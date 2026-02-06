@@ -14,7 +14,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.florent.location.ui.tenant.TenantScreen
 import com.florent.location.ui.theme.LocationTheme
 
+/**
+ * Activité principale qui héberge l'interface Compose.
+ */
 class MainActivity : ComponentActivity() {
+    /**
+     * Configure le contenu Compose et le thème de l'application.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -10,6 +10,9 @@ import com.florent.location.ui.tenant.TenantViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
+/**
+ * Module Koin qui déclare les dépendances de l'application.
+ */
 val appModule = module {
 // DAO
     single { get<AppDatabase>().tenantDao() }
