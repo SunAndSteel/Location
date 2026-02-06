@@ -1,10 +1,11 @@
-package com.florent.location.data.db
+package com.florent.location.data.db.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.florent.location.data.db.entity.TenantEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -16,7 +17,7 @@ interface TenantDao {
     @Query("SELECT * FROM tenants WHERE id = :id LIMIT 1")
     fun observeById(id: Long): Flow<TenantEntity?>
 
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.Companion.ABORT)
     suspend fun insert(entity: TenantEntity): Long
 
     @Update
