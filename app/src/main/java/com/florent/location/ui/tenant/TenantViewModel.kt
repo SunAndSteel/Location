@@ -7,6 +7,9 @@ import com.florent.location.data.db.dao.TenantDao
 import com.florent.location.domain.usecase.TenantUseCases
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel qui orchestre les cas d'usage liés aux locataires.
+ */
 class TenantViewModel(
     private val useCases: TenantUseCases
 ) : ViewModel() {
