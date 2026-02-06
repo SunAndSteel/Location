@@ -1,4 +1,4 @@
-package com.florent.location.data.db
+package com.florent.location.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
