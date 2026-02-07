@@ -192,9 +192,9 @@ private fun LeaseCreateContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
-                value = state.startDateEpochDay,
+                value = state.startDate,
                 onValueChange = { onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, it)) },
-                label = { Text(text = "Date de début (epochDay)") },
+                label = { Text(text = "Date de début (yyyy-MM-dd)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -295,11 +295,11 @@ private fun LeaseCreateContent(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = key.handedOverEpochDay,
+                    value = key.handedOverDate,
                     onValueChange = {
-                        onEvent(LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.HandedOverEpochDay, it))
+                        onEvent(LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.HandedOverDate, it))
                     },
-                    label = { Text(text = "Remise (epochDay)") },
+                    label = { Text(text = "Remise (yyyy-MM-dd)") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 TextButton(onClick = { onEvent(LeaseCreateUiEvent.RemoveKey(index)) }) {

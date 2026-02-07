@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.usecase.lease.LeaseUseCases
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -17,12 +19,12 @@ data class AddKeyDialogState(
     val isOpen: Boolean = false,
     val type: String = "",
     val deviceLabel: String = "",
-    val handedOverEpochDay: String = ""
+    val handedOverDate: String = ""
 )
 
 data class CloseLeaseDialogState(
     val isOpen: Boolean = false,
-    val endEpochDay: String = ""
+    val endDate: String = ""
 )
 
 data class LeaseDetailUiState(
@@ -38,7 +40,7 @@ data class LeaseDetailUiState(
 enum class AddKeyField {
     Type,
     DeviceLabel,
-    HandedOverEpochDay
+    HandedOverDate
 }
 
 sealed interface LeaseDetailUiEvent {
@@ -47,13 +49,13 @@ sealed interface LeaseDetailUiEvent {
     data class ConfirmAddKey(
         val type: String,
         val deviceLabel: String,
-        val handedOverEpochDay: String
+        val handedOverDate: String
     ) : LeaseDetailUiEvent
 
     data class DeleteKeyClicked(val keyId: Long) : LeaseDetailUiEvent
     data object CloseLeaseClicked : LeaseDetailUiEvent
     data class CloseLeaseFieldChanged(val value: String) : LeaseDetailUiEvent
-    data class ConfirmCloseLease(val endEpochDay: String) : LeaseDetailUiEvent
+    data class ConfirmCloseLease(val endDate: String) : LeaseDetailUiEvent
     data object DismissAddKeyDialog : LeaseDetailUiEvent
     data object DismissCloseLeaseDialog : LeaseDetailUiEvent
 }
@@ -78,7 +80,7 @@ class LeaseDetailViewModel(
             is LeaseDetailUiEvent.DeleteKeyClicked -> deleteKey(event.keyId)
             LeaseDetailUiEvent.CloseLeaseClicked -> openCloseLeaseDialog()
             is LeaseDetailUiEvent.CloseLeaseFieldChanged -> updateCloseLeaseField(event.value)
-            is LeaseDetailUiEvent.ConfirmCloseLease -> closeLease(event.endEpochDay)
+            is LeaseDetailUiEvent.ConfirmCloseLease -> closeLease(event.endDate)
             LeaseDetailUiEvent.DismissAddKeyDialog -> dismissAddKeyDialog()
             LeaseDetailUiEvent.DismissCloseLeaseDialog -> dismissCloseLeaseDialog()
         }
@@ -132,7 +134,7 @@ class LeaseDetailViewModel(
             val updated = when (field) {
                 AddKeyField.Type -> dialog.copy(type = value)
                 AddKeyField.DeviceLabel -> dialog.copy(deviceLabel = value)
-                AddKeyField.HandedOverEpochDay -> dialog.copy(handedOverEpochDay = value)
+                AddKeyField.HandedOverDate -> dialog.copy(handedOverDate = value)
             }
             current.copy(addKeyDialog = updated, errorMessage = null)
         }
@@ -145,7 +147,7 @@ class LeaseDetailViewModel(
                 _uiState.update { it.copy(errorMessage = "Bail introuvable.") }
                 return@launch
             }
-            val handedOverEpochDay = event.handedOverEpochDay.toLongOrNull()
+            val handedOverEpochDay = parseEpochDay(event.handedOverDate)
                 ?: lease.startDateEpochDay
 
             try {
@@ -191,15 +193,15 @@ class LeaseDetailViewModel(
     private fun updateCloseLeaseField(value: String) {
         _uiState.update { current ->
             current.copy(
-                closeLeaseDialog = current.closeLeaseDialog.copy(endEpochDay = value),
+                closeLeaseDialog = current.closeLeaseDialog.copy(endDate = value),
                 errorMessage = null
             )
         }
     }
 
-    private fun closeLease(endEpochDay: String) {
+    private fun closeLease(endDate: String) {
         viewModelScope.launch {
-            val parsed = endEpochDay.toLongOrNull()
+            val parsed = parseEpochDay(endDate)
             if (parsed == null) {
                 _uiState.update { it.copy(errorMessage = "Date de clôture invalide.") }
                 return@launch
@@ -225,5 +227,12 @@ class LeaseDetailViewModel(
 
     private fun dismissCloseLeaseDialog() {
         _uiState.update { it.copy(closeLeaseDialog = CloseLeaseDialogState(isOpen = false)) }
+    }
+
+    private fun parseEpochDay(value: String): Long? {
+        if (value.isBlank()) return null
+        return runCatching {
+            LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE).toEpochDay()
+        }.getOrNull()
     }
 }
