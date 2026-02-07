@@ -33,8 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ExperimentalMaterial3Api
 import org.koin.androidx.compose.koinViewModel
 
+@ExperimentalMaterial3Api
 @Composable
 fun HousingListScreen(
     viewModel: HousingListViewModel = koinViewModel(),
@@ -52,6 +54,7 @@ fun HousingListScreen(
     )
 }
 
+@ExperimentalMaterial3Api
 @Composable
 private fun HousingListContent(
     state: HousingListUiState,
