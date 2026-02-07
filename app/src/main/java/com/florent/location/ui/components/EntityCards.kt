@@ -1,16 +1,13 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
 package com.florent.location.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Email
@@ -19,16 +16,14 @@ import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material.icons.outlined.Timelapse
+import androidx.compose.material.icons.outlined.TipsAndUpdates
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Tenant
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun TenantCard(
@@ -47,17 +40,18 @@ fun TenantCard(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false
 ) {
+    val hasContact = tenant.phone != null || tenant.email != null
     val cardColors = if (isSelected) {
         CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     } else {
-        CardDefaults.cardColors()
+        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
     }
     Card(
-        modifier = modifier,
+        modifier = modifier.keyboardClickable(onOpen),
         colors = cardColors,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -65,60 +59,47 @@ fun TenantCard(
             ) {
                 Text(
                     text = "${tenant.firstName} ${tenant.lastName}",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleLarge
                 )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = if (tenant.phone != null || tenant.email != null) "Contact" else "Sans contact") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = null
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors()
-                )
+                StatusBadge(text = if (hasContact) "Contact" else "Sans contact")
             }
-            if (tenant.phone != null || tenant.email != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+            Spacer(modifier = Modifier.height(12.dp))
+            val primaryContact = tenant.phone ?: tenant.email ?: "Aucun"
+            val contactLabel = when {
+                tenant.phone != null -> "Téléphone"
+                tenant.email != null -> "Email"
+                else -> "Contact"
+            }
+            HeroMetric(value = primaryContact, label = contactLabel)
+            if (hasContact) {
+                Spacer(modifier = Modifier.height(12.dp))
+                DetailChipRow {
                     tenant.phone?.let {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(text = it) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Phone,
-                                    contentDescription = null
-                                )
-                            }
-                        )
+                        MetricChip(label = it, icon = Icons.Outlined.Phone)
                     }
                     tenant.email?.let {
-                        AssistChip(
-                            onClick = {},
-                            label = { Text(text = it) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Email,
-                                    contentDescription = null
-                                )
-                            }
-                        )
+                        MetricChip(label = it, icon = Icons.Outlined.Email)
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onOpen) {
-                    Text(text = "Voir")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.TipsAndUpdates,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Ouvrir la fiche",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
@@ -139,73 +120,66 @@ fun HousingCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(),
+        modifier = modifier.keyboardClickable(onOpen),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = housing.address, style = MaterialTheme.typography.titleMedium)
-            Text(text = housing.city, style = MaterialTheme.typography.bodyMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Statut: non renseigné") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Home, contentDescription = null)
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Loyer: ${housing.defaultRentCents} cents") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Payments, contentDescription = null)
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Charges: ${housing.defaultChargesCents} cents") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Payments, contentDescription = null)
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Caution: ${housing.depositCents} cents") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Payments, contentDescription = null)
-                    }
-                )
-                housing.peb?.let {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(text = "PEB: $it") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Outlined.Home, contentDescription = null)
-                        }
-                    )
-                }
-                housing.buildingLabel?.let {
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(text = "Bâtiment: $it") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Outlined.Place, contentDescription = null)
-                        }
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onOpen) {
-                    Text(text = "Voir")
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = housing.address, style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = housing.city,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                StatusBadge(text = "Statut inconnu")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HeroMetric(
+                value = formatCurrency(housing.defaultRentCents),
+                label = "/ mois"
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            DetailChipRow {
+                MetricChip(
+                    label = "Charges ${formatCurrency(housing.defaultChargesCents)}",
+                    icon = Icons.Outlined.Payments
+                )
+                MetricChip(
+                    label = "Caution ${formatCurrency(housing.depositCents)}",
+                    icon = Icons.Outlined.Payments
+                )
+                housing.peb?.let {
+                    MetricChip(label = "PEB $it", icon = Icons.Outlined.Home)
+                }
+                housing.buildingLabel?.let {
+                    MetricChip(label = "Bâtiment $it", icon = Icons.Outlined.Place)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.TipsAndUpdates,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Ouvrir le logement",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
@@ -224,71 +198,90 @@ fun LeaseCard(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val statusLabel = if (bail.endDateEpochDay == null) "Actif" else "Terminé"
+    val isActive = bail.endDateEpochDay == null
+    val statusLabel = if (isActive) "Actif" else "Terminé"
+    val variant = when {
+        isActive -> CardVariant.Highlighted
+        else -> CardVariant.Warning
+    }
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(),
+        modifier = modifier.keyboardClickable(onOpen),
+        colors = variantCardColors(variant),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Bail #${bail.id}", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Logement: ${bail.housingId}") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Home, contentDescription = null)
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = "Locataire: ${bail.tenantId}") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Person, contentDescription = null)
-                    }
-                )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = statusLabel) },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.Schedule, contentDescription = null)
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Loyer: ${bail.rentCents} cents",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "Charges: ${bail.chargesCents} cents",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Début: ${formatEpochDay(bail.startDateEpochDay)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                TextButton(onClick = onOpen) {
-                    Text(text = "Voir")
-                }
+                Text(
+                    text = "Bail #${bail.id}",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                StatusBadge(
+                    text = statusLabel,
+                    containerColor = if (isActive) {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HeroMetric(
+                value = formatCurrency(bail.rentCents),
+                label = "/ mois"
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            DetailChipRow {
+                NonInteractiveChip(
+                    label = "Logement #${bail.housingId}",
+                    icon = Icons.Outlined.Home
+                )
+                NonInteractiveChip(
+                    label = "Locataire #${bail.tenantId}",
+                    icon = Icons.Outlined.Person
+                )
+                NonInteractiveChip(
+                    label = "Échéance le ${bail.rentDueDayOfMonth}",
+                    icon = Icons.Outlined.Timelapse
+                )
+                NonInteractiveChip(
+                    label = "Charges ${formatCurrency(bail.chargesCents)}",
+                    icon = Icons.Outlined.Payments
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            LabeledValueRow(
+                label = "Début",
+                value = formatEpochDay(bail.startDateEpochDay)
+            )
+            if (!isActive && bail.endDateEpochDay != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                LabeledValueRow(
+                    label = "Fin",
+                    value = formatEpochDay(bail.endDateEpochDay)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.TipsAndUpdates,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Ouvrir le bail",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
-}
-
-private fun formatEpochDay(epochDay: Long): String {
-    return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
 }

@@ -2,22 +2,19 @@
 
 package com.florent.location.ui.tenant
 
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -28,6 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.AdaptiveContent
+import com.florent.location.ui.components.AppSectionHeader
+import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.PrimaryActionRow
 
 @Composable
 fun TenantEditScreen(
@@ -73,75 +73,101 @@ private fun TenantEditContent(
         },
         modifier = modifier
     ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding) {
+        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 960.dp) {
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Chargement du locataire...")
-                    }
+                    ExpressiveLoadingState(
+                        title = "Chargement du locataire",
+                        message = "Nous préparons le formulaire."
+                    )
                 }
                 return@AdaptiveContent
             }
 
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                OutlinedTextField(
-                    value = state.firstName,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, it))
-                    },
-                    label = { Text(text = "Prénom") },
-                    modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                AppSectionHeader(
+                    title = "Identité",
+                    supportingText = "Informations principales du locataire."
                 )
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = state.firstName,
+                            onValueChange = {
+                                onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, it))
+                            },
+                            label = { Text(text = "Prénom") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = state.lastName,
+                            onValueChange = {
+                                onEvent(TenantEditUiEvent.FieldChanged(TenantField.LastName, it))
+                            },
+                            label = { Text(text = "Nom") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = state.lastName,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.LastName, it))
-                    },
-                    label = { Text(text = "Nom") },
-                    modifier = Modifier.fillMaxWidth()
+                AppSectionHeader(
+                    title = "Contact",
+                    supportingText = "Coordonnées du locataire."
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = state.phone,
-                    onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.Phone, it)) },
-                    label = { Text(text = "Téléphone") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.Email, it)) },
-                    label = { Text(text = "Email") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = state.phone,
+                            onValueChange = {
+                                onEvent(TenantEditUiEvent.FieldChanged(TenantField.Phone, it))
+                            },
+                            label = { Text(text = "Téléphone") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = state.email,
+                            onValueChange = {
+                                onEvent(TenantEditUiEvent.FieldChanged(TenantField.Email, it))
+                            },
+                            label = { Text(text = "Email") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
 
                 if (state.errorMessage != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = state.errorMessage,
                         color = MaterialTheme.colorScheme.error
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = { onEvent(TenantEditUiEvent.SaveClicked) },
-                    modifier = Modifier.fillMaxWidth().focusable()
-                ) {
-                    Text(text = "Enregistrer")
-                }
+                PrimaryActionRow(
+                    primaryLabel = "Enregistrer",
+                    onPrimary = { onEvent(TenantEditUiEvent.SaveClicked) }
+                )
             }
         }
     }
