@@ -10,21 +10,21 @@ interface TenantRepository {
     /**
      * Observe la liste complète des locataires.
      */
-    fun observeAll(): Flow<List<Tenant>>
+    fun observeTenants(): Flow<List<Tenant>>
     /**
      * Observe un locataire par identifiant.
      */
-    fun observeById(id: Long): Flow<Tenant?>
+    fun observeTenant(id: Long): Flow<Tenant?>
     /**
      * Insère un locataire et renvoie l'identifiant.
      */
-    suspend fun insert(tenant: Tenant): Long
+    suspend fun createTenant(tenant: Tenant): Long
     /**
      * Met à jour un locataire.
      */
-    suspend fun update(tenant: Tenant)
+    suspend fun updateTenant(tenant: Tenant)
     /**
      * Supprime un locataire par identifiant.
      */
-    suspend fun deleteById(id: Long)
+    suspend fun deleteTenant(id: Long)
 }

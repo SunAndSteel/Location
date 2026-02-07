@@ -43,4 +43,16 @@ interface TenantDao {
      */
     @Query("DELETE FROM tenants WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    /**
+     * Vérifie si un locataire possède un bail actif.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) > 0 FROM leases
+        WHERE tenantId = :tenantId
+          AND endDateEpochDay IS NULL
+        """
+    )
+    suspend fun hasActiveLease(tenantId: Long): Boolean
 }

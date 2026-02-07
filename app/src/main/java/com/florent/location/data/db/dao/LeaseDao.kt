@@ -28,6 +28,17 @@ interface LeaseDao {
     )
     suspend fun getActiveLeaseForHousing(housingId: Long): LeaseEntity?
 
+    // --- Bail actif par locataire ---
+    @Query(
+            """
+        SELECT * FROM leases
+        WHERE tenantId = :tenantId
+          AND endDateEpochDay IS NULL
+        LIMIT 1
+    """
+    )
+    suspend fun getActiveLeaseForTenant(tenantId: Long): LeaseEntity?
+
     // --- CRUD ---
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insert(lease: LeaseEntity): Long
 

@@ -13,23 +13,23 @@ interface TenantUseCases {
     /**
      * Observe l'ensemble des locataires.
      */
-    fun observeAll(): Flow<List<Tenant>>
+    fun observeTenants(): Flow<List<Tenant>>
     /**
      * Observe un locataire par identifiant.
      */
-    fun observeById(id: Long): Flow<Tenant?>
+    fun observeTenant(id: Long): Flow<Tenant?>
     /**
      * Crée un locataire et renvoie l'identifiant.
      */
-    suspend fun create(tenant: Tenant): Long
+    suspend fun createTenant(tenant: Tenant): Long
     /**
      * Met à jour un locataire.
      */
-    suspend fun update(tenant: Tenant)
+    suspend fun updateTenant(tenant: Tenant)
     /**
      * Supprime un locataire par identifiant.
      */
-    suspend fun delete(id: Long)
+    suspend fun deleteTenant(id: Long)
 }
 
 /**
@@ -42,30 +42,39 @@ class TenantUseCasesImpl(
     /**
      * Observe tous les locataires.
      */
-    override fun observeAll(): Flow<List<Tenant>> =
-        repository.observeAll()
+    override fun observeTenants(): Flow<List<Tenant>> =
+        repository.observeTenants()
 
     /**
      * Observe un locataire par identifiant.
      */
-    override fun observeById(id: Long): Flow<Tenant?> =
-        repository.observeById(id)
+    override fun observeTenant(id: Long): Flow<Tenant?> =
+        repository.observeTenant(id)
 
     /**
      * Crée un locataire.
      */
-    override suspend fun create(tenant: Tenant): Long =
-        repository.insert(tenant)
+    override suspend fun createTenant(tenant: Tenant): Long {
+        validateTenant(tenant)
+        return repository.createTenant(tenant)
+    }
 
     /**
      * Met à jour un locataire.
      */
-    override suspend fun update(tenant: Tenant) =
-        repository.update(tenant)
+    override suspend fun updateTenant(tenant: Tenant) {
+        validateTenant(tenant)
+        repository.updateTenant(tenant)
+    }
 
     /**
      * Supprime un locataire.
      */
-    override suspend fun delete(id: Long) =
-        repository.deleteById(id)
+    override suspend fun deleteTenant(id: Long) =
+        repository.deleteTenant(id)
+
+    private fun validateTenant(tenant: Tenant) {
+        require(tenant.firstName.isNotBlank()) { "Le prénom est obligatoire." }
+        require(tenant.lastName.isNotBlank()) { "Le nom est obligatoire." }
+    }
 }
