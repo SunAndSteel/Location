@@ -1,7 +1,6 @@
 package com.florent.location.ui.housing
 
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.florent.location.ui.components.AdaptiveContent
 
 @ExperimentalMaterial3Api
 @Composable
@@ -71,12 +73,7 @@ private fun HousingEditContent(
         },
         modifier = modifier
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
+        AdaptiveContent(innerPadding = innerPadding) {
             if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -88,94 +85,96 @@ private fun HousingEditContent(
                         Text(text = "Chargement du logement...")
                     }
                 }
-                return@Column
+                return@AdaptiveContent
             }
 
-            OutlinedTextField(
-                value = state.city,
-                onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
-                label = { Text(text = "Ville") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.address,
-                onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
-                label = { Text(text = "Adresse") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.defaultRentCents.toString(),
-                onValueChange = {
-                    onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
-                },
-                label = { Text(text = "Loyer (cents)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.defaultChargesCents.toString(),
-                onValueChange = {
-                    onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
-                },
-                label = { Text(text = "Charges (cents)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.depositCents.toString(),
-                onValueChange = {
-                    onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
-                },
-                label = { Text(text = "Caution (cents)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.peb.orEmpty(),
-                onValueChange = {
-                    onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null }))
-                },
-                label = { Text(text = "PEB") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = state.buildingLabel.orEmpty(),
-                onValueChange = {
-                    onEvent(HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null }))
-                },
-                label = { Text(text = "Bâtiment") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            if (state.errorMessage != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = state.errorMessage,
-                    color = MaterialTheme.colorScheme.error
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = state.city,
+                    onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
+                    label = { Text(text = "Ville") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onEvent(HousingEditUiEvent.Save) },
-                modifier = Modifier.fillMaxWidth().focusable()
-            ) {
-                Text(text = "Enregistrer")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.address,
+                    onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
+                    label = { Text(text = "Adresse") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.defaultRentCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    label = { Text(text = "Loyer (cents)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.defaultChargesCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    label = { Text(text = "Charges (cents)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.depositCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    label = { Text(text = "Caution (cents)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.peb.orEmpty(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null }))
+                    },
+                    label = { Text(text = "PEB") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.buildingLabel.orEmpty(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null }))
+                    },
+                    label = { Text(text = "Bâtiment") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (state.errorMessage != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = state.errorMessage,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { onEvent(HousingEditUiEvent.Save) },
+                    modifier = Modifier.fillMaxWidth().focusable()
+                ) {
+                    Text(text = "Enregistrer")
+                }
             }
         }
     }
