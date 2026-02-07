@@ -21,7 +21,7 @@ import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Key as KeyIcon
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
@@ -46,7 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.Key as KeyboardKey
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -70,7 +70,7 @@ import com.florent.location.ui.components.variantCardColors
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
 import com.florent.location.domain.model.Bail
-import com.florent.location.domain.model.Key
+import com.florent.location.domain.model.Key as BailKey
 
 @Composable
 fun BailDetailScreen(
@@ -209,11 +209,11 @@ private fun BailDetailContent(
         AlertDialog(
             onDismissRequest = { onEvent(BailDetailUiEvent.DismissAddKeyDialog) },
             modifier = Modifier.onPreviewKeyEvent {
-                if (it.type == KeyEventType.KeyUp && it.key == Key.Escape) {
+                if (it.type == KeyEventType.KeyUp && it.key == KeyboardKey.Escape) {
                     onEvent(BailDetailUiEvent.DismissAddKeyDialog)
                     true
                 } else if (it.type == KeyEventType.KeyUp &&
-                    (it.key == Key.Enter || it.key == Key.NumPadEnter)
+                    (it.key == KeyboardKey.Enter || it.key == KeyboardKey.NumPadEnter)
                 ) {
                     onEvent(
                         BailDetailUiEvent.ConfirmAddKey(
@@ -285,11 +285,11 @@ private fun BailDetailContent(
         AlertDialog(
             onDismissRequest = { onEvent(BailDetailUiEvent.DismissCloseLeaseDialog) },
             modifier = Modifier.onPreviewKeyEvent {
-                if (it.type == KeyEventType.KeyUp && it.key == Key.Escape) {
+                if (it.type == KeyEventType.KeyUp && it.key == KeyboardKey.Escape) {
                     onEvent(BailDetailUiEvent.DismissCloseLeaseDialog)
                     true
                 } else if (it.type == KeyEventType.KeyUp &&
-                    (it.key == Key.Enter || it.key == Key.NumPadEnter)
+                    (it.key == KeyboardKey.Enter || it.key == KeyboardKey.NumPadEnter)
                 ) {
                     onEvent(BailDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate))
                     true
@@ -624,7 +624,7 @@ private fun IndexationSection(
 
 @Composable
 private fun KeysSection(
-    keys: List<Key>,
+    keys: List<BailKey>,
     onAddKey: () -> Unit,
     onDeleteKey: (Long) -> Unit,
     modifier: Modifier = Modifier
@@ -640,7 +640,7 @@ private fun KeysSection(
         ) {
             SectionHeader(title = "Clés")
             FilledTonalButton(onClick = onAddKey) {
-                Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
+                Icon(imageVector = KeyIcon, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Ajouter")
             }

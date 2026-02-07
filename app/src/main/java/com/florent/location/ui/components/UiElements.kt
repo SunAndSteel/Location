@@ -4,6 +4,7 @@ package com.florent.location.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -197,7 +198,7 @@ fun variantCardColors(variant: CardVariant) = when (variant) {
 @Composable
 fun DefaultCard(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = modifier,
@@ -210,7 +211,7 @@ fun DefaultCard(
 @Composable
 fun HighlightCard(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = modifier,
@@ -223,7 +224,7 @@ fun HighlightCard(
 @Composable
 fun WarningCard(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = modifier,
