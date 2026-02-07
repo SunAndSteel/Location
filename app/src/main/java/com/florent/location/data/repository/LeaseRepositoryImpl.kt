@@ -49,6 +49,21 @@ class LeaseRepositoryImpl(
             entities.map { it.toDomain() }
         }
 
+    override suspend fun insertKey(key: Key): Long {
+        return db.withTransaction {
+            val lease = leaseDao.getById(key.leaseId)
+            require(lease != null) { "Bail introuvable." }
+            keyDao.insert(key.toEntity())
+        }
+    }
+
+    override suspend fun deleteKeyById(id: Long) {
+        db.withTransaction {
+            val deleted = keyDao.deleteById(id)
+            require(deleted == 1) { "Clé introuvable." }
+        }
+    }
+
     override suspend fun housingExists(housingId: Long): Boolean =
         db.housingDao().exists(housingId)
 
