@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 
 class FakeLeaseRepository(
-    leases: List<Lease>,
-    keys: List<Key>
+    leases: List<Lease> = emptyList(),
+    keys: List<Key> = emptyList(),
+    private val existingHousingIds: Set<Long> = emptySet(),
+    private val existingTenantIds: Set<Long> = emptySet()
 ) : LeaseRepository {
     private val leaseFlow = MutableStateFlow(leases.associateBy { it.id })
     private val keysFlow = MutableStateFlow(keys.groupBy { it.leaseId })
@@ -62,9 +64,11 @@ class FakeLeaseRepository(
         keysFlow.value = current + (leaseId to updatedKeys)
     }
 
-    override suspend fun housingExists(housingId: Long): Boolean = true
+    override suspend fun housingExists(housingId: Long): Boolean =
+        existingHousingIds.isEmpty() || existingHousingIds.contains(housingId)
 
-    override suspend fun tenantExists(tenantId: Long): Boolean = true
+    override suspend fun tenantExists(tenantId: Long): Boolean =
+        existingTenantIds.isEmpty() || existingTenantIds.contains(tenantId)
 
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) {
         val lease = leaseFlow.value[leaseId]

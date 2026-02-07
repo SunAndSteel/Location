@@ -14,5 +14,9 @@ class FakeLeaseUseCases : LeaseUseCases {
 
     override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> = flowOf(emptyList())
 
+    override suspend fun addKey(leaseId: Long, key: Key): Long = 0L
+
+    override suspend fun deleteKey(keyId: Long) = Unit
+
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) = Unit
 }
