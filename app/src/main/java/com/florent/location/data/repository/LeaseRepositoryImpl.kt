@@ -2,29 +2,30 @@ package com.florent.location.data.repository
 
 import androidx.room.withTransaction
 import com.florent.location.data.db.AppDatabase
-import com.florent.location.data.db.entity.KeyEntity
-import com.florent.location.data.db.entity.LeaseEntity
+import com.florent.location.data.db.dao.KeyDao
+import com.florent.location.data.db.dao.LeaseDao
+import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.repository.LeaseRepository
 
 class LeaseRepositoryImpl(
-    private val db: AppDatabase
+    private val db: AppDatabase,
+    private val leaseDao: LeaseDao,
+    private val keyDao: KeyDao
 ) : LeaseRepository {
-    private val leaseDao = db.leaseDao()
-    private val keyDao = db.keyDao()
-
     override suspend fun createLeaseWithKeys(
-        lease: LeaseEntity,
-        keys: List<KeyEntity>
+        lease: Lease,
+        keys: List<Key>
     ): Long {
         return db.withTransaction {
-            val existing = leaseDao.getActiveLeaseForHousing(lease.housingId)
+            val leaseEntity = lease.toEntity()
+            val existing = leaseDao.getActiveLeaseForHousing(leaseEntity.housingId)
             require(existing == null) { "Un bail actif existe déjà pour ce logement." }
 
-            val leaseId = leaseDao.insert(lease)
+            val leaseId = leaseDao.insert(leaseEntity)
 
             keys.forEach { key ->
-                keyDao.insert(key.copy(leaseId = leaseId))
+                keyDao.insert(key.toEntity(leaseId, lease.startDateEpochDay))
             }
 
             leaseId
