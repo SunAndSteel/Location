@@ -2,26 +2,20 @@
 
 package com.florent.location.ui.tenant
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -36,8 +30,10 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.florent.location.ui.components.AdaptiveContent
+import com.florent.location.ui.components.TenantCard
+import com.florent.location.ui.components.keyboardClickable
 
 @Composable
 fun TenantListScreen(
@@ -76,12 +72,7 @@ private fun TenantListContent(
         },
         modifier = modifier
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
+        AdaptiveContent(innerPadding = innerPadding) {
             OutlinedTextField(
                 value = state.searchQuery,
                 onValueChange = { onEvent(TenantListUiEvent.SearchQueryChanged(it)) },
@@ -140,45 +131,21 @@ private fun TenantListContent(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.tenants, key = { it.id }) { tenant ->
-                            Card(
+                            val openTenant = {
+                                onEvent(TenantListUiEvent.TenantClicked(tenant.id))
+                                onTenantClick(tenant.id)
+                            }
+                            TenantCard(
+                                tenant = tenant,
+                                onOpen = openTenant,
+                                onDelete = {
+                                    onEvent(TenantListUiEvent.DeleteTenantClicked(tenant.id))
+                                },
+                                isSelected = tenant.id == state.selectedTenantId,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        onEvent(TenantListUiEvent.TenantClicked(tenant.id))
-                                        onTenantClick(tenant.id)
-                                    }
-                                    .focusable()
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "${tenant.firstName} ${tenant.lastName}",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    tenant.phone?.let { Text(text = "Téléphone: $it") }
-                                    tenant.email?.let { Text(text = "Email: $it") }
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Button(onClick = { onTenantClick(tenant.id) }) {
-                                            Text(text = "Voir")
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                onEvent(TenantListUiEvent.DeleteTenantClicked(tenant.id))
-                                            },
-                                            modifier = Modifier.focusable()
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Supprimer le locataire"
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                                    .keyboardClickable(onClick = openTenant)
+                            )
                         }
                     }
                 }

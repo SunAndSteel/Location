@@ -2,7 +2,9 @@
 
 package com.florent.location.ui.navigation
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -13,8 +15,11 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -35,6 +41,9 @@ import androidx.navigation.navArgument
 import com.florent.location.ui.bail.BailDetailScreen
 import com.florent.location.ui.bail.BailDetailViewModel
 import com.florent.location.ui.bail.BailsScreen
+import com.florent.location.ui.components.EmptyDetailPane
+import com.florent.location.ui.components.WindowWidthSize
+import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.housing.HousingDetailScreen
 import com.florent.location.ui.housing.HousingDetailViewModel
 import com.florent.location.ui.housing.HousingEditScreen
@@ -122,47 +131,224 @@ fun LocationNavHost(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    Row(modifier = modifier.fillMaxSize()) {
-        NavigationRail(
-            modifier = Modifier
-                .width(88.dp)
-                .padding(vertical = 8.dp)
-        ) {
-            topLevelDestinations.forEach { destination ->
-                val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
-                NavigationRailItem(
-                    selected = selected,
-                    onClick = {
-                        navController.navigate(destination.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val widthSize = windowWidthSize(maxWidth)
+        val currentRoute = currentDestination?.route
+        val isTwoPaneRoute = currentRoute in setOf(
+            LocationRoutes.BAILS_LIST,
+            LocationRoutes.BAIL_DETAIL,
+            LocationRoutes.HOUSINGS_LIST,
+            LocationRoutes.HOUSING_DETAIL,
+            LocationRoutes.TENANTS_LIST,
+            LocationRoutes.TENANT_DETAIL
+        )
+
+        when (widthSize) {
+            WindowWidthSize.Compact -> {
+                Scaffold(
+                    bottomBar = {
+                        NavigationBar {
+                            topLevelDestinations.forEach { destination ->
+                                val selected = currentDestination?.hierarchy
+                                    ?.any { it.route == destination.route } == true
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = {
+                                        navController.navigate(destination.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            destination.icon,
+                                            contentDescription = destination.label
+                                        )
+                                    },
+                                    label = { Text(destination.label) }
+                                )
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
-                    },
-                    icon = { Icon(destination.icon, contentDescription = destination.label) },
-                    label = { Text(destination.label) }
-                )
+                    }
+                ) { innerPadding ->
+                    LocationNavGraph(
+                        navController = navController,
+                        modifier = Modifier.padding(innerPadding)
+                    )
+                }
+            }
+
+            WindowWidthSize.Medium -> {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    NavigationRail(
+                        modifier = Modifier
+                            .width(88.dp)
+                            .padding(vertical = 8.dp)
+                    ) {
+                        topLevelDestinations.forEach { destination ->
+                            val selected = currentDestination?.hierarchy
+                                ?.any { it.route == destination.route } == true
+                            NavigationRailItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(destination.icon, contentDescription = destination.label) },
+                                label = { Text(destination.label) }
+                            )
+                        }
+                    }
+
+                    LocationNavGraph(
+                        navController = navController,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            WindowWidthSize.Expanded -> {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    NavigationRail(
+                        modifier = Modifier
+                            .width(88.dp)
+                            .padding(vertical = 8.dp)
+                    ) {
+                        topLevelDestinations.forEach { destination ->
+                            val selected = currentDestination?.hierarchy
+                                ?.any { it.route == destination.route } == true
+                            NavigationRailItem(
+                                selected = selected,
+                                onClick = {
+                                    navController.navigate(destination.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(destination.icon, contentDescription = destination.label) },
+                                label = { Text(destination.label) }
+                            )
+                        }
+                    }
+
+                    if (isTwoPaneRoute) {
+                        TwoPaneContent(
+                            navController = navController,
+                            currentDestination = currentDestination,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        LocationNavGraph(
+                            navController = navController,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TwoPaneContent(
+    navController: NavHostController,
+    currentDestination: NavDestination?,
+    modifier: Modifier = Modifier
+) {
+    val isBails = currentDestination?.hierarchy?.any { it.route == LocationRoutes.BAILS } == true
+    val isHousings = currentDestination?.hierarchy?.any { it.route == LocationRoutes.HOUSINGS } == true
+    val isTenants = currentDestination?.hierarchy?.any { it.route == LocationRoutes.TENANTS } == true
+
+    Row(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .weight(0.45f)
+                .fillMaxHeight()
+        ) {
+            when {
+                isBails -> {
+                    BailsScreen(
+                        onBailClick = { leaseId ->
+                            navController.navigate(LocationRoutes.bailDetail(leaseId))
+                        },
+                        onAddBail = { navController.navigate(LocationRoutes.bailCreate()) }
+                    )
+                }
+
+                isHousings -> {
+                    HousingListScreen(
+                        onHousingClick = { housingId ->
+                            navController.navigate(LocationRoutes.housingDetail(housingId))
+                        },
+                        onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) }
+                    )
+                }
+
+                else -> {
+                    TenantListScreen(
+                        onTenantClick = { tenantId ->
+                            navController.navigate(LocationRoutes.tenantDetail(tenantId))
+                        },
+                        onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
+                    )
+                }
             }
         }
 
-        NavHost(
-            navController = navController,
-            startDestination = LocationRoutes.BAILS,
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier
+                .weight(0.55f)
+                .fillMaxHeight()
         ) {
+            LocationNavGraph(
+                navController = navController,
+                modifier = Modifier.fillMaxSize(),
+                useListPlaceholder = true
+            )
+        }
+    }
+}
+
+@Composable
+private fun LocationNavGraph(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    useListPlaceholder: Boolean = false
+) {
+    NavHost(
+        navController = navController,
+        startDestination = LocationRoutes.BAILS,
+        modifier = modifier
+    ) {
         navigation(
             route = LocationRoutes.BAILS,
             startDestination = LocationRoutes.BAILS_LIST
         ) {
             composable(LocationRoutes.BAILS_LIST) {
-                BailsScreen(
-                    onBailClick = { leaseId ->
-                        navController.navigate(LocationRoutes.bailDetail(leaseId))
-                    },
-                    onAddBail = { navController.navigate(LocationRoutes.bailCreate()) }
-                )
+                if (useListPlaceholder) {
+                    EmptyDetailPane(
+                        title = "Sélectionnez un bail",
+                        message = "Choisissez un bail pour afficher ses détails."
+                    )
+                } else {
+                    BailsScreen(
+                        onBailClick = { leaseId ->
+                            navController.navigate(LocationRoutes.bailDetail(leaseId))
+                        },
+                        onAddBail = { navController.navigate(LocationRoutes.bailCreate()) }
+                    )
+                }
             }
 
             composable(
@@ -219,12 +405,19 @@ fun LocationNavHost(
             startDestination = LocationRoutes.HOUSINGS_LIST
         ) {
             composable(LocationRoutes.HOUSINGS_LIST) {
-                HousingListScreen(
-                    onHousingClick = { housingId ->
-                        navController.navigate(LocationRoutes.housingDetail(housingId))
-                    },
-                    onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) }
-                )
+                if (useListPlaceholder) {
+                    EmptyDetailPane(
+                        title = "Sélectionnez un logement",
+                        message = "Choisissez un logement pour afficher ses détails."
+                    )
+                } else {
+                    HousingListScreen(
+                        onHousingClick = { housingId ->
+                            navController.navigate(LocationRoutes.housingDetail(housingId))
+                        },
+                        onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) }
+                    )
+                }
             }
 
             composable(
@@ -265,12 +458,19 @@ fun LocationNavHost(
             startDestination = LocationRoutes.TENANTS_LIST
         ) {
             composable(LocationRoutes.TENANTS_LIST) {
-                TenantListScreen(
-                    onTenantClick = { tenantId ->
-                        navController.navigate(LocationRoutes.tenantDetail(tenantId))
-                    },
-                    onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
-                )
+                if (useListPlaceholder) {
+                    EmptyDetailPane(
+                        title = "Sélectionnez un locataire",
+                        message = "Choisissez un locataire pour afficher ses détails."
+                    )
+                } else {
+                    TenantListScreen(
+                        onTenantClick = { tenantId ->
+                            navController.navigate(LocationRoutes.tenantDetail(tenantId))
+                        },
+                        onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
+                    )
+                }
             }
 
             composable(
@@ -304,7 +504,6 @@ fun LocationNavHost(
                     onSaved = { navController.popBackStack() }
                 )
             }
-        }
         }
     }
 }
