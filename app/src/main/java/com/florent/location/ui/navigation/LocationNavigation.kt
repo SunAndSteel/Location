@@ -2,14 +2,33 @@
 
 package com.florent.location.ui.navigation
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.florent.location.ui.housing.HousingDetailScreen
@@ -70,16 +89,68 @@ object LocationRoutes {
     fun leaseDetail(leaseId: Long) = "lease/$leaseId"
 }
 
+private data class TopLevelDestination(
+    val route: String,
+    val label: String,
+    val icon: ImageVector
+)
+
+private val topLevelDestinations = listOf(
+    TopLevelDestination(
+        route = LocationRoutes.HOUSINGS,
+        label = "Housings",
+        icon = Icons.Outlined.Home
+    ),
+    TopLevelDestination(
+        route = LocationRoutes.TENANTS,
+        label = "Tenants",
+        icon = Icons.Outlined.People
+    ),
+    TopLevelDestination(
+        route = LocationRoutes.INDEXATIONS,
+        label = "Indexations",
+        icon = Icons.Outlined.TrendingUp
+    )
+)
+
 @Composable
 fun LocationNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
-    NavHost(
-        navController = navController,
-        startDestination = LocationRoutes.HOUSINGS,
-        modifier = modifier
-    ) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    Row(modifier = modifier.fillMaxSize()) {
+        NavigationRail(
+            modifier = Modifier
+                .width(88.dp)
+                .padding(vertical = 8.dp)
+        ) {
+            topLevelDestinations.forEach { destination ->
+                val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                NavigationRailItem(
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(destination.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    icon = { Icon(destination.icon, contentDescription = destination.label) },
+                    label = { Text(destination.label) }
+                )
+            }
+        }
+
+        NavHost(
+            navController = navController,
+            startDestination = LocationRoutes.HOUSINGS,
+            modifier = Modifier.weight(1f)
+        ) {
         composable(LocationRoutes.HOUSINGS) {
             HousingListScreen(
                 onHousingClick = { housingId ->
@@ -213,6 +284,7 @@ fun LocationNavHost(
         composable(LocationRoutes.INDEXATIONS) {
             val viewModel: IndexationViewModel = koinViewModel()
             IndexationScreen(viewModel = viewModel)
+        }
         }
     }
 }
