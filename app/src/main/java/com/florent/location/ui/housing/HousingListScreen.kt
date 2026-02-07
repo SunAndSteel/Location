@@ -17,10 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,12 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.florent.location.ui.components.AdaptiveContent
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
 import com.florent.location.ui.components.HousingCard
 import com.florent.location.ui.components.SectionHeader
+import com.florent.location.ui.components.ScreenScaffold
+import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -54,7 +54,6 @@ fun HousingListScreen(
     val state by viewModel.uiState.collectAsState()
     HousingListContent(
         state = state,
-        onEvent = viewModel::onEvent,
         onHousingClick = onHousingClick,
         onAddHousing = onAddHousing,
         modifier = modifier
@@ -65,108 +64,100 @@ fun HousingListScreen(
 @Composable
 private fun HousingListContent(
     state: HousingListUiState,
-    onEvent: (HousingListUiEvent) -> Unit,
     onHousingClick: (Long) -> Unit,
     onAddHousing: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Logements") }) },
+    ScreenScaffold(
+        title = "Logements",
         floatingActionButton = {
             FloatingActionButton(onClick = onAddHousing, modifier = Modifier.focusable()) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un logement")
             }
         },
+        contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
         modifier = modifier
-    ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 1080.dp) {
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ExpressiveLoadingState(
-                            title = "Chargement des logements",
-                            message = "Nous préparons vos biens et leurs informations clés."
-                        )
-                    }
+    ) {
+        when {
+            state.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpressiveLoadingState(
+                        title = "Chargement des logements",
+                        message = "Nous préparons vos biens et leurs informations clés."
+                    )
                 }
+            }
 
-                state.errorMessage != null -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ExpressiveErrorState(
-                            title = "Impossible de charger les logements",
-                            message = state.errorMessage,
-                            icon = Icons.Outlined.ErrorOutline
-                        )
-                    }
+            state.errorMessage != null -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveErrorState(
+                        title = "Impossible de charger les logements",
+                        message = state.errorMessage,
+                        icon = Icons.Outlined.ErrorOutline
+                    )
                 }
+            }
 
-                state.isEmpty -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ExpressiveEmptyState(
-                            title = "Aucun logement enregistré",
-                            message = "Ajoutez un premier bien pour suivre loyers et contrats.",
-                            icon = Icons.Outlined.HomeWork,
-                            actionLabel = "Ajouter un logement",
-                            onAction = onAddHousing
-                        )
-                    }
+            state.isEmpty -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveEmptyState(
+                        title = "Aucun logement",
+                        message = "Ajoutez un premier bien pour suivre loyers et baux.",
+                        icon = Icons.Outlined.HomeWork,
+                        actionLabel = "Ajouter un logement",
+                        onAction = onAddHousing
+                    )
                 }
+            }
 
-                else -> {
-                    BoxWithConstraints {
-                        val sizeClass = windowWidthSize(maxWidth)
-                        if (sizeClass == WindowWidthSize.Expanded) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(24.dp)
-                            ) {
-                                LazyColumn(
-                                    modifier = Modifier.weight(0.58f),
-                                    contentPadding = PaddingValues(vertical = 8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    items(state.housings, key = { it.id }) { housing ->
-                                        HousingCard(
-                                            housing = housing,
-                                            onOpen = { onHousingClick(housing.id) },
-                                            onDelete = {
-                                                onEvent(HousingListUiEvent.DeleteHousing(housing.id))
-                                            },
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                }
-                                HousingContextPanel(
-                                    total = state.housings.size,
-                                    modifier = Modifier.weight(0.42f)
-                                )
-                            }
-                        } else {
+            else -> {
+                BoxWithConstraints {
+                    val sizeClass = windowWidthSize(maxWidth)
+                    if (sizeClass == WindowWidthSize.Expanded) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
+                        ) {
                             LazyColumn(
-                                contentPadding = PaddingValues(vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                modifier = Modifier.weight(0.4f),
+                                contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
+                                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
                                 items(state.housings, key = { it.id }) { housing ->
                                     HousingCard(
                                         housing = housing,
                                         onOpen = { onHousingClick(housing.id) },
-                                        onDelete = {
-                                            onEvent(HousingListUiEvent.DeleteHousing(housing.id))
-                                        },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+                            }
+                            HousingContextPanel(
+                                total = state.housings.size,
+                                modifier = Modifier.weight(0.6f)
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
+                            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                        ) {
+                            items(state.housings, key = { it.id }) { housing ->
+                                HousingCard(
+                                    housing = housing,
+                                    onOpen = { onHousingClick(housing.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
@@ -183,40 +174,35 @@ private fun HousingContextPanel(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
     ) {
         SectionHeader(
-            title = "Aperçu",
-            supportingText = "Vision globale de vos logements."
+            title = "Conseils & raccourcis",
+            supportingText = "Gérez vos biens rapidement."
         )
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.ListAlt,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Logements au total : $total",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+        SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.ListAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Ouvrez un logement pour consulter ses baux.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Logements au total : $total",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
+            Text(
+                text = "Sélectionnez un logement pour voir les baux associés.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Créer un logement depuis l'action principale.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

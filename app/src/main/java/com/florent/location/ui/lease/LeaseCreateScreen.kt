@@ -21,11 +21,8 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,11 +30,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AdaptiveContent
 import com.florent.location.ui.components.AppSectionHeader
+import com.florent.location.ui.components.DateFieldWithPicker
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.MoneyField
 import com.florent.location.ui.components.PrimaryActionRow
+import com.florent.location.ui.components.ScreenScaffold
+import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.UiTokens
+import com.florent.location.ui.components.formatCurrency
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -79,30 +81,28 @@ private fun LeaseCreateContent(
         }
     }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Création d'un bail") }) },
+    ScreenScaffold(
+        title = "Créer un bail",
+        contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
         modifier = modifier
-    ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 1080.dp) {
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ExpressiveLoadingState(
-                        title = "Chargement des données",
-                        message = "Nous préparons les logements et locataires."
-                    )
-                }
-                return@AdaptiveContent
+    ) {
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                ExpressiveLoadingState(
+                    title = "Chargement des données",
+                    message = "Nous préparons les logements et locataires."
+                )
             }
-
+        } else {
             if (state.errorMessage != null) {
                 ExpressiveErrorState(
                     title = "Impossible de préparer le bail",
                     message = state.errorMessage
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(UiTokens.SpacingL))
             }
 
             val isHousingMissing = state.housings.isEmpty()
@@ -117,8 +117,8 @@ private fun LeaseCreateContent(
                         text = "Veuillez ajouter les informations requises pour créer un bail.",
                         style = MaterialTheme.typography.titleMedium
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Spacer(modifier = Modifier.height(UiTokens.SpacingS))
+                    Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
                         if (isHousingMissing) {
                             Button(onClick = onAddHousing, modifier = Modifier.focusable()) {
                                 Icon(imageVector = Icons.Outlined.HomeWork, contentDescription = null)
@@ -135,27 +135,16 @@ private fun LeaseCreateContent(
                         }
                     }
                 }
-                return@AdaptiveContent
-            }
-
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                AppSectionHeader(
-                    title = "Sélection",
-                    supportingText = "Choisissez le logement et le locataire."
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
+            } else {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+            AppSectionHeader(
+                title = "Sélection",
+                supportingText = "Choisissez le logement et le locataire."
+            )
+            SectionCard {
                 ExposedDropdownMenuBox(
                     expanded = state.housingDropdownExpanded,
                     onExpandedChange = { onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(it)) }
@@ -225,176 +214,150 @@ private fun LeaseCreateContent(
                         }
                     }
                 }
-                    }
-                }
+            }
 
-                AppSectionHeader(
-                    title = "Conditions",
-                    supportingText = "Dates et montants du bail."
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.startDate,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, it))
-                            },
-                            label = { Text(text = "Date de début (yyyy-MM-dd)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.rentCents,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, it))
-                            },
-                            label = { Text(text = "Loyer (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.chargesCents,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, it))
-                            },
-                            label = { Text(text = "Charges (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.depositCents,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, it))
-                            },
-                            label = { Text(text = "Caution (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.rentDueDayOfMonth,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, it))
-                            },
-                            label = { Text(text = "Jour d'échéance (1-28)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
+            AppSectionHeader(
+                title = "Conditions",
+                supportingText = "Dates et montants du bail."
+            )
+            SectionCard {
+                DateFieldWithPicker(
+                    label = "Date de début",
+                    value = state.startDate,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, it))
                     }
-                }
-
-                AppSectionHeader(
-                    title = "Compteurs",
-                    supportingText = "Informations complémentaires."
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.mailboxLabel,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MailboxLabel, it))
-                            },
-                            label = { Text(text = "Étiquette boîte aux lettres") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.meterGas,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterGas, it))
-                            },
-                            label = { Text(text = "Compteur gaz") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.meterElectricity,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterElectricity, it))
-                            },
-                            label = { Text(text = "Compteur électricité") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.meterWater,
-                            onValueChange = {
-                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterWater, it))
-                            },
-                            label = { Text(text = "Compteur eau") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                AppSectionHeader(
-                    title = "Clés",
-                    supportingText = "Clés à remettre au locataire."
+                MoneyField(
+                    label = "Loyer (€)",
+                    value = state.rentCents,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, it))
+                    },
+                    supportingText = state.rentCents.toLongOrNull()?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 750,00"
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        state.keys.forEachIndexed { index, key ->
-                            OutlinedTextField(
-                                value = key.type,
-                                onValueChange = {
-                                    onEvent(LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.Type, it))
-                                },
-                                label = { Text(text = "Type") },
-                                modifier = Modifier.fillMaxWidth()
+                MoneyField(
+                    label = "Charges (€)",
+                    value = state.chargesCents,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, it))
+                    },
+                    supportingText = state.chargesCents.toLongOrNull()?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 120,00"
+                )
+                MoneyField(
+                    label = "Caution (€)",
+                    value = state.depositCents,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, it))
+                    },
+                    supportingText = state.depositCents.toLongOrNull()?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 900,00"
+                )
+                OutlinedTextField(
+                    value = state.rentDueDayOfMonth,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, it))
+                    },
+                    label = { Text(text = "Jour d'échéance (1-28)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            AppSectionHeader(
+                title = "Compteurs",
+                supportingText = "Informations complémentaires."
+            )
+            SectionCard {
+                OutlinedTextField(
+                    value = state.mailboxLabel,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MailboxLabel, it))
+                    },
+                    label = { Text(text = "Étiquette boîte aux lettres") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterGas,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterGas, it))
+                    },
+                    label = { Text(text = "Compteur gaz") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterElectricity,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterElectricity, it))
+                    },
+                    label = { Text(text = "Compteur électricité") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterWater,
+                    onValueChange = {
+                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.MeterWater, it))
+                    },
+                    label = { Text(text = "Compteur eau") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            AppSectionHeader(
+                title = "Clés",
+                supportingText = "Clés à remettre au locataire."
+            )
+            SectionCard {
+                state.keys.forEachIndexed { index, key ->
+                    OutlinedTextField(
+                        value = key.type,
+                        onValueChange = {
+                            onEvent(LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.Type, it))
+                        },
+                        label = { Text(text = "Type") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = key.deviceLabel,
+                        onValueChange = {
+                            onEvent(
+                                LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.DeviceLabel, it)
                             )
-                            OutlinedTextField(
-                                value = key.deviceLabel,
-                                onValueChange = {
-                                    onEvent(
-                                        LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.DeviceLabel, it)
-                                    )
-                                },
-                                label = { Text(text = "Étiquette dispositif") },
-                                modifier = Modifier.fillMaxWidth()
+                        },
+                        label = { Text(text = "Étiquette dispositif") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DateFieldWithPicker(
+                        label = "Remise",
+                        value = key.handedOverDate,
+                        onValueChange = {
+                            onEvent(
+                                LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.HandedOverDate, it)
                             )
-                            OutlinedTextField(
-                                value = key.handedOverDate,
-                                onValueChange = {
-                                    onEvent(
-                                        LeaseCreateUiEvent.KeyFieldChanged(index, KeyField.HandedOverDate, it)
-                                    )
-                                },
-                                label = { Text(text = "Remise (yyyy-MM-dd)") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            TextButton(onClick = { onEvent(LeaseCreateUiEvent.RemoveKey(index)) }) {
-                                Text(text = "Supprimer la clé")
-                            }
                         }
-                        TextButton(onClick = { onEvent(LeaseCreateUiEvent.AddKey) }) {
-                            Text(text = "Ajouter une clé")
-                        }
+                    )
+                    TextButton(onClick = { onEvent(LeaseCreateUiEvent.RemoveKey(index)) }) {
+                        Text(text = "Supprimer la clé")
                     }
                 }
-
-                if (state.isSaved) {
-                    Text(text = "Bail enregistré.", color = MaterialTheme.colorScheme.primary)
+                TextButton(onClick = { onEvent(LeaseCreateUiEvent.AddKey) }) {
+                    Text(text = "Ajouter une clé")
                 }
+            }
 
-                PrimaryActionRow(
-                    primaryLabel = if (state.isSaving) "Enregistrement..." else "Enregistrer",
-                    onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
-                )
+            if (state.isSaved) {
+                Text(text = "Bail enregistré.", color = MaterialTheme.colorScheme.primary)
+            }
+
+            PrimaryActionRow(
+                primaryLabel = if (state.isSaving) "Enregistrement..." else "Créer le bail",
+                onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
+            )
+                }
             }
         }
     }

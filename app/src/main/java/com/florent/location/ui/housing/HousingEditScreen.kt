@@ -11,10 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,10 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AdaptiveContent
 import com.florent.location.ui.components.AppSectionHeader
 import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.MoneyField
 import com.florent.location.ui.components.PrimaryActionRow
+import com.florent.location.ui.components.ScreenScaffold
+import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.UiTokens
+import com.florent.location.ui.components.formatCurrency
 
 @ExperimentalMaterial3Api
 @Composable
@@ -57,156 +58,112 @@ private fun HousingEditContent(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (state.housingId == null) {
-                            "Nouveau logement"
-                        } else {
-                            "Modifier le logement"
-                        }
-                    )
-                }
-            )
-        },
+    ScreenScaffold(
+        title = if (state.housingId == null) "Nouveau logement" else "Modifier le logement",
+        contentMaxWidth = UiTokens.ContentMaxWidthMedium,
         modifier = modifier
-    ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 960.dp) {
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    ExpressiveLoadingState(
-                        title = "Chargement du logement",
-                        message = "Nous préparons le formulaire."
-                    )
-                }
-                return@AdaptiveContent
+    ) {
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                ExpressiveLoadingState(
+                    title = "Chargement du logement",
+                    message = "Nous préparons le formulaire."
+                )
             }
-
+        } else {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
             ) {
                 AppSectionHeader(
                     title = "Informations",
                     supportingText = "Adresse et identification du bien."
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.city,
-                            onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
-                            label = { Text(text = "Ville") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.address,
-                            onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
-                            label = { Text(text = "Adresse") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                AppSectionHeader(
-                    title = "Conditions financières",
-                    supportingText = "Montants exprimés en cents."
+            SectionCard {
+                OutlinedTextField(
+                    value = state.city,
+                    onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
+                    label = { Text(text = "Ville") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.defaultRentCents.toString(),
-                            onValueChange = {
-                                onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
-                            },
-                            label = { Text(text = "Loyer (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.defaultChargesCents.toString(),
-                            onValueChange = {
-                                onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
-                            },
-                            label = { Text(text = "Charges (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.depositCents.toString(),
-                            onValueChange = {
-                                onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
-                            },
-                            label = { Text(text = "Caution (cents)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                AppSectionHeader(
-                    title = "Compléments",
-                    supportingText = "Informations optionnelles."
+                OutlinedTextField(
+                    value = state.address,
+                    onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
+                    label = { Text(text = "Adresse") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = state.peb.orEmpty(),
-                            onValueChange = {
-                                onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null }))
-                            },
-                            label = { Text(text = "PEB") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        OutlinedTextField(
-                            value = state.buildingLabel.orEmpty(),
-                            onValueChange = {
-                                onEvent(
-                                    HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null })
-                                )
-                            },
-                            label = { Text(text = "Bâtiment") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
+            }
 
-                if (state.errorMessage != null) {
-                    Text(
-                        text = state.errorMessage,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-
-                PrimaryActionRow(
-                    primaryLabel = "Enregistrer",
-                    onPrimary = { onEvent(HousingEditUiEvent.Save) }
+            AppSectionHeader(
+                title = "Conditions financières",
+                supportingText = "Saisissez un montant en euros, ex: 750,00."
+            )
+            SectionCard {
+                MoneyField(
+                    label = "Loyer (€)",
+                    value = state.defaultRentCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    supportingText = "Actuel : ${formatCurrency(state.defaultRentCents)}"
                 )
+                MoneyField(
+                    label = "Charges (€)",
+                    value = state.defaultChargesCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    supportingText = "Actuel : ${formatCurrency(state.defaultChargesCents)}"
+                )
+                MoneyField(
+                    label = "Caution (€)",
+                    value = state.depositCents.toString(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
+                    },
+                    supportingText = "Actuel : ${formatCurrency(state.depositCents)}"
+                )
+            }
+
+            AppSectionHeader(
+                title = "Champs optionnels",
+                supportingText = "Informations complémentaires."
+            )
+            SectionCard {
+                OutlinedTextField(
+                    value = state.peb.orEmpty(),
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null }))
+                    },
+                    label = { Text(text = "PEB") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.buildingLabel.orEmpty(),
+                    onValueChange = {
+                        onEvent(
+                            HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null })
+                        )
+                    },
+                    label = { Text(text = "Bâtiment") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            PrimaryActionRow(
+                primaryLabel = "Enregistrer",
+                onPrimary = { onEvent(HousingEditUiEvent.Save) }
+            )
             }
         }
     }
