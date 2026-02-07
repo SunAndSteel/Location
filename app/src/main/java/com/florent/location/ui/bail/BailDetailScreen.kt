@@ -21,7 +21,7 @@ import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material.icons.outlined.Key as KeyIcon
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
@@ -640,7 +640,7 @@ private fun KeysSection(
         ) {
             SectionHeader(title = "Clés")
             FilledTonalButton(onClick = onAddKey) {
-                Icon(imageVector = KeyIcon, contentDescription = null)
+                Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Ajouter")
             }
