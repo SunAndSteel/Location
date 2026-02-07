@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 fun TenantListScreen(
     state: TenantListUiState,
     onEvent: (TenantListUiEvent) -> Unit,
+    onTenantClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -82,7 +83,7 @@ fun TenantListScreen(
                         Card(
                             modifier =
                                 Modifier.clickable {
-                                    onEvent(TenantListUiEvent.TenantClicked(tenant.id))
+                                    onTenantClick(tenant.id)
                                 }
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {

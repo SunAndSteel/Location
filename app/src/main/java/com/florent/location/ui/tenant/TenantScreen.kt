@@ -12,6 +12,7 @@ fun TenantScreen(
     val state by viewModel.uiState.collectAsState()
     TenantListScreen(
         state = state,
-        onEvent = viewModel::onEvent
+        onEvent = viewModel::onEvent,
+        onTenantClick = {}
     )
 }

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 fun TenantDetailScreen(
     state: TenantDetailUiState,
     onEvent: (TenantDetailUiEvent) -> Unit,
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -66,8 +68,12 @@ fun TenantDetailScreen(
                 state.tenant.phone?.let { Text(text = "Téléphone: $it") }
                 state.tenant.email?.let { Text(text = "Email: $it") }
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { onEvent(TenantDetailUiEvent.Edit) }) {
+                Button(onClick = onEdit) {
                     Text(text = "Modifier")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(onClick = onCreateLease) {
+                    Text(text = "Créer un bail")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = { onEvent(TenantDetailUiEvent.Delete) }) {

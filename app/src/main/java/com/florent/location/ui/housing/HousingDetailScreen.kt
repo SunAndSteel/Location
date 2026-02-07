@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 fun HousingDetailScreen(
     state: HousingDetailUiState,
     onEvent: (HousingDetailUiEvent) -> Unit,
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -72,6 +74,14 @@ fun HousingDetailScreen(
                     housing.peb?.let { Text(text = "PEB: $it") }
                     housing.buildingLabel?.let { Text(text = "Bâtiment: $it") }
                     Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onEdit) {
+                        Text(text = "Modifier")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = onCreateLease) {
+                        Text(text = "Créer un bail")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Button(onClick = { onEvent(HousingDetailUiEvent.DeleteHousing(housing.id)) }) {
                         Text(text = "Supprimer")
                     }

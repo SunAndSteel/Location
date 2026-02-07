@@ -1,5 +1,6 @@
 package com.florent.location.ui.housing
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 fun HousingListScreen(
     state: HousingListUiState,
     onEvent: (HousingListUiEvent) -> Unit,
+    onHousingClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -67,7 +69,9 @@ fun HousingListScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(state.housings, key = { it.id }) { housing ->
-                        Card {
+                        Card(
+                            modifier = Modifier.clickable { onHousingClick(housing.id) }
+                        ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
                                     text = housing.address,
@@ -80,6 +84,10 @@ fun HousingListScreen(
                                 housing.peb?.let { Text(text = "PEB: $it") }
                                 housing.buildingLabel?.let { Text(text = "Bâtiment: $it") }
                                 Spacer(modifier = Modifier.height(12.dp))
+                                Button(onClick = { onHousingClick(housing.id) }) {
+                                    Text(text = "Voir")
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Button(onClick = { onEvent(HousingListUiEvent.DeleteHousing(housing.id)) }) {
                                     Text(text = "Supprimer")
                                 }

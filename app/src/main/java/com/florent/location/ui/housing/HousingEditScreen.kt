@@ -1,4 +1,4 @@
-package com.florent.location.ui.tenant
+package com.florent.location.ui.housing
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun TenantEditScreen(
-    state: TenantEditUiState,
-    onEvent: (TenantEditUiEvent) -> Unit,
+fun HousingEditScreen(
+    state: HousingEditUiState,
+    onEvent: (HousingEditUiEvent) -> Unit,
     onSaved: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -37,7 +37,7 @@ fun TenantEditScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = if (state.tenantId == null) "Nouveau locataire" else "Modifier le locataire",
+            text = if (state.housingId == null) "Nouveau logement" else "Modifier le logement",
             style = MaterialTheme.typography.headlineSmall
         )
 
@@ -51,42 +51,79 @@ fun TenantEditScreen(
             ) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Chargement du locataire...")
+                Text(text = "Chargement du logement...")
             }
             return
         }
 
         OutlinedTextField(
-            value = state.firstName,
-            onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, it)) },
-            label = { Text(text = "Prénom") },
+            value = state.city,
+            onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
+            label = { Text(text = "Ville") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.lastName,
-            onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.LastName, it)) },
-            label = { Text(text = "Nom") },
+            value = state.address,
+            onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
+            label = { Text(text = "Adresse") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.phone,
-            onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.Phone, it)) },
-            label = { Text(text = "Téléphone") },
+            value = state.defaultRentCents.toString(),
+            onValueChange = {
+                onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
+            },
+            label = { Text(text = "Loyer (cents)") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.email,
-            onValueChange = { onEvent(TenantEditUiEvent.FieldChanged(TenantField.Email, it)) },
-            label = { Text(text = "Email") },
+            value = state.defaultChargesCents.toString(),
+            onValueChange = {
+                onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
+            },
+            label = { Text(text = "Charges (cents)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = state.depositCents.toString(),
+            onValueChange = {
+                onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
+            },
+            label = { Text(text = "Caution (cents)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = state.peb.orEmpty(),
+            onValueChange = {
+                onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null }))
+            },
+            label = { Text(text = "PEB") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = state.buildingLabel.orEmpty(),
+            onValueChange = {
+                onEvent(HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null }))
+            },
+            label = { Text(text = "Bâtiment") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -99,7 +136,7 @@ fun TenantEditScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { onEvent(TenantEditUiEvent.SaveClicked) }) {
+        Button(onClick = { onEvent(HousingEditUiEvent.Save) }) {
             Text(text = "Enregistrer")
         }
     }
