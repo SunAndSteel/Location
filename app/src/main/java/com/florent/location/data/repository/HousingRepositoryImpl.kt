@@ -1,0 +1,59 @@
+package com.florent.location.data.repository
+
+import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.LeaseDao
+import com.florent.location.domain.model.Housing
+import com.florent.location.domain.repository.HousingRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+/**
+ * Implémentation de [HousingRepository] basée sur Room.
+ */
+class HousingRepositoryImpl(
+    private val housingDao: HousingDao,
+    private val leaseDao: LeaseDao
+) : HousingRepository {
+
+    /**
+     * Observe la liste complète des logements.
+     */
+    override fun observeHousings(): Flow<List<Housing>> =
+        housingDao.observeHousings().map { entities ->
+            entities.map { it.toDomain() }
+        }
+
+    /**
+     * Observe un logement par identifiant.
+     */
+    override fun observeHousing(id: Long): Flow<Housing?> =
+        housingDao.observeHousing(id).map { entity ->
+            entity?.toDomain()
+        }
+
+    /**
+     * Insère un logement et renvoie son identifiant.
+     */
+    override suspend fun insert(housing: Housing): Long =
+        housingDao.insert(housing.toEntity())
+
+    /**
+     * Met à jour un logement.
+     */
+    override suspend fun update(housing: Housing) {
+        housingDao.update(housing.toEntity())
+    }
+
+    /**
+     * Supprime un logement par identifiant.
+     */
+    override suspend fun deleteById(id: Long) {
+        housingDao.deleteById(id)
+    }
+
+    /**
+     * Indique si un bail actif existe pour ce logement.
+     */
+    override suspend fun hasActiveLease(housingId: Long): Boolean =
+        leaseDao.getActiveLeaseForHousing(housingId) != null
+}
