@@ -2,8 +2,6 @@ package com.florent.location.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -80,14 +78,11 @@ fun LocationNavHost(
         modifier = modifier
     ) {
         composable(LocationRoutes.HOUSINGS) {
-            val viewModel: HousingListViewModel = koinViewModel()
-            val state by viewModel.uiState.collectAsState()
             HousingListScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
                 onHousingClick = { housingId ->
                     navController.navigate(LocationRoutes.housingDetail(housingId))
-                }
+                },
+                onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) }
             )
         }
 
@@ -98,10 +93,8 @@ fun LocationNavHost(
             val housingId = backStackEntry.arguments?.getLong("housingId") ?: 0L
             val viewModel: HousingDetailViewModel =
                 koinViewModel(parameters = { parametersOf(housingId) })
-            val state by viewModel.uiState.collectAsState()
             HousingDetailScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
+                viewModel = viewModel,
                 onEdit = { navController.navigate(LocationRoutes.housingEdit(housingId)) },
                 onCreateLease = { navController.navigate(LocationRoutes.leaseCreate(housingId = housingId)) }
             )
@@ -119,23 +112,18 @@ fun LocationNavHost(
             val housingId = backStackEntry.arguments?.getString("housingId")?.toLongOrNull()
             val viewModel: HousingEditViewModel =
                 koinViewModel(parameters = { parametersOf(housingId) })
-            val state by viewModel.uiState.collectAsState()
             HousingEditScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
+                viewModel = viewModel,
                 onSaved = { navController.popBackStack() }
             )
         }
 
         composable(LocationRoutes.TENANTS) {
-            val viewModel: TenantListViewModel = koinViewModel()
-            val state by viewModel.uiState.collectAsState()
             TenantListScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
                 onTenantClick = { tenantId ->
                     navController.navigate(LocationRoutes.tenantDetail(tenantId))
-                }
+                },
+                onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
             )
         }
 
@@ -146,10 +134,8 @@ fun LocationNavHost(
             val tenantId = backStackEntry.arguments?.getLong("tenantId") ?: 0L
             val viewModel: TenantDetailViewModel =
                 koinViewModel(parameters = { parametersOf(tenantId) })
-            val state by viewModel.uiState.collectAsState()
             TenantDetailScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
+                viewModel = viewModel,
                 onEdit = { navController.navigate(LocationRoutes.tenantEdit(tenantId)) },
                 onCreateLease = { navController.navigate(LocationRoutes.leaseCreate(tenantId = tenantId)) }
             )
@@ -167,10 +153,8 @@ fun LocationNavHost(
             val tenantId = backStackEntry.arguments?.getString("tenantId")?.toLongOrNull()
             val viewModel: TenantEditViewModel =
                 koinViewModel(parameters = { parametersOf(tenantId) })
-            val state by viewModel.uiState.collectAsState()
             TenantEditScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
+                viewModel = viewModel,
                 onSaved = { navController.popBackStack() }
             )
         }
@@ -191,7 +175,6 @@ fun LocationNavHost(
             val housingId = backStackEntry.arguments?.getString("housingId")?.toLongOrNull()
             val tenantId = backStackEntry.arguments?.getString("tenantId")?.toLongOrNull()
             val viewModel: LeaseCreateViewModel = koinViewModel()
-            val state by viewModel.uiState.collectAsState()
 
             LaunchedEffect(housingId) {
                 housingId?.let { viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(it)) }
@@ -201,13 +184,14 @@ fun LocationNavHost(
             }
 
             LeaseCreateScreen(
-                state = state,
-                onEvent = viewModel::onEvent,
+                viewModel = viewModel,
                 onLeaseCreated = { leaseId ->
                     navController.navigate(LocationRoutes.leaseDetail(leaseId)) {
                         popUpTo(LocationRoutes.LEASE_CREATE) { inclusive = true }
                     }
-                }
+                },
+                onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) },
+                onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
             )
         }
 
@@ -218,17 +202,14 @@ fun LocationNavHost(
             val leaseId = backStackEntry.arguments?.getLong("leaseId") ?: 0L
             val viewModel: LeaseDetailViewModel =
                 koinViewModel(parameters = { parametersOf(leaseId) })
-            val state by viewModel.uiState.collectAsState()
             LeaseDetailScreen(
-                state = state,
-                onEvent = viewModel::onEvent
+                viewModel = viewModel
             )
         }
 
         composable(LocationRoutes.INDEXATIONS) {
             val viewModel: IndexationViewModel = koinViewModel()
-            val state by viewModel.uiState.collectAsState()
-            IndexationScreen(state = state)
+            IndexationScreen(viewModel = viewModel)
         }
     }
 }
