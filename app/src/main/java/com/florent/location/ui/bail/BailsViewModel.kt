@@ -1,11 +1,9 @@
-package com.florent.location.ui.indexation
+package com.florent.location.ui.bail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.florent.location.domain.model.UpcomingIndexation
-import com.florent.location.domain.usecase.indexation.IndexationUseCases
-import java.time.LocalDate
-import java.time.ZoneId
+import com.florent.location.domain.model.Bail
+import com.florent.location.domain.usecase.bail.BailUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -13,28 +11,27 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class IndexationUiState(
+data class BailsUiState(
     val isLoading: Boolean = true,
-    val upcomingIndexations: List<UpcomingIndexation> = emptyList(),
+    val bails: List<Bail> = emptyList(),
     val isEmpty: Boolean = false,
     val errorMessage: String? = null
 )
 
-class IndexationViewModel(
-    private val useCases: IndexationUseCases
+class BailsViewModel(
+    private val useCases: BailUseCases
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(IndexationUiState())
-    val uiState: StateFlow<IndexationUiState> = _uiState
+    private val _uiState = MutableStateFlow(BailsUiState())
+    val uiState: StateFlow<BailsUiState> = _uiState
 
     init {
-        observeUpcomingIndexations()
+        observeBails()
     }
 
-    private fun observeUpcomingIndexations() {
-        val todayEpochDay = LocalDate.now(ZoneId.of("Europe/Brussels")).toEpochDay()
+    private fun observeBails() {
         viewModelScope.launch {
-            useCases.observeUpcomingIndexations(todayEpochDay)
+            useCases.observeBails()
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 }
@@ -42,17 +39,16 @@ class IndexationViewModel(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = error.message
-                                ?: "Erreur lors du chargement des indexations."
+                            errorMessage = error.message ?: "Erreur lors du chargement des baux."
                         )
                     }
                 }
-                .collect { indexations ->
+                .collect { bails ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            upcomingIndexations = indexations,
-                            isEmpty = indexations.isEmpty(),
+                            bails = bails,
+                            isEmpty = bails.isEmpty(),
                             errorMessage = null
                         )
                     }
