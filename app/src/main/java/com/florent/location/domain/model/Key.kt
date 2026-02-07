@@ -1,8 +1,9 @@
 package com.florent.location.domain.model
 
 data class Key(
-    val id: Long,
-    val leaseId: Long,
-    val name: String,
-    val description: String?
+    val id: Long = 0L,
+    val leaseId: Long = 0L,
+    val type: String,
+    val deviceLabel: String? = null,
+    val handedOverEpochDay: Long
 )

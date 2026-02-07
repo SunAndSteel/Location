@@ -26,6 +26,9 @@ interface TenantDao {
     @Query("SELECT * FROM tenants WHERE id = :id LIMIT 1")
     fun observeById(id: Long): Flow<TenantEntity?>
 
+    @Query("SELECT COUNT(*) > 0 FROM tenants WHERE id = :id")
+    suspend fun exists(id: Long): Boolean
+
     /**
      * Insère une entité et renvoie l'identifiant généré.
      */
