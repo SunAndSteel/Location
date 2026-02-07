@@ -61,4 +61,7 @@ interface LeaseDao {
     // clôture simple
     @Query("UPDATE leases SET endDateEpochDay = :endEpochDay WHERE id = :leaseId")
     suspend fun closeLease(leaseId: Long, endEpochDay: Long): Int
+
+    @Query("UPDATE leases SET rentCents = :rentCents WHERE id = :leaseId")
+    suspend fun updateRent(leaseId: Long, rentCents: Long): Int
 }
