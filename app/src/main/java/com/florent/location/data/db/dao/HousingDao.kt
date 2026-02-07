@@ -42,6 +42,9 @@ interface HousingDao {
     @Query("SELECT * FROM housings WHERE id = :id")
     fun observeHousing(id: Long): Flow<HousingEntity?>
 
+    @Query("SELECT COUNT(*) > 0 FROM housings WHERE id = :id")
+    suspend fun exists(id: Long): Boolean
+
     // --- CRUD ---
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insert(housing: HousingEntity): Long
 

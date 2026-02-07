@@ -3,7 +3,7 @@ package com.florent.location.domain.model
 
 
 data class Lease(
-    val id: Long,
+    val id: Long = 0L,
     val housingId: Long,
     val tenantId: Long,
     val startDateEpochDay: Long, // LocalDate.toEpochDay()

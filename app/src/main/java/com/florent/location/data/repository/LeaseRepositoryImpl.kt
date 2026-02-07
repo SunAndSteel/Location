@@ -7,6 +7,8 @@ import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.repository.LeaseRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class LeaseRepositoryImpl(
     private val db: AppDatabase,
@@ -25,12 +27,33 @@ class LeaseRepositoryImpl(
             val leaseId = leaseDao.insert(leaseEntity)
 
             keys.forEach { key ->
-                keyDao.insert(key.toEntity(leaseId, lease.startDateEpochDay))
+                keyDao.insert(key.toEntity(overrideLeaseId = leaseId))
             }
 
             leaseId
         }
     }
+
+    override fun observeActiveLeaseForHousing(housingId: Long): Flow<Lease?> =
+        leaseDao.observeActiveLeaseForHousing(housingId).map { entity ->
+            entity?.toDomain()
+        }
+
+    override fun observeLease(leaseId: Long): Flow<Lease?> =
+        leaseDao.observeLease(leaseId).map { entity ->
+            entity?.toDomain()
+        }
+
+    override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> =
+        keyDao.observeKeysForLease(leaseId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+
+    override suspend fun housingExists(housingId: Long): Boolean =
+        db.housingDao().exists(housingId)
+
+    override suspend fun tenantExists(tenantId: Long): Boolean =
+        db.tenantDao().exists(tenantId)
 
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) {
         db.withTransaction {
