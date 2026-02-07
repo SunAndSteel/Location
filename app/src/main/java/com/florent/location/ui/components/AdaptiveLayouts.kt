@@ -35,7 +35,7 @@ fun windowWidthSize(maxWidth: Dp): WindowWidthSize {
 fun AdaptiveContent(
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
-    contentMaxWidth: Dp = 720.dp,
+    contentMaxWidth: Dp = UiTokens.ContentMaxWidthMedium,
     content: @Composable ColumnScope.() -> Unit
 ) {
     BoxWithConstraints(
@@ -44,9 +44,9 @@ fun AdaptiveContent(
             .padding(innerPadding)
     ) {
         val horizontalPadding = when (windowWidthSize(maxWidth)) {
-            WindowWidthSize.Compact -> 16.dp
-            WindowWidthSize.Medium -> 24.dp
-            WindowWidthSize.Expanded -> 32.dp
+            WindowWidthSize.Compact -> UiTokens.SpacingL
+            WindowWidthSize.Medium -> UiTokens.SpacingXL
+            WindowWidthSize.Expanded -> UiTokens.SpacingXXL
         }
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -56,7 +56,7 @@ fun AdaptiveContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .widthIn(max = contentMaxWidth)
-                    .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                    .padding(horizontal = horizontalPadding, vertical = UiTokens.SpacingL),
                 content = content
             )
         }

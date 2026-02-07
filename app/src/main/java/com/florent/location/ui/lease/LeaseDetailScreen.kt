@@ -15,32 +15,29 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AdaptiveContent
 import com.florent.location.ui.components.AppSectionHeader
 import com.florent.location.ui.components.CardVariant
 import com.florent.location.ui.components.DestructiveActionCard
+import com.florent.location.ui.components.DateFieldWithPicker
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
-import com.florent.location.ui.components.HeroCard
+import com.florent.location.ui.components.HeroSummaryCard
 import com.florent.location.ui.components.LabeledValueRow
-import com.florent.location.ui.components.MetricChip
+import com.florent.location.ui.components.NonInteractiveBadge
+import com.florent.location.ui.components.ScreenScaffold
+import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.formatCurrency
 import com.florent.location.ui.components.formatEpochDay
@@ -50,7 +47,6 @@ import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material.icons.outlined.Schedule
 
@@ -73,101 +69,65 @@ private fun LeaseDetailContent(
     onEvent: (LeaseDetailUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Détail du bail") }) },
+    ScreenScaffold(
+        title = "Bail",
+        contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
         modifier = modifier
-    ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 1080.dp) {
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        ExpressiveLoadingState(
-                            title = "Chargement du bail",
-                            message = "Nous préparons les informations du contrat."
-                        )
-                    }
+    ) {
+        when {
+            state.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpressiveLoadingState(
+                        title = "Chargement du bail",
+                        message = "Nous préparons les informations du bail."
+                    )
                 }
+            }
 
-                state.errorMessage != null -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ExpressiveErrorState(
-                            title = "Impossible de charger le bail",
-                            message = state.errorMessage,
-                            icon = Icons.Outlined.ErrorOutline
-                        )
-                    }
+            state.errorMessage != null -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveErrorState(
+                        title = "Impossible de charger le bail",
+                        message = state.errorMessage,
+                        icon = Icons.Outlined.ErrorOutline
+                    )
                 }
+            }
 
-                state.lease == null -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ExpressiveEmptyState(
-                            title = "Bail introuvable",
-                            message = "Ce bail n'est plus disponible.",
-                            icon = Icons.Outlined.Schedule
-                        )
-                    }
+            state.lease == null -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveEmptyState(
+                        title = "Bail introuvable",
+                        message = "Ce bail n'est plus disponible.",
+                        icon = Icons.Outlined.Schedule
+                    )
                 }
+            }
 
-                else -> {
-                    val lease = state.lease
-                    BoxWithConstraints {
-                        val sizeClass = windowWidthSize(maxWidth)
-                        if (sizeClass == WindowWidthSize.Expanded) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(24.dp)
+            else -> {
+                val lease = state.lease
+                BoxWithConstraints {
+                    val sizeClass = windowWidthSize(maxWidth)
+                    if (sizeClass == WindowWidthSize.Expanded) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(0.6f),
+                                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                Column(
-                                    modifier = Modifier.weight(0.6f),
-                                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                                ) {
-                                    LeaseSummarySection(lease = lease, isActive = state.isActive)
-                                    LeaseKeysSection(
-                                        keys = state.keys,
-                                        onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
-                                        onDeleteKey = { keyId ->
-                                            onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId))
-                                        }
-                                    )
-                                }
-                                Column(
-                                    modifier = Modifier.weight(0.4f),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    PrimaryActionRow(
-                                        primaryLabel = "Ajouter une clé",
-                                        onPrimary = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
-                                        secondaryLabel = if (state.isActive) "Clôturer le bail" else null,
-                                        onSecondary = if (state.isActive) {
-                                            { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) }
-                                        } else {
-                                            null
-                                        }
-                                    )
-                                    if (state.isActive) {
-                                        DestructiveActionCard(
-                                            title = "Clôturer le bail",
-                                            message = "Marquez le bail comme terminé.",
-                                            actionLabel = "Clôturer",
-                                            onAction = { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) },
-                                            icon = Icons.Outlined.ReportProblem
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                                 LeaseSummarySection(lease = lease, isActive = state.isActive)
                                 LeaseKeysSection(
                                     keys = state.keys,
@@ -176,6 +136,13 @@ private fun LeaseDetailContent(
                                         onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId))
                                     }
                                 )
+                                LeaseDatesSection(lease = lease)
+                            }
+                            Column(
+                                modifier = Modifier.weight(0.4f),
+                                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                            ) {
+                                AppSectionHeader(title = "Actions")
                                 PrimaryActionRow(
                                     primaryLabel = "Ajouter une clé",
                                     onPrimary = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
@@ -187,6 +154,7 @@ private fun LeaseDetailContent(
                                     }
                                 )
                                 if (state.isActive) {
+                                    AppSectionHeader(title = "Zone dangereuse")
                                     DestructiveActionCard(
                                         title = "Clôturer le bail",
                                         message = "Marquez le bail comme terminé.",
@@ -195,6 +163,39 @@ private fun LeaseDetailContent(
                                         icon = Icons.Outlined.ReportProblem
                                     )
                                 }
+                            }
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+                            LeaseSummarySection(lease = lease, isActive = state.isActive)
+                            LeaseKeysSection(
+                                keys = state.keys,
+                                onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
+                                onDeleteKey = { keyId ->
+                                    onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId))
+                                }
+                            )
+                            LeaseDatesSection(lease = lease)
+                            AppSectionHeader(title = "Actions")
+                            PrimaryActionRow(
+                                primaryLabel = "Ajouter une clé",
+                                onPrimary = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
+                                secondaryLabel = if (state.isActive) "Clôturer le bail" else null,
+                                onSecondary = if (state.isActive) {
+                                    { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) }
+                                } else {
+                                    null
+                                }
+                            )
+                            if (state.isActive) {
+                                AppSectionHeader(title = "Zone dangereuse")
+                                DestructiveActionCard(
+                                    title = "Clôturer le bail",
+                                    message = "Marquez le bail comme terminé.",
+                                    actionLabel = "Clôturer",
+                                    onAction = { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) },
+                                    icon = Icons.Outlined.ReportProblem
+                                )
                             }
                         }
                     }
@@ -228,8 +229,11 @@ private fun LeaseDetailContent(
             },
             title = { Text(text = "Ajouter une clé") },
             text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+                ) {
+                    androidx.compose.material3.OutlinedTextField(
                         value = state.addKeyDialog.type,
                         onValueChange = {
                             onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.Type, it))
@@ -237,8 +241,7 @@ private fun LeaseDetailContent(
                         label = { Text(text = "Type") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    androidx.compose.material3.OutlinedTextField(
                         value = state.addKeyDialog.deviceLabel,
                         onValueChange = {
                             onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.DeviceLabel, it))
@@ -246,14 +249,12 @@ private fun LeaseDetailContent(
                         label = { Text(text = "Étiquette dispositif") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
+                    DateFieldWithPicker(
+                        label = "Date de remise",
                         value = state.addKeyDialog.handedOverDate,
                         onValueChange = {
                             onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.HandedOverDate, it))
-                        },
-                        label = { Text(text = "Remise (yyyy-MM-dd)") },
-                        modifier = Modifier.fillMaxWidth()
+                        }
                     )
                 }
             }
@@ -279,11 +280,10 @@ private fun LeaseDetailContent(
             },
             title = { Text(text = "Clôturer le bail") },
             text = {
-                OutlinedTextField(
+                DateFieldWithPicker(
+                    label = "Date de fin",
                     value = state.closeLeaseDialog.endDate,
-                    onValueChange = { onEvent(LeaseDetailUiEvent.CloseLeaseFieldChanged(it)) },
-                    label = { Text(text = "Date de fin (yyyy-MM-dd)") },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = { onEvent(LeaseDetailUiEvent.CloseLeaseFieldChanged(it)) }
                 )
             }
         )
@@ -297,52 +297,44 @@ private fun LeaseSummarySection(
     modifier: Modifier = Modifier
 ) {
     val status = if (isActive) "Actif" else "Terminé"
-    HeroCard(
+    HeroSummaryCard(
         title = "Bail #${lease.id}",
-        statusBadge = status,
+        status = status,
         heroValue = formatCurrency(lease.rentCents),
         heroLabel = "/ mois",
-        variant = if (isActive) CardVariant.Highlighted else CardVariant.Warning,
-        secondaryMetrics = listOf(
+        variant = if (isActive) CardVariant.Highlighted else CardVariant.Default,
+        facts = listOf(
             "Charges" to formatCurrency(lease.chargesCents),
             "Caution" to formatCurrency(lease.depositCents),
-            "Échéance" to "Jour ${lease.rentDueDayOfMonth}"
+            "Échéance" to "Jour ${lease.rentDueDayOfMonth}",
+            "Début" to formatEpochDay(lease.startDateEpochDay)
         ),
         modifier = modifier
     )
+}
+
+@Composable
+private fun LeaseDatesSection(
+    lease: Lease,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
         AppSectionHeader(
-            title = "Détails",
-            supportingText = "Informations du bail et compteurs."
+            title = "Dates",
+            supportingText = "Début et fin du bail."
         )
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                LabeledValueRow(
-                    label = "Début",
-                    value = formatEpochDay(lease.startDateEpochDay)
-                )
-                LabeledValueRow(
-                    label = "Fin",
-                    value = lease.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif"
-                )
-                lease.mailboxLabel?.let { MetricChip(label = "Boîte $it") }
-                lease.meterGas?.let { MetricChip(label = "Gaz $it") }
-                lease.meterElectricity?.let { MetricChip(label = "Élec. $it") }
-                lease.meterWater?.let { MetricChip(label = "Eau $it") }
-            }
+        SectionCard {
+            LabeledValueRow(
+                label = "Début",
+                value = formatEpochDay(lease.startDateEpochDay)
+            )
+            LabeledValueRow(
+                label = "Fin",
+                value = lease.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif"
+            )
         }
     }
 }
@@ -356,68 +348,41 @@ private fun LeaseKeysSection(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
         AppSectionHeader(
             title = "Clés",
             supportingText = "Historique des clés remises."
         )
         if (keys.isEmpty()) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainer
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Aucune clé enregistrée.",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = "Ajoutez la première clé remise.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Button(onClick = onAddKey, modifier = Modifier.fillMaxWidth()) {
-                        Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Ajouter une clé")
-                    }
-                }
+            SectionCard {
+                Text(
+                    text = "Aucune clé enregistrée.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Ajoutez la première clé remise.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
             keys.forEach { key ->
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
+                SectionCard {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingXs)) {
                             Text(
                                 text = key.type,
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            key.deviceLabel?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Text(
-                                text = "Remise le ${formatEpochDay(key.handedOverEpochDay)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            key.deviceLabel?.let { NonInteractiveBadge(label = it) }
+                            LabeledValueRow(
+                                label = "Remise",
+                                value = formatEpochDay(key.handedOverEpochDay)
                             )
                         }
                         TextButton(
@@ -430,5 +395,9 @@ private fun LeaseKeysSection(
                 }
             }
         }
+        PrimaryActionRow(
+            primaryLabel = "Ajouter une clé",
+            onPrimary = onAddKey
+        )
     }
 }

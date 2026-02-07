@@ -2,29 +2,47 @@
 
 package com.florent.location.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +50,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 enum class CardVariant {
     Default,
@@ -118,13 +143,22 @@ fun HeroMetric(
 fun LabeledValueRow(
     label: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
@@ -168,6 +202,21 @@ fun NonInteractiveChip(
 }
 
 @Composable
+fun NonInteractiveBadge(
+    label: String,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    StatusBadge(
+        text = label,
+        modifier = modifier,
+        containerColor = containerColor,
+        contentColor = contentColor
+    )
+}
+
+@Composable
 fun MetricChip(
     label: String,
     icon: ImageVector? = null,
@@ -203,7 +252,8 @@ fun DefaultCard(
     Card(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Default),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(UiTokens.CardRadius),
         content = content
     )
 }
@@ -216,7 +266,8 @@ fun HighlightCard(
     Card(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Highlighted),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(UiTokens.CardRadius),
         content = content
     )
 }
@@ -229,7 +280,8 @@ fun WarningCard(
     Card(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Warning),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(UiTokens.CardRadius),
         content = content
     )
 }
@@ -363,7 +415,8 @@ fun HeroCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = variantCardColors(variant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(UiTokens.CardRadius)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -389,6 +442,232 @@ fun HeroCard(
             }
         }
     }
+}
+
+@Composable
+fun ScreenScaffold(
+    title: String,
+    modifier: Modifier = Modifier,
+    contentMaxWidth: Dp = UiTokens.ContentMaxWidthMedium,
+    floatingActionButton: @Composable (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(text = title) },
+                actions = actions
+            )
+        },
+        floatingActionButton = {
+            if (floatingActionButton != null) {
+                floatingActionButton()
+            }
+        },
+        modifier = modifier
+    ) { innerPadding ->
+        AdaptiveContent(
+            innerPadding = innerPadding,
+            contentMaxWidth = contentMaxWidth,
+            content = content
+        )
+    }
+}
+
+@Composable
+fun SectionCard(
+    modifier: Modifier = Modifier,
+    tonalColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    contentPadding: PaddingValues = PaddingValues(UiTokens.SpacingL),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(UiTokens.CardRadius),
+        color = tonalColor
+    ) {
+        Column(
+            modifier = Modifier.padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun HeroSummaryCard(
+    title: String,
+    heroValue: String,
+    heroLabel: String,
+    modifier: Modifier = Modifier,
+    status: String? = null,
+    facts: List<Pair<String, String>> = emptyList(),
+    variant: CardVariant = CardVariant.Default
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = variantCardColors(variant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(UiTokens.CardRadius)
+    ) {
+        Column(
+            modifier = Modifier.padding(UiTokens.SpacingL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                status?.let { StatusBadge(text = it) }
+            }
+            HeroMetric(value = heroValue, label = heroLabel)
+            if (facts.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingXs)) {
+                    facts.forEach { (label, value) ->
+                        LabeledValueRow(label = label, value = value)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ResultCard(
+    title: String,
+    entries: List<Pair<String, String>>,
+    modifier: Modifier = Modifier
+) {
+    SectionCard(
+        modifier = modifier,
+        tonalColor = MaterialTheme.colorScheme.secondaryContainer
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium)
+        entries.forEach { (label, value) ->
+            LabeledValueRow(label = label, value = value)
+        }
+    }
+}
+
+@Composable
+fun TimelineListItem(
+    title: String,
+    subtitle: String,
+    trailing: String? = null,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(UiTokens.CardRadius),
+        color = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(UiTokens.SpacingM),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(text = title, style = MaterialTheme.typography.labelLarge)
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            trailing?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateFieldWithPicker(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    supportingText: String? = null
+) {
+    var isDialogOpen by remember { mutableStateOf(false) }
+    val initialDate = remember(value) { parseIsoDate(value) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate?.let { toEpochMillis(it) }
+    )
+
+    OutlinedTextField(
+        value = initialDate?.let { formatEpochDay(it.toEpochDay()) } ?: "",
+        onValueChange = {},
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { isDialogOpen = true },
+        label = { Text(text = label) },
+        readOnly = true,
+        trailingIcon = {
+            Icon(imageVector = Icons.Outlined.CalendarMonth, contentDescription = null)
+        },
+        supportingText = supportingText?.let { { Text(text = it) } }
+    )
+
+    if (isDialogOpen) {
+        DatePickerDialog(
+            onDismissRequest = { isDialogOpen = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis
+                        if (millis != null) {
+                            val newDate = LocalDate.ofInstant(
+                                java.time.Instant.ofEpochMilli(millis),
+                                ZoneId.systemDefault()
+                            )
+                            onValueChange(newDate.format(DateTimeFormatter.ISO_LOCAL_DATE))
+                        }
+                        isDialogOpen = false
+                    }
+                ) {
+                    Text(text = "Valider")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isDialogOpen = false }) {
+                    Text(text = "Annuler")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+@Composable
+fun MoneyField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    supportingText: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        label = { Text(text = label) },
+        supportingText = supportingText?.let { { Text(text = it) } }
+    )
 }
 
 @Composable
@@ -443,7 +722,7 @@ fun DestructiveActionCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(UiTokens.CardRadius),
         color = MaterialTheme.colorScheme.errorContainer
     ) {
         Row(
@@ -517,3 +796,9 @@ fun DateText(
         color = color
     )
 }
+
+private fun parseIsoDate(value: String): LocalDate? =
+    runCatching { LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE) }.getOrNull()
+
+private fun toEpochMillis(date: LocalDate): Long =
+    date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()

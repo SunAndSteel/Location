@@ -21,10 +21,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,17 +33,21 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
-import com.florent.location.ui.components.AdaptiveContent
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.TenantCard
 import com.florent.location.ui.components.SectionHeader
+import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.IconButton
 
 @Composable
 fun TenantListScreen(
@@ -72,8 +74,8 @@ private fun TenantListContent(
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(text = "Locataires") }) },
+    ScreenScaffold(
+        title = "Locataires",
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddTenant,
@@ -82,47 +84,61 @@ private fun TenantListContent(
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Ajouter un locataire")
             }
         },
+        contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
         modifier = modifier
-    ) { innerPadding ->
-        AdaptiveContent(innerPadding = innerPadding, contentMaxWidth = 1080.dp) {
-            BoxWithConstraints {
-                val sizeClass = windowWidthSize(maxWidth)
-                if (sizeClass == WindowWidthSize.Expanded) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(0.58f)) {
-                            OutlinedTextField(
-                                value = state.searchQuery,
-                                onValueChange = { onEvent(TenantListUiEvent.SearchQueryChanged(it)) },
-                                label = { Text(text = "Rechercher") },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            TenantListBody(
-                                state = state,
-                                onAddTenant = onAddTenant,
-                                onTenantClick = onTenantClick,
-                                onEvent = onEvent
-                            )
-                        }
-                        TenantContextPanel(
-                            total = state.tenants.size,
-                            selectedName = state.tenants.firstOrNull {
-                                it.id == state.selectedTenantId
-                            }?.let { "${it.firstName} ${it.lastName}" },
-                            modifier = Modifier.weight(0.42f)
-                        )
-                    }
-                } else {
+    ) {
+        BoxWithConstraints {
+            val sizeClass = windowWidthSize(maxWidth)
+            val searchField: @Composable () -> Unit = {
+                SectionCard {
                     OutlinedTextField(
                         value = state.searchQuery,
                         onValueChange = { onEvent(TenantListUiEvent.SearchQueryChanged(it)) },
                         label = { Text(text = "Rechercher") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = {
+                            if (state.searchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = { onEvent(TenantListUiEvent.SearchQueryChanged("")) }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Effacer la recherche"
+                                    )
+                                }
+                            }
+                        }
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+            if (sizeClass == WindowWidthSize.Expanded) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
+                ) {
+                    Column(
+                        modifier = Modifier.weight(0.4f),
+                        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                    ) {
+                        searchField()
+                        TenantListBody(
+                            state = state,
+                            onAddTenant = onAddTenant,
+                            onTenantClick = onTenantClick,
+                            onEvent = onEvent
+                        )
+                    }
+                    TenantContextPanel(
+                        total = state.tenants.size,
+                        selectedName = state.tenants.firstOrNull {
+                            it.id == state.selectedTenantId
+                        }?.let { "${it.firstName} ${it.lastName}" },
+                        modifier = Modifier.weight(0.6f)
+                    )
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+                    searchField()
                     TenantListBody(
                         state = state,
                         onAddTenant = onAddTenant,
@@ -177,7 +193,7 @@ private fun TenantListBody(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ExpressiveEmptyState(
-                    title = "Aucun locataire enregistré",
+                    title = "Aucun locataire",
                     message = "Ajoutez votre premier locataire pour démarrer un bail.",
                     icon = Icons.Outlined.Group,
                     actionLabel = "Ajouter un locataire",
@@ -188,8 +204,8 @@ private fun TenantListBody(
 
         else -> {
             LazyColumn(
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
+                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
             ) {
                 items(state.tenants, key = { it.id }) { tenant ->
                     val openTenant = {
@@ -199,9 +215,6 @@ private fun TenantListBody(
                     TenantCard(
                         tenant = tenant,
                         onOpen = openTenant,
-                        onDelete = {
-                            onEvent(TenantListUiEvent.DeleteTenantClicked(tenant.id))
-                        },
                         isSelected = tenant.id == state.selectedTenantId,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -219,40 +232,35 @@ private fun TenantContextPanel(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
     ) {
         SectionHeader(
-            title = "Aperçu",
-            supportingText = "Suivi rapide de vos contacts."
+            title = "Conseils & raccourcis",
+            supportingText = "Navigation clavier et aperçu rapide."
         )
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainer
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Outlined.ListAlt,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Locataires au total : $total",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+        SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.ListAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = selectedName?.let { "Sélectionné : $it" } ?: "Aucun locataire sélectionné.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Locataires au total : $total",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
+            Text(
+                text = selectedName?.let { "Sélectionné : $it" } ?: "Sélectionnez un locataire.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Astuce : utilisez Entrée pour ouvrir la fiche.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
