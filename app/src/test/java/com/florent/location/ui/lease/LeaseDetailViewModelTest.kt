@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -72,7 +74,7 @@ class LeaseDetailViewModelTest {
                 LeaseDetailUiEvent.ConfirmAddKey(
                     type = "Badge",
                     deviceLabel = "Portail",
-                    handedOverEpochDay = START_EPOCH_DAY.toString()
+                    handedOverDate = epochDayToDate(START_EPOCH_DAY)
                 )
             )
             advanceUntilIdle()
@@ -128,7 +130,7 @@ class LeaseDetailViewModelTest {
             }
             assertTrue(initialLeaseState.isActive)
 
-            viewModel.onEvent(LeaseDetailUiEvent.ConfirmCloseLease(CLOSE_EPOCH_DAY.toString()))
+            viewModel.onEvent(LeaseDetailUiEvent.ConfirmCloseLease(epochDayToDate(CLOSE_EPOCH_DAY)))
             advanceUntilIdle()
 
             val updated = awaitItem()
@@ -190,5 +192,9 @@ class LeaseDetailViewModelTest {
         override suspend fun deleteKey(keyId: Long) = Unit
 
         override suspend fun closeLease(leaseId: Long, endEpochDay: Long) = Unit
+    }
+
+    private fun epochDayToDate(epochDay: Long): String {
+        return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
     }
 }

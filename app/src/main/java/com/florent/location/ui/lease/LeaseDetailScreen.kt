@@ -29,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun LeaseDetailScreen(
@@ -108,8 +110,8 @@ private fun LeaseDetailContent(
                     Text(text = "Caution: ${lease.depositCents} cents")
                     Text(text = "Échéance: ${lease.rentDueDayOfMonth}")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Début: ${lease.startDateEpochDay}")
-                    Text(text = "Fin: ${lease.endDateEpochDay ?: "Actif"}")
+                    Text(text = "Début: ${formatEpochDay(lease.startDateEpochDay)}")
+                    Text(text = "Fin: ${lease.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif"}")
                     lease.mailboxLabel?.let { Text(text = "Boîte aux lettres: $it") }
                     lease.meterGas?.let { Text(text = "Compteur gaz: $it") }
                     lease.meterElectricity?.let { Text(text = "Compteur électricité: $it") }
@@ -128,7 +130,7 @@ private fun LeaseDetailContent(
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(text = "Type: ${key.type}")
                             key.deviceLabel?.let { Text(text = "Dispositif: $it") }
-                            Text(text = "Remise: ${key.handedOverEpochDay}")
+                            Text(text = "Remise: ${formatEpochDay(key.handedOverEpochDay)}")
                             TextButton(
                                 onClick = { onEvent(LeaseDetailUiEvent.DeleteKeyClicked(key.id)) },
                                 modifier = Modifier.focusable()
@@ -174,7 +176,7 @@ private fun LeaseDetailContent(
                             LeaseDetailUiEvent.ConfirmAddKey(
                                 type = state.addKeyDialog.type,
                                 deviceLabel = state.addKeyDialog.deviceLabel,
-                                handedOverEpochDay = state.addKeyDialog.handedOverEpochDay
+                                handedOverDate = state.addKeyDialog.handedOverDate
                             )
                         )
                     }
@@ -209,11 +211,11 @@ private fun LeaseDetailContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = state.addKeyDialog.handedOverEpochDay,
+                        value = state.addKeyDialog.handedOverDate,
                         onValueChange = {
-                            onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.HandedOverEpochDay, it))
+                            onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.HandedOverDate, it))
                         },
-                        label = { Text(text = "Remise (epochDay)") },
+                        label = { Text(text = "Remise (yyyy-MM-dd)") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -227,7 +229,7 @@ private fun LeaseDetailContent(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onEvent(LeaseDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endEpochDay))
+                        onEvent(LeaseDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate))
                     }
                 ) {
                     Text(text = "Clôturer")
@@ -241,12 +243,16 @@ private fun LeaseDetailContent(
             title = { Text(text = "Clôturer le bail") },
             text = {
                 OutlinedTextField(
-                    value = state.closeLeaseDialog.endEpochDay,
+                    value = state.closeLeaseDialog.endDate,
                     onValueChange = { onEvent(LeaseDetailUiEvent.CloseLeaseFieldChanged(it)) },
-                    label = { Text(text = "Date de fin (epochDay)") },
+                    label = { Text(text = "Date de fin (yyyy-MM-dd)") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         )
     }
+}
+
+private fun formatEpochDay(epochDay: Long): String {
+    return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
 }

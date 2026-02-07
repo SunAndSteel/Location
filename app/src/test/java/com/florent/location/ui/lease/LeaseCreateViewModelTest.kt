@@ -13,6 +13,8 @@ import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,7 +44,7 @@ class LeaseCreateViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSaving)
         assertFalse(state.isSaved)
-        assertEquals("", state.startDateEpochDay)
+        assertEquals("", state.startDate)
         assertEquals("", state.rentCents)
         assertEquals("", state.chargesCents)
         assertEquals("", state.depositCents)
@@ -112,14 +114,14 @@ class LeaseCreateViewModelTest {
         advanceUntilIdle()
         viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
         viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, "1000"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, epochDayToDate(1000)))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "100000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "10000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "50000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, "5"))
         viewModel.onEvent(LeaseCreateUiEvent.AddKey)
         viewModel.onEvent(LeaseCreateUiEvent.KeyFieldChanged(0, KeyField.Type, "Badge"))
-        viewModel.onEvent(LeaseCreateUiEvent.KeyFieldChanged(0, KeyField.HandedOverEpochDay, "1001"))
+        viewModel.onEvent(LeaseCreateUiEvent.KeyFieldChanged(0, KeyField.HandedOverDate, epochDayToDate(1001)))
 
         viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
         advanceUntilIdle()
@@ -166,7 +168,7 @@ class LeaseCreateViewModelTest {
         advanceUntilIdle()
         viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
         viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, "1000"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, epochDayToDate(1000)))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "100000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "10000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "50000"))
@@ -178,5 +180,9 @@ class LeaseCreateViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSaving)
         assertEquals("Un bail actif existe déjà pour ce logement.", state.errorMessage)
+    }
+
+    private fun epochDayToDate(epochDay: Long): String {
+        return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
     }
 }

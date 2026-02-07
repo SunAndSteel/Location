@@ -9,6 +9,8 @@ import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseCreateRequest
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -19,7 +21,7 @@ import kotlinx.coroutines.launch
 data class KeyDraft(
     val type: String = "",
     val deviceLabel: String = "",
-    val handedOverEpochDay: String = ""
+    val handedOverDate: String = ""
 )
 
 data class LeaseCreateUiState(
@@ -28,7 +30,7 @@ data class LeaseCreateUiState(
     val tenants: List<Tenant> = emptyList(),
     val selectedHousingId: Long? = null,
     val selectedTenantId: Long? = null,
-    val startDateEpochDay: String = "",
+    val startDate: String = "",
     val rentCents: String = "",
     val chargesCents: String = "",
     val depositCents: String = "",
@@ -61,7 +63,7 @@ enum class LeaseField {
 enum class KeyField {
     Type,
     DeviceLabel,
-    HandedOverEpochDay
+    HandedOverDate
 }
 
 sealed interface LeaseCreateUiEvent {
@@ -157,7 +159,7 @@ class LeaseCreateViewModel(
     private fun updateField(field: LeaseField, value: String) {
         _uiState.update {
             when (field) {
-                LeaseField.StartDate -> it.copy(startDateEpochDay = value, errorMessage = null)
+                LeaseField.StartDate -> it.copy(startDate = value, errorMessage = null)
                 LeaseField.Rent -> it.copy(rentCents = value, errorMessage = null)
                 LeaseField.Charges -> it.copy(chargesCents = value, errorMessage = null)
                 LeaseField.Deposit -> it.copy(depositCents = value, errorMessage = null)
@@ -178,7 +180,7 @@ class LeaseCreateViewModel(
                 updatedKeys[index] = when (field) {
                     KeyField.Type -> key.copy(type = value)
                     KeyField.DeviceLabel -> key.copy(deviceLabel = value)
-                    KeyField.HandedOverEpochDay -> key.copy(handedOverEpochDay = value)
+                    KeyField.HandedOverDate -> key.copy(handedOverDate = value)
                 }
             }
             current.copy(keys = updatedKeys, errorMessage = null)
@@ -215,14 +217,14 @@ class LeaseCreateViewModel(
                 )
             }
 
-            val startDateEpochDay = current.startDateEpochDay.toLongOrNull()
+            val startDateEpochDay = parseEpochDay(current.startDate)
             val rentCents = current.rentCents.toLongOrNull() ?: 0L
             val chargesCents = current.chargesCents.toLongOrNull() ?: 0L
             val depositCents = current.depositCents.toLongOrNull() ?: 0L
             val rentDueDay = current.rentDueDayOfMonth.toIntOrNull() ?: 0
 
             val keys = current.keys.map { draft ->
-                val handedOverEpochDay = draft.handedOverEpochDay.toLongOrNull()
+                val handedOverEpochDay = parseEpochDay(draft.handedOverDate)
                     ?: startDateEpochDay
                     ?: 0L
                 Key(
@@ -270,5 +272,12 @@ class LeaseCreateViewModel(
                 }
             }
         }
+    }
+
+    private fun parseEpochDay(value: String): Long? {
+        if (value.isBlank()) return null
+        return runCatching {
+            LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE).toEpochDay()
+        }.getOrNull()
     }
 }
