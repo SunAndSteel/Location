@@ -25,6 +25,16 @@ interface LeaseUseCases {
     fun observeKeysForLease(leaseId: Long): Flow<List<Key>>
 
     /**
+     * Ajoute une clé à un bail.
+     */
+    suspend fun addKey(leaseId: Long, key: Key): Long
+
+    /**
+     * Supprime une clé.
+     */
+    suspend fun deleteKey(keyId: Long)
+
+    /**
      * Clôture un bail existant.
      */
     suspend fun closeLease(leaseId: Long, endEpochDay: Long)
@@ -89,7 +99,29 @@ class LeaseUseCasesImpl(
     override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> =
         repository.observeKeysForLease(leaseId)
 
+    override suspend fun addKey(leaseId: Long, key: Key): Long {
+        require(leaseId > 0) { "Le bail est obligatoire." }
+        val type = key.type.trim()
+        require(type.isNotBlank()) { "Le type de clé est obligatoire." }
+        require(key.handedOverEpochDay >= 0) { "La date de remise est obligatoire." }
+
+        val normalized = key.copy(
+            leaseId = leaseId,
+            type = type,
+            deviceLabel = key.deviceLabel?.trim()?.ifBlank { null }
+        )
+
+        return repository.insertKey(normalized)
+    }
+
+    override suspend fun deleteKey(keyId: Long) {
+        require(keyId > 0) { "Clé invalide." }
+        repository.deleteKeyById(keyId)
+    }
+
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) {
+        require(leaseId > 0) { "Le bail est obligatoire." }
+        require(endEpochDay >= 0) { "La date de clôture est obligatoire." }
         repository.closeLease(leaseId, endEpochDay)
     }
 }

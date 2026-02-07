@@ -9,6 +9,8 @@ interface LeaseRepository {
     fun observeActiveLeaseForHousing(housingId: Long): Flow<Lease?>
     fun observeLease(leaseId: Long): Flow<Lease?>
     fun observeKeysForLease(leaseId: Long): Flow<List<Key>>
+    suspend fun insertKey(key: Key): Long
+    suspend fun deleteKeyById(id: Long)
     suspend fun housingExists(housingId: Long): Boolean
     suspend fun tenantExists(tenantId: Long): Boolean
     suspend fun closeLease(leaseId: Long, endEpochDay: Long)

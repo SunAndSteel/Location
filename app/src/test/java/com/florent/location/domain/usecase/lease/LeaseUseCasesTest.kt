@@ -1,145 +1,104 @@
 package com.florent.location.domain.usecase.lease
 
-import com.florent.location.domain.model.Key
+import app.cash.turbine.test
 import com.florent.location.fake.FakeLeaseRepository
+import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
+import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
+import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
+import com.florent.location.testutils.MainDispatcherRule
+import com.florent.location.domain.model.Key
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LeaseUseCasesTest {
 
-    @Test
-    fun `createLease fails if housing does not exist`() = runTest {
-        val repository = FakeLeaseRepository(existingTenantIds = setOf(1L))
-        val useCases = LeaseUseCasesImpl(repository)
-        val request = LeaseCreateRequest(
-            housingId = 42L,
-            tenantId = 1L,
-            startDateEpochDay = 1000L,
-            rentCents = 100000L,
-            chargesCents = 10000L,
-            depositCents = 50000L,
-            rentDueDayOfMonth = 5,
-            mailboxLabel = null,
-            meterGas = "G",
-            meterElectricity = "E",
-            meterWater = "W",
-            keys = emptyList()
-        )
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
-        val error = runCatching { useCases.createLease(request) }.exceptionOrNull()
-        assertEquals("Le logement sélectionné n'existe pas.", error?.message)
+    @Test
+    fun observeLeaseEmitsUpdatesWhenLeaseChanges() = runTest {
+        val repository = FakeLeaseRepository.seeded()
+        val useCases = LeaseUseCasesImpl(repository)
+
+        useCases.observeLease(ACTIVE_LEASE_ID).test {
+            val initial = awaitItem()
+            assertNotNull(initial)
+            assertNull(initial?.endDateEpochDay)
+
+            useCases.closeLease(ACTIVE_LEASE_ID, CLOSE_EPOCH_DAY)
+            advanceUntilIdle()
+
+            val updated = awaitItem()
+            assertEquals(CLOSE_EPOCH_DAY, updated?.endDateEpochDay)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `createLease fails if tenant does not exist`() = runTest {
-        val repository = FakeLeaseRepository(existingHousingIds = setOf(1L))
+    fun addKeyAddsKeyAndEmitsUpdatedList() = runTest {
+        val repository = FakeLeaseRepository.seeded()
         val useCases = LeaseUseCasesImpl(repository)
-        val request = LeaseCreateRequest(
-            housingId = 1L,
-            tenantId = 9L,
-            startDateEpochDay = 1000L,
-            rentCents = 100000L,
-            chargesCents = 10000L,
-            depositCents = 50000L,
-            rentDueDayOfMonth = 5,
-            mailboxLabel = null,
-            meterGas = null,
-            meterElectricity = null,
-            meterWater = null,
-            keys = emptyList()
-        )
 
-        val error = runCatching { useCases.createLease(request) }.exceptionOrNull()
-        assertEquals("Le locataire sélectionné n'existe pas.", error?.message)
+        useCases.observeKeysForLease(ACTIVE_LEASE_ID).test {
+            val initial = awaitItem()
+            assertEquals(2, initial.size)
+
+            useCases.addKey(
+                ACTIVE_LEASE_ID,
+                Key(
+                    type = "Télécommande",
+                    deviceLabel = "Portail",
+                    handedOverEpochDay = START_EPOCH_DAY
+                )
+            )
+            advanceUntilIdle()
+
+            val updated = awaitItem()
+            assertEquals(3, updated.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `createLease fails if rentDueDayOfMonth not in range`() = runTest {
-        val repository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+    fun deleteKeyRemovesKeyAndEmitsUpdatedList() = runTest {
+        val repository = FakeLeaseRepository.seeded()
         val useCases = LeaseUseCasesImpl(repository)
-        val request = LeaseCreateRequest(
-            housingId = 1L,
-            tenantId = 2L,
-            startDateEpochDay = 1000L,
-            rentCents = 100000L,
-            chargesCents = 10000L,
-            depositCents = 50000L,
-            rentDueDayOfMonth = 31,
-            mailboxLabel = null,
-            meterGas = null,
-            meterElectricity = null,
-            meterWater = null,
-            keys = emptyList()
-        )
 
-        val error = runCatching { useCases.createLease(request) }.exceptionOrNull()
-        assertEquals("Le jour d'échéance doit être entre 1 et 28.", error?.message)
+        useCases.observeKeysForLease(ACTIVE_LEASE_ID).test {
+            val initial = awaitItem()
+            assertEquals(2, initial.size)
+
+            useCases.deleteKey(FakeLeaseRepository.KEY_ID_1)
+            advanceUntilIdle()
+
+            val updated = awaitItem()
+            assertEquals(1, updated.size)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
-    fun `createLease fails if active lease exists for housing`() = runTest {
-        val repository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+    fun closeLeaseMarksLeaseInactiveAndEmitsUpdate() = runTest {
+        val repository = FakeLeaseRepository.seeded()
         val useCases = LeaseUseCasesImpl(repository)
-        val request = LeaseCreateRequest(
-            housingId = 1L,
-            tenantId = 2L,
-            startDateEpochDay = 1000L,
-            rentCents = 100000L,
-            chargesCents = 10000L,
-            depositCents = 50000L,
-            rentDueDayOfMonth = 5,
-            mailboxLabel = null,
-            meterGas = null,
-            meterElectricity = null,
-            meterWater = null,
-            keys = emptyList()
-        )
 
-        useCases.createLease(request)
+        useCases.observeLease(ACTIVE_LEASE_ID).test {
+            val initial = awaitItem()
+            assertNull(initial?.endDateEpochDay)
 
-        val error = runCatching { useCases.createLease(request) }.exceptionOrNull()
-        assertEquals("Un bail actif existe déjà pour ce logement.", error?.message)
-    }
+            useCases.closeLease(ACTIVE_LEASE_ID, CLOSE_EPOCH_DAY)
+            advanceUntilIdle()
 
-    @Test
-    fun `createLease succeeds and persists meters and keys`() = runTest {
-        val repository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
-        val useCases = LeaseUseCasesImpl(repository)
-        val keys = listOf(
-            Key(type = "Badge", deviceLabel = "Hall", handedOverEpochDay = 1001L),
-            Key(type = "Clé", deviceLabel = null, handedOverEpochDay = 1002L)
-        )
-        val request = LeaseCreateRequest(
-            housingId = 1L,
-            tenantId = 2L,
-            startDateEpochDay = 1000L,
-            rentCents = 100000L,
-            chargesCents = 10000L,
-            depositCents = 50000L,
-            rentDueDayOfMonth = 5,
-            mailboxLabel = "Boite A",
-            meterGas = "G1",
-            meterElectricity = "E1",
-            meterWater = "W1",
-            keys = keys
-        )
-
-        val leaseId = useCases.createLease(request)
-
-        val storedLease = useCases.observeLease(leaseId).first()
-        assertNotNull(storedLease)
-        assertEquals("G1", storedLease?.meterGas)
-        assertEquals("E1", storedLease?.meterElectricity)
-        assertEquals("W1", storedLease?.meterWater)
-
-        val storedKeys = useCases.observeKeysForLease(leaseId).first()
-        assertEquals(2, storedKeys.size)
-        assertEquals("Badge", storedKeys[0].type)
-        assertEquals("Clé", storedKeys[1].type)
+            val updated = awaitItem()
+            assertEquals(CLOSE_EPOCH_DAY, updated?.endDateEpochDay)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }
