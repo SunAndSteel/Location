@@ -13,11 +13,7 @@ fun TenantEntity.toDomain() : Tenant =
         lastName = lastName,
         phone = phone,
         email = email,
-        moveInDateEpochDay = moveInDateEpochDay,
-        mailboxLabel = mailboxLabel,
-        rentCents = rentCents,
-        chargesCents = chargesCents,
-        rentDueDayOfMonth = rentDueDayOfMonth
+
     )
 
 
@@ -31,9 +27,4 @@ fun Tenant.toEntity(): TenantEntity =
         lastName = lastName,
         phone = phone,
         email = email,
-        moveInDateEpochDay = moveInDateEpochDay,
-        mailboxLabel = mailboxLabel,
-        rentCents = rentCents,
-        chargesCents = chargesCents,
-        rentDueDayOfMonth = rentDueDayOfMonth
     )

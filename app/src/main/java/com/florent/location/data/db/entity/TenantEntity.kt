@@ -14,10 +14,4 @@ data class TenantEntity(
     val phone: String? = null,
     val email: String? = null,
 
-    val moveInDateEpochDay: Long? = null, // LocalDate.toEpochDay()
-    val mailboxLabel: String? = null,
-
-    val rentCents: Long = 0L,
-    val chargesCents: Long = 0L,
-    val rentDueDayOfMonth: Int = 1
 )

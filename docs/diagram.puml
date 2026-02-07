@@ -1,0 +1,409 @@
+@startuml
+title Architecture App Gestion Locative – Domain & Data détaillés
+' Direction verticale pour meilleure lisibilité
+skinparam packageStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam shadowing false
+
+' Couleurs
+skinparam package {
+    BackgroundColor<<ui>> #E3F2FD
+    BorderColor<<ui>> #1976D2
+    BackgroundColor<<domain>> #E8F5E9
+    BorderColor<<domain>> #388E3C
+    BackgroundColor<<data>> #FCE4EC
+    BorderColor<<data>> #C2185B
+}
+
+' ===== UI LAYER (simplifié) =====
+package "UI + Presentation" <<ui>> {
+    class "10 ViewModels" as ViewModels {
+        **Housing:** List, Detail, Edit
+        **Tenant:** List, Detail, Edit
+        **Lease:** Create, Detail
+        **Indexation:** ViewModel
+        --
+        Injectés par Koin (scope: viewModel)
+    }
+}
+
+' ===== DOMAIN LAYER (détaillé) =====
+package "Domain Layer – Business Logic" <<domain>> {
+    
+    ' Tenant
+    together {
+        interface TenantUseCases {
+            + observeAll(): Flow<List<Tenant>>
+            + observeById(id): Flow<Tenant?>
+            + create(tenant: Tenant): Long
+            + update(tenant: Tenant)
+            + delete(id: Long)
+        }
+        
+        class TenantUseCasesImpl {
+            - repository: TenantRepository
+        }
+        
+        interface TenantRepository {
+            + observeAll(): Flow<List<Tenant>>
+            + observeById(id): Flow<Tenant?>
+            + insert(tenant): Long
+            + update(tenant)
+            + deleteById(id)
+        }
+    }
+    
+    ' Housing
+    together {
+        interface HousingUseCases {
+            + observeAll(): Flow<List<Housing>>
+            + observeById(id): Flow<Housing?>
+            + create(housing: Housing): Long
+            + update(housing: Housing)
+            + delete(id: Long)
+        }
+        
+        class HousingUseCasesImpl {
+            - repository: HousingRepository
+        }
+        
+        interface HousingRepository {
+            + observeAll(): Flow<List<Housing>>
+            + observeById(id): Flow<Housing?>
+            + insert(housing): Long
+            + update(housing)
+            + deleteById(id)
+        }
+    }
+    
+    ' Lease
+    together {
+        interface LeaseUseCases {
+            + observeAll(): Flow<List<Lease>>
+            + observeById(id): Flow<Lease?>
+            + createLeaseWithKeys(lease, keys)
+            + closeLease(id: Long)
+            + observeActiveLeases()
+        }
+        
+        class LeaseUseCasesImpl {
+            - repository: LeaseRepository
+        }
+        
+        interface LeaseRepository {
+            + observeAll(): Flow<List<Lease>>
+            + observeById(id): Flow<Lease?>
+            + createLeaseWithKeys(lease, keys)
+            + closeLease(id)
+            + observeActiveLeases()
+        }
+    }
+    
+    ' Indexation
+    together {
+        interface IndexationUseCases {
+            + observeUpcoming(): Flow<List<Indexation>>
+            --
+            **Logique métier:**
+            Baux actifs + calcul J-60
+        }
+        
+        class IndexationUseCasesImpl {
+            - leaseRepository: LeaseRepository
+            --
+            Réutilise LeaseRepository
+            pour calculer indexations
+        }
+    }
+    
+    ' Domain Models
+    class Tenant {
+        + id: Long
+        + firstName: String
+        + lastName: String
+        + phone: String?
+        + email: String?
+        + rentCents: Long
+        + chargesCents: Long
+        --
+        + fullName: String
+    }
+    
+    class Housing {
+        + id: Long
+        + address: String
+        + type: HousingType
+        + surfaceM2: Int?
+    }
+    
+    class Lease {
+        + id: Long
+        + housingId: Long
+        + tenantId: Long
+        + startDate: LocalDate
+        + endDate: LocalDate?
+        + rentCents: Long
+    }
+}
+
+' ===== DATA LAYER (détaillé) =====
+package "Data Layer – Infrastructure" <<data>> {
+    
+    ' Repositories Implementation
+    class TenantRepositoryImpl {
+        - dao: TenantDao
+        --
+        + observeAll(): Flow<List<Tenant>>
+        + insert(tenant): Long
+        --
+        **Mapping:**
+        TenantEntity.toDomain()
+        Tenant.toEntity()
+    }
+    
+    class HousingRepositoryImpl {
+        - housingDao: HousingDao
+        - leaseDao: LeaseDao
+        --
+        + observeAll(): Flow<List<Housing>>
+        + insert(housing): Long
+        --
+        **Mapping + Logique:**
+        Expose "logement + bail actif"
+        via leaseDao
+    }
+    
+    class LeaseRepositoryImpl {
+        - db: AppDatabase
+        - leaseDao: LeaseDao
+        - keyDao: KeyDao
+        --
+        + createLeaseWithKeys(...)
+        + closeLease(id)
+        --
+        **Transactions:**
+        db.withTransaction {
+            leaseDao.insert(...)
+            keyDao.insertAll(...)
+        }
+    
+    
+    ' DAOs
+    interface TenantDao {
+        @Query("SELECT * FROM tenants
+                ORDER BY lastName, firstName")
+        + observeAll(): Flow<List<TenantEntity>>
+        
+        @Query("...WHERE id = :id")
+        + observeById(id): Flow<TenantEntity?>
+        
+        @Insert(onConflict = ABORT)
+        + insert(entity): Long
+        
+        @Update
+        + update(entity)
+        
+        @Query("DELETE FROM tenants WHERE id = :id")
+        + deleteById(id)
+    }
+    
+    interface HousingDao {
+        @Query("SELECT * FROM housings...")
+        + observeAll(): Flow<List<HousingEntity>>
+        
+        @Insert / @Update / @Delete
+    }
+    
+    interface LeaseDao {
+        @Query("SELECT * FROM leases...")
+        + observeAll(): Flow<List<LeaseEntity>>
+        
+        @Query("...WHERE endDate IS NULL")
+        + observeActiveLeases(): Flow<List<LeaseEntity>>
+        
+        @Insert / @Update
+    }
+    
+    interface KeyDao {
+        @Insert
+        + insertAll(keys: List<KeyEntity>)
+        
+        @Query("...WHERE leaseId = :id")
+        + getByLeaseId(id): List<KeyEntity>
+        
+        @Delete
+    }
+    
+    ' Database
+    class "AppDatabase" as Database {
+        **Configuration:**
+        • Name: "location.db"
+        • fallbackToDestructiveMigration()
+        
+        **Entities:**
+        TenantEntity, HousingEntity,
+        LeaseEntity, KeyEntity
+        
+        **Fournit:**
+        + tenantDao(): TenantDao
+        + housingDao(): HousingDao
+        + leaseDao(): LeaseDao
+        + keyDao(): KeyDao
+    }
+    
+    ' Entities
+    class TenantEntity {
+        @PrimaryKey(autoGenerate = true)
+        id: Long
+        
+        @ColumnInfo
+        firstName: String
+        lastName: String
+        phone: String?
+        email: String?
+        moveInDateEpochDay: Long?
+        mailboxLabel: String?
+        rentCents: Long
+        chargesCents: Long
+        rentDueDayOfMonth: Int
+    }
+    
+    class HousingEntity {
+        @PrimaryKey(autoGenerate = true)
+        id: Long
+        
+        @ColumnInfo
+        address: String
+        type: String
+        surfaceM2: Int?
+    }
+    
+    class LeaseEntity {
+        @PrimaryKey(autoGenerate = true)
+        id: Long
+        
+        @ColumnInfo
+        housingId: Long
+        tenantId: Long
+        startDateEpochDay: Long
+        endDateEpochDay: Long?
+        rentCents: Long
+        chargesCents: Long
+    }
+    
+    class KeyEntity {
+        @PrimaryKey(autoGenerate = true)
+        id: Long
+        
+        @ColumnInfo
+        leaseId: Long
+        description: String
+        quantity: Int
+    }
+}
+
+' ===== DÉPENDANCES =====
+
+' UI → Domain
+ViewModels --> TenantUseCases
+ViewModels --> HousingUseCases
+ViewModels --> LeaseUseCases
+ViewModels --> IndexationUseCases
+
+' UseCases impl → interface
+TenantUseCasesImpl .up.|> TenantUseCases
+HousingUseCasesImpl .up.|> HousingUseCases
+LeaseUseCasesImpl .up.|> LeaseUseCases
+IndexationUseCasesImpl .up.|> IndexationUseCases
+
+' UseCases → Repository interface
+TenantUseCasesImpl --> TenantRepository
+HousingUseCasesImpl --> HousingRepository
+LeaseUseCasesImpl --> LeaseRepository
+IndexationUseCasesImpl --> LeaseRepository
+
+' Repository impl → interface
+TenantRepositoryImpl .up.|> TenantRepository
+HousingRepositoryImpl .up.|> HousingRepository
+LeaseRepositoryImpl .up.|> LeaseRepository
+
+' Repository impl → DAO
+TenantRepositoryImpl --> TenantDao
+HousingRepositoryImpl --> HousingDao
+HousingRepositoryImpl --> LeaseDao
+LeaseRepositoryImpl --> Database
+LeaseRepositoryImpl --> LeaseDao
+LeaseRepositoryImpl --> KeyDao
+
+' Database CONTIENT les DAOs (composition)
+Database *--> TenantDao
+Database *--> HousingDao
+Database *--> LeaseDao
+Database *--> KeyDao
+
+' DAO utilise Entity (dépendance faible)
+TenantDao ..> TenantEntity
+HousingDao ..> HousingEntity
+LeaseDao ..> LeaseEntity
+KeyDao ..> KeyEntity
+
+' Mapping (bleu)
+TenantEntity -[#1976D2,dashed,thickness=2]-> Tenant : <color:#1976D2>**mapped to**</color>
+HousingEntity -[#1976D2,dashed,thickness=2]-> Housing : <color:#1976D2>**mapped to**</color>
+LeaseEntity -[#1976D2,dashed,thickness=2]-> Lease : <color:#1976D2>**mapped to**</color>
+
+legend right
+    **Architecture Clean (MVVM + Koin DI)**
+    
+    |= Couche |= Responsabilité |
+    | <back:#E3F2FD>UI</back> | 10 ViewModels (simplified) |
+    | <back:#E8F5E9>Domain</back> | UseCases + Repo interfaces + Models |
+    | <back:#FCE4EC>Data</back> | Repo impl + Room (DAOs + Entities) |
+    
+    **Légende des flèches:**
+    | ━━━> | Dépendance (uses) |
+    | ╍╍╍> | Dépendance faible |
+    | ━━━|> | Implémente (implements) |
+    | *━━━> | Composition (contains) |
+    | <color:#1976D2>╍╍╍></color> | Mapping de données |
+    
+    **Principes appliqués:**
+    ✓ Dependency Inversion (UseCases → Repo interface)
+    ✓ Repository Pattern (abstraction data source)
+    ✓ Clean Architecture (Domain indépendant)
+    ✓ UseCases bundles (regroupement par domaine)
+    ✓ Room Transactions (LeaseRepo avec db.withTransaction)
+    
+    **Koin provides:**
+    • **single** : Database, DAOs, Repos, UseCases
+    • **viewModel** : 10 ViewModels
+    
+    **Spécificités:**
+    • HousingRepo utilise leaseDao (logement + bail actif)
+    • LeaseRepo utilise db pour transactions atomiques
+    • IndexationUseCases réutilise LeaseRepository (métier)
+endlegend
+
+note as TransactionNote
+    **Exemple Transaction (LeaseRepositoryImpl):**
+    
+    suspend fun createLeaseWithKeys(
+        lease: Lease, 
+        keys: List<Key>
+    ): Long {
+        return db.withTransaction {
+            val leaseId = leaseDao.insert(lease.toEntity())
+            keyDao.insertAll(keys.map { 
+                it.toEntity(leaseId) 
+            })
+            leaseId
+        }
+    }
+    
+    → Atomicité garantie : 
+    Si insertAll échoue, insert lease est rollback
+end note
+
+TransactionNote .. LeaseRepositoryImpl
+
+@enduml

@@ -1,0 +1,20 @@
+package com.florent.location.domain.model
+
+
+
+data class Lease(
+    val id: Long,
+    val housingId: Long,
+    val tenantId: Long,
+    val startDateEpochDay: Long, // LocalDate.toEpochDay()
+    val endDateEpochDay: Long? = null, // null = actif
+    val rentCents: Long,
+    val chargesCents: Long,
+    val depositCents: Long = 0L,
+    val rentDueDayOfMonth: Int = 1,
+    val mailboxLabel: String? = null,
+    val meterGas: String? = null,
+    val meterElectricity: String? = null,
+    val meterWater: String? = null,
+    val indexAnniversaryEpochDay: Long? = null // par défaut startDateEpochDay
+)

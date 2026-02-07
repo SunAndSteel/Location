@@ -8,10 +8,5 @@ data class Tenant(
     val firstName: String,
     val lastName: String,
     val phone: String?,
-    val email: String?,
-    val moveInDateEpochDay: Long?,
-    val mailboxLabel: String?,
-    val rentCents: Long,
-    val chargesCents: Long,
-    val rentDueDayOfMonth: Int
+    val email: String?
 )
