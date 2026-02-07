@@ -50,7 +50,6 @@ fun HousingDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@OptIn(ExperimentalLayoutApi::class)
 private fun HousingDetailContent(
     state: HousingDetailUiState,
     onEvent: (HousingDetailUiEvent) -> Unit,
