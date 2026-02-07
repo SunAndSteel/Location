@@ -1,6 +1,9 @@
 package com.florent.location.ui.lease
 
 import app.cash.turbine.test
+import com.florent.location.domain.model.Key
+import com.florent.location.domain.model.Lease
+import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
@@ -8,6 +11,9 @@ import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
 import com.florent.location.testutils.MainDispatcherRule
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -150,5 +156,39 @@ class LeaseDetailViewModelTest {
             assertEquals(0, loaded.keys.size)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun observeLeaseFailureUpdatesErrorMessage() = runTest {
+        val viewModel = LeaseDetailViewModel(
+            ACTIVE_LEASE_ID,
+            FakeLeaseUseCases(
+                flow {
+                    throw IllegalStateException("boom")
+                }
+            )
+        )
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals("boom", state.errorMessage)
+    }
+
+    private class FakeLeaseUseCases(
+        private val leaseFlow: Flow<Lease?>
+    ) : LeaseUseCases {
+        override suspend fun createLease(request: com.florent.location.domain.usecase.lease.LeaseCreateRequest): Long = 0L
+
+        override fun observeLease(leaseId: Long): Flow<Lease?> = leaseFlow
+
+        override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> = flowOf(emptyList())
+
+        override suspend fun addKey(leaseId: Long, key: Key): Long = 0L
+
+        override suspend fun deleteKey(keyId: Long) = Unit
+
+        override suspend fun closeLease(leaseId: Long, endEpochDay: Long) = Unit
     }
 }

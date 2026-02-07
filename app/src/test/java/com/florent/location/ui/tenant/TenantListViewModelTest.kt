@@ -2,9 +2,13 @@ package com.florent.location.ui.tenant
 
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.TenantUseCasesImpl
+import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -86,5 +90,36 @@ class TenantListViewModelTest {
             "Impossible de supprimer un locataire avec un bail actif.",
             viewModel.uiState.value.errorMessage
         )
+    }
+
+    @Test
+    fun `observe tenants failure sets error state`() = runTest {
+        val viewModel = TenantListViewModel(
+            FakeTenantUseCases(
+                flow {
+                    throw IllegalStateException("boom")
+                }
+            )
+        )
+
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isLoading)
+        assertEquals("boom", state.errorMessage)
+    }
+
+    private class FakeTenantUseCases(
+        private val tenantsFlow: Flow<List<Tenant>>
+    ) : TenantUseCases {
+        override fun observeTenants(): Flow<List<Tenant>> = tenantsFlow
+
+        override fun observeTenant(id: Long): Flow<Tenant?> = flowOf(null)
+
+        override suspend fun createTenant(tenant: Tenant): Long = 0L
+
+        override suspend fun updateTenant(tenant: Tenant) = Unit
+
+        override suspend fun deleteTenant(id: Long) = Unit
     }
 }
