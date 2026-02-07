@@ -5,6 +5,7 @@ package com.florent.location.ui.bail
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,17 +13,31 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.ReportProblem
+import androidx.compose.material.icons.outlined.Timelapse
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,12 +51,26 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.AdaptiveContent
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import com.florent.location.ui.components.ExpressiveEmptyState
+import com.florent.location.ui.components.ExpressiveErrorState
+import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.CardVariant
+import com.florent.location.ui.components.DetailChipRow
+import com.florent.location.ui.components.DestructiveActionCard
+import com.florent.location.ui.components.HeroMetric
+import com.florent.location.ui.components.LabeledValueRow
+import com.florent.location.ui.components.NonInteractiveChip
+import com.florent.location.ui.components.SectionHeader
+import com.florent.location.ui.components.StatusBadge
+import com.florent.location.ui.components.formatCurrency
+import com.florent.location.ui.components.formatEpochDay
+import com.florent.location.ui.components.variantCardColors
+import com.florent.location.ui.components.windowWidthSize
+import com.florent.location.ui.components.WindowWidthSize
+import com.florent.location.domain.model.Bail
+import com.florent.location.domain.model.Key
 
 @Composable
 fun BailDetailScreen(
@@ -73,11 +102,10 @@ private fun BailDetailContent(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Chargement du bail...")
-                        }
+                        ExpressiveLoadingState(
+                            title = "Chargement du bail",
+                            message = "Nous préparons le résumé, les clés et l'indexation."
+                        )
                     }
                 }
 
@@ -87,12 +115,11 @@ private fun BailDetailContent(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = state.errorMessage,
-                            color = MaterialTheme.colorScheme.error
+                        ExpressiveErrorState(
+                            title = "Impossible de charger le bail",
+                            message = state.errorMessage,
+                            icon = Icons.Outlined.ReportProblem
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "Veuillez réessayer plus tard.")
                     }
                 }
 
@@ -102,167 +129,74 @@ private fun BailDetailContent(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "Bail introuvable.")
+                        ExpressiveEmptyState(
+                            title = "Bail introuvable",
+                            message = "Ce bail n'est plus disponible.",
+                            icon = Icons.Outlined.Inbox
+                        )
                     }
                 }
 
                 else -> {
                     val bail = state.bail
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Text(
-                            text = "Résumé du bail",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.semantics { heading() }
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(text = "Logement: ${bail.housingId}")
-                                Text(text = "Locataire: ${bail.tenantId}")
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(text = "Loyer courant: ${bail.rentCents} cents")
-                                Text(text = "Charges: ${bail.chargesCents} cents")
-                                Text(text = "Caution: ${bail.depositCents} cents")
-                                Text(text = "Échéance: ${bail.rentDueDayOfMonth}")
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(text = "Début: ${formatEpochDay(bail.startDateEpochDay)}")
-                                Text(
-                                    text = "Fin: ${bail.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif"}"
-                                )
-                                bail.mailboxLabel?.let { Text(text = "Boîte aux lettres: $it") }
-                                bail.meterGas?.let { Text(text = "Compteur gaz: $it") }
-                                bail.meterElectricity?.let { Text(text = "Compteur électricité: $it") }
-                                bail.meterWater?.let { Text(text = "Compteur eau: $it") }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "Indexation",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.semantics { heading() }
-                        )
-                        state.indexationPolicy?.let { policy ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = policy.ruleLabel)
-                            Text(text = "Anniversaire: ${formatEpochDay(policy.anniversaryEpochDay)}")
-                            Text(text = "Prochaine échéance: ${formatEpochDay(policy.nextIndexationEpochDay)}")
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "Simulation", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = state.indexationForm.indexPercent,
-                            onValueChange = { onEvent(BailDetailUiEvent.IndexationPercentChanged(it)) },
-                            label = { Text(text = "Indice (%)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = state.indexationForm.effectiveDate,
-                            onValueChange = { onEvent(BailDetailUiEvent.IndexationEffectiveDateChanged(it)) },
-                            label = { Text(text = "Date d'effet (yyyy-MM-dd)") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Button(
-                                onClick = { onEvent(BailDetailUiEvent.SimulateIndexation) },
-                                modifier = Modifier.weight(1f)
+                    BoxWithConstraints {
+                        val sizeClass = windowWidthSize(maxWidth)
+                        val scrollState = rememberScrollState()
+                        if (sizeClass == WindowWidthSize.Expanded) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState),
+                                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                                verticalAlignment = Alignment.Top
                             ) {
-                                Text(text = "Simuler")
-                            }
-                            Button(
-                                onClick = { onEvent(BailDetailUiEvent.ApplyIndexation) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(text = "Appliquer")
-                            }
-                        }
-                        state.indexationForm.simulation?.let { simulation ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Loyer actuel: ${simulation.baseRentCents} cents")
-                            Text(text = "Nouveau loyer: ${simulation.newRentCents} cents")
-                            Text(text = "Date d'effet: ${formatEpochDay(simulation.effectiveEpochDay)}")
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "Historique", style = MaterialTheme.typography.titleSmall)
-                        if (state.indexationHistory.isEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Aucune indexation appliquée.")
-                        } else {
-                            state.indexationHistory.forEach { event ->
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Le ${formatEpochDay(event.appliedEpochDay)}: " +
-                                        "${event.baseRentCents} → ${event.newRentCents} cents"
-                                )
-                                Text(text = "Indice: ${event.indexPercent}%")
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Clés",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.semantics { heading() }
-                        )
-
-                        if (state.keys.isEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "Aucune clé enregistrée.")
-                        } else {
-                            state.keys.forEach { key ->
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Text(text = "Type: ${key.type}")
-                                        key.deviceLabel?.let { Text(text = "Dispositif: $it") }
-                                        Text(text = "Remise: ${formatEpochDay(key.handedOverEpochDay)}")
-                                        TextButton(
-                                            onClick = { onEvent(BailDetailUiEvent.DeleteKeyClicked(key.id)) },
-                                            modifier = Modifier.focusable()
-                                        ) {
-                                            Text(text = "Supprimer la clé")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Button(
-                                onClick = { onEvent(BailDetailUiEvent.AddKeyClicked) },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(text = "Ajouter une clé")
-                            }
-                            if (state.isActive) {
-                                Button(
-                                    onClick = { onEvent(BailDetailUiEvent.CloseLeaseClicked) },
-                                    modifier = Modifier.weight(1f)
+                                Column(
+                                    modifier = Modifier.weight(0.55f),
+                                    verticalArrangement = Arrangement.spacedBy(24.dp)
                                 ) {
-                                    Text(text = "Clôturer le bail")
+                                    BailSummarySection(bail = bail, isActive = state.isActive)
+                                    KeysSection(
+                                        keys = state.keys,
+                                        onAddKey = { onEvent(BailDetailUiEvent.AddKeyClicked) },
+                                        onDeleteKey = { keyId ->
+                                            onEvent(BailDetailUiEvent.DeleteKeyClicked(keyId))
+                                        }
+                                    )
+                                    DestructiveActionsSection(
+                                        isActive = state.isActive,
+                                        onCloseLease = { onEvent(BailDetailUiEvent.CloseLeaseClicked) }
+                                    )
                                 }
+                                Column(
+                                    modifier = Modifier.weight(0.45f),
+                                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
+                                    IndexationSection(
+                                        state = state,
+                                        onEvent = onEvent
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState),
+                                verticalArrangement = Arrangement.spacedBy(24.dp)
+                            ) {
+                                BailSummarySection(bail = bail, isActive = state.isActive)
+                                IndexationSection(state = state, onEvent = onEvent)
+                                KeysSection(
+                                    keys = state.keys,
+                                    onAddKey = { onEvent(BailDetailUiEvent.AddKeyClicked) },
+                                    onDeleteKey = { keyId ->
+                                        onEvent(BailDetailUiEvent.DeleteKeyClicked(keyId))
+                                    }
+                                )
+                                DestructiveActionsSection(
+                                    isActive = state.isActive,
+                                    onCloseLease = { onEvent(BailDetailUiEvent.CloseLeaseClicked) }
+                                )
                             }
                         }
                     }
@@ -390,6 +324,409 @@ private fun BailDetailContent(
     }
 }
 
-private fun formatEpochDay(epochDay: Long): String {
-    return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
+@Composable
+private fun BailSummarySection(
+    bail: Bail,
+    isActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SectionHeader(title = "Résumé")
+        val statusLabel = if (isActive) "Actif" else "Terminé"
+        val variant = if (isActive) CardVariant.Highlighted else CardVariant.Warning
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = variantCardColors(variant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bail #${bail.id}",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    StatusBadge(
+                        text = statusLabel,
+                        containerColor = if (isActive) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                    )
+                }
+                HeroMetric(
+                    value = formatCurrency(bail.rentCents),
+                    label = "/ mois"
+                )
+                DetailChipRow {
+                    NonInteractiveChip(
+                        label = "Logement #${bail.housingId}",
+                        icon = Icons.Outlined.Home
+                    )
+                    NonInteractiveChip(
+                        label = "Locataire #${bail.tenantId}",
+                        icon = Icons.Outlined.Person
+                    )
+                    NonInteractiveChip(
+                        label = "Échéance le ${bail.rentDueDayOfMonth}",
+                        icon = Icons.Outlined.Timelapse
+                    )
+                }
+                LabeledValueRow(
+                    label = "Charges",
+                    value = formatCurrency(bail.chargesCents)
+                )
+                LabeledValueRow(
+                    label = "Caution",
+                    value = formatCurrency(bail.depositCents)
+                )
+                LabeledValueRow(
+                    label = "Début",
+                    value = formatEpochDay(bail.startDateEpochDay)
+                )
+                LabeledValueRow(
+                    label = "Fin",
+                    value = bail.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif"
+                )
+                if (
+                    bail.mailboxLabel != null ||
+                    bail.meterGas != null ||
+                    bail.meterElectricity != null ||
+                    bail.meterWater != null
+                ) {
+                    DetailChipRow {
+                        bail.mailboxLabel?.let {
+                            NonInteractiveChip(
+                                label = "Boîte $it",
+                                icon = Icons.Outlined.Inbox
+                            )
+                        }
+                        bail.meterGas?.let {
+                            NonInteractiveChip(
+                                label = "Gaz $it",
+                                icon = Icons.Outlined.Payments
+                            )
+                        }
+                        bail.meterElectricity?.let {
+                            NonInteractiveChip(
+                                label = "Élec. $it",
+                                icon = Icons.Outlined.Payments
+                            )
+                        }
+                        bail.meterWater?.let {
+                            NonInteractiveChip(
+                                label = "Eau $it",
+                                icon = Icons.Outlined.Payments
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IndexationSection(
+    state: BailDetailUiState,
+    onEvent: (BailDetailUiEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SectionHeader(title = "Indexation")
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                state.indexationPolicy?.let { policy ->
+                    Text(
+                        text = policy.ruleLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.EventAvailable,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Prochaine échéance",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Text(
+                        text = formatEpochDay(policy.nextIndexationEpochDay),
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    LabeledValueRow(
+                        label = "Anniversaire",
+                        value = formatEpochDay(policy.anniversaryEpochDay)
+                    )
+                }
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Simulation",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        OutlinedTextField(
+                            value = state.indexationForm.indexPercent,
+                            onValueChange = { onEvent(BailDetailUiEvent.IndexationPercentChanged(it)) },
+                            label = { Text(text = "Indice (%)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = state.indexationForm.effectiveDate,
+                            onValueChange = { onEvent(BailDetailUiEvent.IndexationEffectiveDateChanged(it)) },
+                            label = { Text(text = "Date d'effet (yyyy-MM-dd)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { onEvent(BailDetailUiEvent.SimulateIndexation) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(text = "Simuler")
+                            }
+                            Button(
+                                onClick = { onEvent(BailDetailUiEvent.ApplyIndexation) },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(text = "Appliquer")
+                            }
+                        }
+                    }
+                }
+                state.indexationForm.simulation?.let { simulation ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Résultat",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            LabeledValueRow(
+                                label = "Loyer actuel",
+                                value = formatCurrency(simulation.baseRentCents)
+                            )
+                            LabeledValueRow(
+                                label = "Nouveau loyer",
+                                value = formatCurrency(simulation.newRentCents)
+                            )
+                            LabeledValueRow(
+                                label = "Date d'effet",
+                                value = formatEpochDay(simulation.effectiveEpochDay)
+                            )
+                        }
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Historique",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    if (state.indexationHistory.isEmpty()) {
+                        Text(
+                            text = "Aucune indexation appliquée.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        state.indexationHistory.forEach { event ->
+                            Surface(
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.surfaceContainer
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = formatEpochDay(event.appliedEpochDay),
+                                        style = MaterialTheme.typography.labelLarge
+                                    )
+                                    Text(
+                                        text = "${formatCurrency(event.baseRentCents)} → " +
+                                            formatCurrency(event.newRentCents),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = "Indice: ${event.indexPercent}%",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun KeysSection(
+    keys: List<Key>,
+    onAddKey: () -> Unit,
+    onDeleteKey: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SectionHeader(title = "Clés")
+            FilledTonalButton(onClick = onAddKey) {
+                Icon(imageVector = Icons.Outlined.Key, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Ajouter")
+            }
+        }
+        if (keys.isEmpty()) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainer
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Aucune clé enregistrée.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Ajoutez la première clé remise au locataire.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            keys.forEach { key ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = key.type,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            key.deviceLabel?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(
+                                text = "Remise le ${formatEpochDay(key.handedOverEpochDay)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(
+                            onClick = { onDeleteKey(key.id) },
+                            modifier = Modifier.focusable()
+                        ) {
+                            Text(text = "Supprimer")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DestructiveActionsSection(
+    isActive: Boolean,
+    onCloseLease: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (!isActive) return
+    DestructiveActionCard(
+        title = "Clôturer le bail",
+        message = "Marquez le bail comme terminé.",
+        actionLabel = "Clôturer",
+        onAction = onCloseLease,
+        icon = Icons.Outlined.ReportProblem,
+        modifier = modifier
+    )
 }
