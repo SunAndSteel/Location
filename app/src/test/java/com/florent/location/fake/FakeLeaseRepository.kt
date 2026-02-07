@@ -37,6 +37,12 @@ class FakeLeaseRepository(
         }
     }
 
+    override fun observeActiveLeases(): Flow<List<Lease>> {
+        return leaseFlow.map { leases ->
+            leases.values.filter { it.endDateEpochDay == null }
+        }
+    }
+
     override fun observeLease(leaseId: Long): Flow<Lease?> {
         return leaseFlow.map { it[leaseId] }
     }

@@ -39,6 +39,14 @@ interface LeaseDao {
     )
     suspend fun getActiveLeaseForTenant(tenantId: Long): LeaseEntity?
 
+    @Query(
+            """
+        SELECT * FROM leases
+        WHERE endDateEpochDay IS NULL
+    """
+    )
+    fun observeActiveLeases(): Flow<List<LeaseEntity>>
+
     // --- CRUD ---
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insert(lease: LeaseEntity): Long
 
