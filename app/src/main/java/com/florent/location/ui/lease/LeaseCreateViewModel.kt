@@ -42,6 +42,7 @@ data class LeaseCreateUiState(
     val tenantDropdownExpanded: Boolean = false,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
+    val savedLeaseId: Long? = null,
     val errorMessage: String? = null
 )
 
@@ -205,7 +206,14 @@ class LeaseCreateViewModel(
     private fun saveLease() {
         viewModelScope.launch {
             val current = _uiState.value
-            _uiState.update { it.copy(isSaving = true, errorMessage = null, isSaved = false) }
+            _uiState.update {
+                it.copy(
+                    isSaving = true,
+                    errorMessage = null,
+                    isSaved = false,
+                    savedLeaseId = null
+                )
+            }
 
             val startDateEpochDay = current.startDateEpochDay.toLongOrNull()
             val rentCents = current.rentCents.toLongOrNull() ?: 0L
@@ -242,10 +250,24 @@ class LeaseCreateViewModel(
             )
 
             try {
-                leaseUseCases.createLease(request)
-                _uiState.update { it.copy(isSaving = false, isSaved = true, errorMessage = null) }
+                val leaseId = leaseUseCases.createLease(request)
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        isSaved = true,
+                        savedLeaseId = leaseId,
+                        errorMessage = null
+                    )
+                }
             } catch (error: IllegalArgumentException) {
-                _uiState.update { it.copy(isSaving = false, errorMessage = error.message, isSaved = false) }
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        errorMessage = error.message,
+                        isSaved = false,
+                        savedLeaseId = null
+                    )
+                }
             }
         }
     }
