@@ -14,7 +14,13 @@ fun LeaseEntity.toDomain() : Lease =
         chargesCents = chargesCents,
         depositCents = depositCents,
         rentDueDayOfMonth = rentDueDayOfMonth,
-        indexAnniversaryEpochDay = indexAnniversaryEpochDay
+        indexAnniversaryEpochDay = indexAnniversaryEpochDay,
+        rentOverridden = rentOverridden,
+        chargesOverridden = chargesOverridden,
+        depositOverridden = depositOverridden,
+        housingRentCentsSnapshot = housingRentCentsSnapshot,
+        housingChargesCentsSnapshot = housingChargesCentsSnapshot,
+        housingDepositCentsSnapshot = housingDepositCentsSnapshot
     )
 
 
@@ -29,5 +35,11 @@ fun Lease.toEntity() : LeaseEntity =
         chargesCents = chargesCents,
         depositCents = depositCents,
         rentDueDayOfMonth = rentDueDayOfMonth,
-        indexAnniversaryEpochDay = indexAnniversaryEpochDay
+        indexAnniversaryEpochDay = indexAnniversaryEpochDay,
+        rentOverridden = rentOverridden,
+        chargesOverridden = chargesOverridden,
+        depositOverridden = depositOverridden,
+        housingRentCentsSnapshot = housingRentCentsSnapshot,
+        housingChargesCentsSnapshot = housingChargesCentsSnapshot,
+        housingDepositCentsSnapshot = housingDepositCentsSnapshot
     )

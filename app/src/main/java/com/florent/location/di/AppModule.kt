@@ -105,7 +105,7 @@ val appModule = module {
     single<HousingUseCases> { HousingUseCasesImpl(repository = get()) }
     single { ObserveHousingSituation(leaseRepository = get()) }
     single { ObserveTenantSituation(leaseRepository = get()) }
-    single<LeaseUseCases> { LeaseUseCasesImpl(repository = get()) }
+    single<LeaseUseCases> { LeaseUseCasesImpl(repository = get(), housingRepository = get()) }
     single<BailUseCases> { BailUseCasesImpl(repository = get()) }
 
     // ---------------------------------------------------------------------

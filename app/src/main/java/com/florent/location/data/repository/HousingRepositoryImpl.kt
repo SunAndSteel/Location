@@ -35,6 +35,12 @@ class HousingRepositoryImpl(
         }
 
     /**
+     * Récupère un logement par identifiant.
+     */
+    override suspend fun getHousing(id: Long): Housing? =
+        housingDao.getById(id)?.toDomain()
+
+    /**
      * Insère un logement et renvoie son identifiant.
      */
     override suspend fun insert(housing: Housing): Long =

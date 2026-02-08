@@ -23,7 +23,13 @@ interface HousingDao {
             l.chargesCents AS lease_chargesCents,
             l.depositCents AS lease_depositCents,
             l.rentDueDayOfMonth AS lease_rentDueDayOfMonth,
-            l.indexAnniversaryEpochDay AS lease_indexAnniversaryEpochDay
+            l.indexAnniversaryEpochDay AS lease_indexAnniversaryEpochDay,
+            l.rentOverridden AS lease_rentOverridden,
+            l.chargesOverridden AS lease_chargesOverridden,
+            l.depositOverridden AS lease_depositOverridden,
+            l.housingRentCentsSnapshot AS lease_housingRentCentsSnapshot,
+            l.housingChargesCentsSnapshot AS lease_housingChargesCentsSnapshot,
+            l.housingDepositCentsSnapshot AS lease_housingDepositCentsSnapshot
         FROM housings h
         LEFT JOIN leases l 
             ON l.housingId = h.id AND l.endDateEpochDay IS NULL
@@ -37,6 +43,9 @@ interface HousingDao {
 
     @Query("SELECT * FROM housings WHERE id = :id")
     fun observeHousing(id: Long): Flow<HousingEntity?>
+
+    @Query("SELECT * FROM housings WHERE id = :id")
+    suspend fun getById(id: Long): HousingEntity?
 
     @Query("SELECT COUNT(*) > 0 FROM housings WHERE id = :id")
     suspend fun exists(id: Long): Boolean

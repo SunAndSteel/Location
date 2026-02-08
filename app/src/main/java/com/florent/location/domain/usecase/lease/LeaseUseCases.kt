@@ -1,6 +1,7 @@
 package com.florent.location.domain.usecase.lease
 
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.repository.HousingRepository
 import com.florent.location.domain.repository.LeaseRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -28,9 +29,9 @@ data class LeaseCreateRequest(
     val housingId: Long?,
     val tenantId: Long?,
     val startDateEpochDay: Long?,
-    val rentCents: Long,
-    val chargesCents: Long,
-    val depositCents: Long,
+    val rentCents: Long?,
+    val chargesCents: Long?,
+    val depositCents: Long?,
     val rentDueDayOfMonth: Int
 )
 
@@ -38,7 +39,8 @@ data class LeaseCreateRequest(
  * Implémentation des cas d'usage basés sur le [LeaseRepository].
  */
 class LeaseUseCasesImpl(
-    private val repository: LeaseRepository
+    private val repository: LeaseRepository,
+    private val housingRepository: HousingRepository
 ) : LeaseUseCases {
 
     override suspend fun createLease(request: LeaseCreateRequest): Long {
@@ -51,6 +53,15 @@ class LeaseUseCasesImpl(
         require(request.rentDueDayOfMonth in 1..28) { "Le jour d'échéance doit être entre 1 et 28." }
         require(repository.housingExists(housingId)) { "Le logement sélectionné n'existe pas." }
         require(repository.tenantExists(tenantId)) { "Le locataire sélectionné n'existe pas." }
+        val housing = requireNotNull(housingRepository.getHousing(housingId)) {
+            "Le logement sélectionné n'existe pas."
+        }
+        val defaultRentCents = housing.defaultRentCents
+        val defaultChargesCents = housing.defaultChargesCents
+        val defaultDepositCents = housing.depositCents
+        val rentCents = request.rentCents ?: defaultRentCents
+        val chargesCents = request.chargesCents ?: defaultChargesCents
+        val depositCents = request.depositCents ?: defaultDepositCents
 
         val lease = Lease(
             id = 0L,
@@ -58,11 +69,17 @@ class LeaseUseCasesImpl(
             tenantId = tenantId,
             startDateEpochDay = startDateEpochDay,
             endDateEpochDay = null,
-            rentCents = request.rentCents,
-            chargesCents = request.chargesCents,
-            depositCents = request.depositCents,
+            rentCents = rentCents,
+            chargesCents = chargesCents,
+            depositCents = depositCents,
             rentDueDayOfMonth = request.rentDueDayOfMonth,
-            indexAnniversaryEpochDay = startDateEpochDay
+            indexAnniversaryEpochDay = startDateEpochDay,
+            rentOverridden = request.rentCents?.let { it != defaultRentCents } ?: false,
+            chargesOverridden = request.chargesCents?.let { it != defaultChargesCents } ?: false,
+            depositOverridden = request.depositCents?.let { it != defaultDepositCents } ?: false,
+            housingRentCentsSnapshot = defaultRentCents,
+            housingChargesCentsSnapshot = defaultChargesCents,
+            housingDepositCentsSnapshot = defaultDepositCents
         )
 
         return repository.createLease(lease)
