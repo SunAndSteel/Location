@@ -37,9 +37,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.florent.location.ui.bail.BailDetailScreen
-import com.florent.location.ui.bail.BailDetailViewModel
-import com.florent.location.ui.bail.BailsScreen
+import com.florent.location.ui.lease.LeaseDetailScreen
+import com.florent.location.ui.lease.LeaseDetailViewModel
+import com.florent.location.ui.lease.LeaseListScreen
 import com.florent.location.ui.components.EmptyDetailPane
 import com.florent.location.ui.components.WindowWidthSize
 import com.florent.location.ui.components.windowWidthSize
@@ -277,7 +277,7 @@ private fun TwoPaneContent(
         ) {
             when {
                 isBails -> {
-                    BailsScreen(
+                    LeaseListScreen(
                         onBailClick = { leaseId ->
                             navController.navigate(LocationRoutes.bailDetail(leaseId))
                         },
@@ -341,7 +341,7 @@ private fun LocationNavGraph(
                         message = "Choisissez un bail pour afficher ses détails."
                     )
                 } else {
-                    BailsScreen(
+                    LeaseListScreen(
                         onBailClick = { leaseId ->
                             navController.navigate(LocationRoutes.bailDetail(leaseId))
                         },
@@ -355,9 +355,9 @@ private fun LocationNavGraph(
                 arguments = listOf(navArgument("leaseId") { type = NavType.LongType })
             ) { backStackEntry ->
                 val leaseId = backStackEntry.arguments?.getLong("leaseId") ?: 0L
-                val viewModel: BailDetailViewModel =
+                val viewModel: LeaseDetailViewModel =
                     koinViewModel(parameters = { parametersOf(leaseId) })
-                BailDetailScreen(
+                LeaseDetailScreen(
                     viewModel = viewModel
                 )
             }
