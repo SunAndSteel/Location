@@ -37,6 +37,16 @@ interface LeaseDao {
         LIMIT 1
     """
     )
+    fun observeActiveLeaseForTenant(tenantId: Long): Flow<LeaseEntity?>
+
+    @Query(
+            """
+        SELECT * FROM leases
+        WHERE tenantId = :tenantId
+          AND endDateEpochDay IS NULL
+        LIMIT 1
+    """
+    )
     suspend fun getActiveLeaseForTenant(tenantId: Long): LeaseEntity?
 
     @Query(

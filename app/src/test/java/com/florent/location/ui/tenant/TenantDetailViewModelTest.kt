@@ -2,7 +2,8 @@ package com.florent.location.ui.tenant
 
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.TenantUseCasesImpl
-import com.florent.location.fake.FakeLeaseUseCases
+import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
+import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,10 +26,11 @@ class TenantDetailViewModelTest {
             listOf(Tenant(1L, "Alice", "Durand", null, null))
         )
         val useCases = TenantUseCasesImpl(repository)
+        val observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
         val viewModel = TenantDetailViewModel(
             tenantId = 1L,
             tenantUseCases = useCases,
-            leaseUseCases = FakeLeaseUseCases()
+            observeTenantSituation = observeTenantSituation
         )
 
         advanceUntilIdle()
@@ -43,10 +45,11 @@ class TenantDetailViewModelTest {
     fun `missing tenant leads to empty state`() = runTest {
         val repository = FakeTenantRepository()
         val useCases = TenantUseCasesImpl(repository)
+        val observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
         val viewModel = TenantDetailViewModel(
             tenantId = 99L,
             tenantUseCases = useCases,
-            leaseUseCases = FakeLeaseUseCases()
+            observeTenantSituation = observeTenantSituation
         )
 
         advanceUntilIdle()

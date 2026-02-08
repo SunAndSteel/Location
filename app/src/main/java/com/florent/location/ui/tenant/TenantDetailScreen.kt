@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +32,7 @@ import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
+import com.florent.location.ui.components.tenantSituationLabel
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.Icons
@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
 import com.florent.location.domain.model.Tenant
+import com.florent.location.domain.model.TenantSituation
 
 @Composable
 fun TenantDetailScreen(
@@ -125,7 +126,7 @@ private fun TenantDetailContent(
                                 modifier = Modifier.weight(0.6f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                TenantHeroSection(tenant = tenant)
+                                TenantHeroSection(tenant = tenant, situation = state.situation)
                                 TenantContactSection(tenant = tenant)
                             }
                             Column(
@@ -154,7 +155,7 @@ private fun TenantDetailContent(
                         }
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
-                            TenantHeroSection(tenant = tenant)
+                            TenantHeroSection(tenant = tenant, situation = state.situation)
                             TenantContactSection(tenant = tenant)
                             AppSectionHeader(title = "Actions")
                             PrimaryActionRow(
@@ -185,9 +186,9 @@ private fun TenantDetailContent(
 @Composable
 private fun TenantHeroSection(
     tenant: Tenant,
+    situation: TenantSituation?,
     modifier: Modifier = Modifier
 ) {
-    val status = if (tenant.phone != null || tenant.email != null) "Contact" else null
     val heroValue = tenant.phone ?: tenant.email ?: "Aucun"
     val heroLabel = when {
         tenant.phone != null -> "Téléphone"
@@ -198,7 +199,7 @@ private fun TenantHeroSection(
         title = "${tenant.firstName} ${tenant.lastName}",
         heroValue = heroValue,
         heroLabel = heroLabel,
-        status = status,
+        status = situation?.let { tenantSituationLabel(it) },
         facts = listOfNotNull(
             tenant.email?.let { "Email" to it },
             tenant.phone?.let { "Téléphone" to it }

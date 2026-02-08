@@ -3,6 +3,8 @@ package com.florent.location.ui.tenant
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.TenantUseCasesImpl
 import com.florent.location.domain.usecase.tenant.TenantUseCases
+import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
+import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,7 +29,10 @@ class TenantListViewModelTest {
     fun `initial state transitions to empty`() = runTest {
         val repository = FakeTenantRepository()
         val useCases = TenantUseCasesImpl(repository)
-        val viewModel = TenantListViewModel(useCases)
+        val viewModel = TenantListViewModel(
+            useCases = useCases,
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+        )
 
         advanceUntilIdle()
 
@@ -47,16 +52,19 @@ class TenantListViewModelTest {
             Tenant(3L, "Claire", "Dupont", null, "claire@example.com")
         )
         repository.setTenants(tenants)
-        val viewModel = TenantListViewModel(useCases)
+        val viewModel = TenantListViewModel(
+            useCases = useCases,
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+        )
 
         advanceUntilIdle()
         viewModel.onEvent(TenantListUiEvent.SearchQueryChanged("mar"))
         advanceUntilIdle()
-        assertEquals(listOf(tenants[1]), viewModel.uiState.value.tenants)
+        assertEquals(listOf(tenants[1]), viewModel.uiState.value.tenants.map { it.tenant })
 
         viewModel.onEvent(TenantListUiEvent.SearchQueryChanged("ALICE"))
         advanceUntilIdle()
-        assertEquals(listOf(tenants[0]), viewModel.uiState.value.tenants)
+        assertEquals(listOf(tenants[0]), viewModel.uiState.value.tenants.map { it.tenant })
 
         viewModel.onEvent(TenantListUiEvent.SearchQueryChanged("example.com"))
         advanceUntilIdle()
@@ -64,7 +72,7 @@ class TenantListViewModelTest {
 
         viewModel.onEvent(TenantListUiEvent.SearchQueryChanged("123"))
         advanceUntilIdle()
-        assertEquals(listOf(tenants[0]), viewModel.uiState.value.tenants)
+        assertEquals(listOf(tenants[0]), viewModel.uiState.value.tenants.map { it.tenant })
     }
 
     @Test
@@ -76,12 +84,18 @@ class TenantListViewModelTest {
             )
         )
         val useCases = TenantUseCasesImpl(repository)
-        val viewModel = TenantListViewModel(useCases)
+        val viewModel = TenantListViewModel(
+            useCases = useCases,
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+        )
 
         advanceUntilIdle()
         viewModel.onEvent(TenantListUiEvent.DeleteTenantClicked(1L))
         advanceUntilIdle()
-        assertEquals(listOf(Tenant(2L, "Bob", "Martin", null, null)), viewModel.uiState.value.tenants)
+        assertEquals(
+            listOf(Tenant(2L, "Bob", "Martin", null, null)),
+            viewModel.uiState.value.tenants.map { it.tenant }
+        )
 
         repository.setActiveLease(2L, true)
         viewModel.onEvent(TenantListUiEvent.DeleteTenantClicked(2L))
@@ -99,7 +113,8 @@ class TenantListViewModelTest {
                 flow {
                     throw IllegalStateException("boom")
                 }
-            )
+            ),
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
         )
 
         advanceUntilIdle()

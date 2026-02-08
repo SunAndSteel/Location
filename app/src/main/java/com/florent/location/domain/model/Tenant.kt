@@ -8,5 +8,6 @@ data class Tenant(
     val firstName: String,
     val lastName: String,
     val phone: String?,
-    val email: String?
+    val email: String?,
+    val status: TenantStatus = TenantStatus.ACTIVE
 )

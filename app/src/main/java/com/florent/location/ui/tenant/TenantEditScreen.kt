@@ -7,26 +7,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.menuAnchor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.AppSectionHeader
 import com.florent.location.ui.components.ExpressiveLoadingState
 import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.tenantStatusLabel
 import com.florent.location.ui.components.UiTokens
+import com.florent.location.ui.lease.ExposedDropdownMenu
+import com.florent.location.domain.model.TenantStatus
 
 @Composable
 fun TenantEditScreen(
@@ -80,54 +85,96 @@ private fun TenantEditContent(
                     title = "Identité",
                     supportingText = "Informations principales du locataire."
                 )
-            SectionCard {
-                OutlinedTextField(
-                    value = state.firstName,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, it))
-                    },
-                    label = { Text(text = "Prénom") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = state.lastName,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.LastName, it))
-                    },
-                    label = { Text(text = "Nom") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+                SectionCard {
+                    OutlinedTextField(
+                        value = state.firstName,
+                        onValueChange = {
+                            onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, it))
+                        },
+                        label = { Text(text = "Prénom") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = state.lastName,
+                        onValueChange = {
+                            onEvent(TenantEditUiEvent.FieldChanged(TenantField.LastName, it))
+                        },
+                        label = { Text(text = "Nom") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
-            AppSectionHeader(
-                title = "Contact",
-                supportingText = "Coordonnées du locataire."
-            )
-            SectionCard {
-                OutlinedTextField(
-                    value = state.phone,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.Phone, it))
-                    },
-                    label = { Text(text = "Téléphone") },
-                    modifier = Modifier.fillMaxWidth()
+                AppSectionHeader(
+                    title = "Statut",
+                    supportingText = "Situation du locataire."
                 )
-                OutlinedTextField(
-                    value = state.email,
-                    onValueChange = {
-                        onEvent(TenantEditUiEvent.FieldChanged(TenantField.Email, it))
-                    },
-                    label = { Text(text = "Email") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+                SectionCard {
+                    ExposedDropdownMenuBox(
+                        expanded = state.statusDropdownExpanded,
+                        onExpandedChange = { onEvent(TenantEditUiEvent.StatusDropdownExpanded(it)) }
+                    ) {
+                        OutlinedTextField(
+                            value = tenantStatusLabel(state.status),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(text = "Statut") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    expanded = state.statusDropdownExpanded
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = state.statusDropdownExpanded,
+                            onDismissRequest = {
+                                onEvent(TenantEditUiEvent.StatusDropdownExpanded(false))
+                            }
+                        ) {
+                            TenantStatus.entries.forEach { status ->
+                                DropdownMenuItem(
+                                    text = { Text(text = tenantStatusLabel(status)) },
+                                    onClick = {
+                                        onEvent(TenantEditUiEvent.StatusChanged(status))
+                                        onEvent(TenantEditUiEvent.StatusDropdownExpanded(false))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
 
-            if (state.errorMessage != null) {
-                Text(
-                    text = state.errorMessage,
-                    color = MaterialTheme.colorScheme.error
+                AppSectionHeader(
+                    title = "Contact",
+                    supportingText = "Coordonnées du locataire."
                 )
-            }
+                SectionCard {
+                    OutlinedTextField(
+                        value = state.phone,
+                        onValueChange = {
+                            onEvent(TenantEditUiEvent.FieldChanged(TenantField.Phone, it))
+                        },
+                        label = { Text(text = "Téléphone") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = state.email,
+                        onValueChange = {
+                            onEvent(TenantEditUiEvent.FieldChanged(TenantField.Email, it))
+                        },
+                        label = { Text(text = "Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                if (state.errorMessage != null) {
+                    Text(
+                        text = state.errorMessage,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
 
                 PrimaryActionRow(
                     primaryLabel = "Enregistrer",
