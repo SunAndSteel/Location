@@ -131,6 +131,7 @@ private fun HousingDetailContent(
                                 ) {
                                     HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
                                     HousingInfoSection(housing = housing)
+                                    HousingAccessSection(housing = housing)
                                     HousingFinancialSection(housing = housing)
                                 }
                                 Column(
@@ -160,6 +161,7 @@ private fun HousingDetailContent(
                             Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
                                 HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
                                 HousingInfoSection(housing = housing)
+                                HousingAccessSection(housing = housing)
                                 HousingFinancialSection(housing = housing)
                                 AppSectionHeader(title = "Actions")
                                 PrimaryActionRow(
@@ -246,6 +248,28 @@ private fun HousingFinancialSection(
             LabeledValueRow(label = "Loyer", value = formatCurrency(housing.defaultRentCents))
             LabeledValueRow(label = "Charges", value = formatCurrency(housing.defaultChargesCents))
             LabeledValueRow(label = "Caution", value = formatCurrency(housing.depositCents))
+        }
+    }
+}
+
+@Composable
+private fun HousingAccessSection(
+    housing: Housing,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+    ) {
+        AppSectionHeader(
+            title = "Accès et compteurs",
+            supportingText = "Informations liées à la boîte aux lettres et aux compteurs."
+        )
+        SectionCard {
+            LabeledValueRow(label = "Boîte aux lettres", value = housing.mailboxLabel ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur gaz", value = housing.meterGas ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur électricité", value = housing.meterElectricity ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur eau", value = housing.meterWater ?: "Non renseigné")
         }
     }
 }

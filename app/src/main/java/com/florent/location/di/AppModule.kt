@@ -83,17 +83,17 @@ val appModule = module {
     single<HousingRepository> {
         HousingRepositoryImpl(
             housingDao = get(),
+            keyDao = get(),
             leaseDao = get() // utile si tu exposes "logements + bail actif" côté repo
         )
     }
 
     // LeaseRepositoryImpl recommandé avec transaction via db.withTransaction
-    // (createLeaseWithKeys, closeLease, etc.)
+    // (createLease, closeLease, etc.)
     single<LeaseRepository> {
         LeaseRepositoryImpl(
             db = get(),
             leaseDao = get(),
-            keyDao = get(),
             indexationEventDao = get()
         )
     }
@@ -139,7 +139,7 @@ val appModule = module {
 
     // Création de baux
     viewModel {
-        // workflow: choisir logement + locataire, puis save bail + compteurs + clés
+        // workflow: choisir logement + locataire, puis save bail
         LeaseCreateViewModel(
             housingUseCases = get(),
             tenantUseCases = get(),
@@ -150,7 +150,8 @@ val appModule = module {
         LeaseDetailViewModel(
             leaseId = leaseId,
             bailUseCases = get(),
-            leaseUseCases = get()
+            leaseUseCases = get(),
+            housingUseCases = get()
         )
     }
 }

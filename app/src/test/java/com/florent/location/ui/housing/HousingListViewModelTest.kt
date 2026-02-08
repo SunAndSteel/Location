@@ -1,6 +1,7 @@
 package com.florent.location.ui.housing
 
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.Key
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
@@ -97,5 +98,11 @@ class HousingListViewModelTest {
         override suspend fun updateHousing(housing: Housing) = Unit
 
         override suspend fun deleteHousing(id: Long) = Unit
+
+        override fun observeKeysForHousing(housingId: Long): Flow<List<Key>> = flowOf(emptyList())
+
+        override suspend fun addKey(housingId: Long, key: Key): Long = 0L
+
+        override suspend fun deleteKey(keyId: Long) = Unit
     }
 }

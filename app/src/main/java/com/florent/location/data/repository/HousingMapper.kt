@@ -14,6 +14,10 @@ fun HousingEntity.toDomain(): Housing =
         defaultRentCents = defaultRentCents,
         defaultChargesCents = defaultChargesCents,
         depositCents = depositCents,
+        mailboxLabel = mailboxLabel,
+        meterGas = meterGas,
+        meterElectricity = meterElectricity,
+        meterWater = meterWater,
         peb = peb,
         buildingLabel = buildingLabel
     )
@@ -29,6 +33,10 @@ fun Housing.toEntity(): HousingEntity =
         defaultRentCents = defaultRentCents,
         defaultChargesCents = defaultChargesCents,
         depositCents = depositCents,
+        mailboxLabel = mailboxLabel,
+        meterGas = meterGas,
+        meterElectricity = meterElectricity,
+        meterWater = meterWater,
         peb = peb,
         buildingLabel = buildingLabel
     )

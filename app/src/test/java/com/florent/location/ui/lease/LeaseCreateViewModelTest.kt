@@ -77,26 +77,6 @@ class LeaseCreateViewModelTest {
     }
 
     @Test
-    fun `adding and removing keys updates UiState`() = runTest {
-        val housingRepository = FakeHousingRepository()
-        val tenantRepository = FakeTenantRepository()
-        val leaseRepository = FakeLeaseRepository()
-        val viewModel = LeaseCreateViewModel(
-            housingUseCases = HousingUseCasesImpl(housingRepository),
-            tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository)
-        )
-
-        advanceUntilIdle()
-        viewModel.onEvent(LeaseCreateUiEvent.AddKey)
-        viewModel.onEvent(LeaseCreateUiEvent.AddKey)
-        assertEquals(2, viewModel.uiState.value.keys.size)
-
-        viewModel.onEvent(LeaseCreateUiEvent.RemoveKey(0))
-        assertEquals(1, viewModel.uiState.value.keys.size)
-    }
-
-    @Test
     fun `save success triggers success flag and resets saving state`() = runTest {
         val housingRepository = FakeHousingRepository(
             listOf(Housing(id = 1L, city = "Paris", address = "1 rue A"))
@@ -119,9 +99,6 @@ class LeaseCreateViewModelTest {
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "10000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "50000"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, "5"))
-        viewModel.onEvent(LeaseCreateUiEvent.AddKey)
-        viewModel.onEvent(LeaseCreateUiEvent.KeyFieldChanged(0, KeyField.Type, "Badge"))
-        viewModel.onEvent(LeaseCreateUiEvent.KeyFieldChanged(0, KeyField.HandedOverDate, epochDayToDate(1001)))
 
         viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
         advanceUntilIdle()
@@ -150,12 +127,7 @@ class LeaseCreateViewModelTest {
                 rentCents = 100000L,
                 chargesCents = 10000L,
                 depositCents = 50000L,
-                rentDueDayOfMonth = 5,
-                mailboxLabel = null,
-                meterGas = null,
-                meterElectricity = null,
-                meterWater = null,
-                keys = emptyList()
+                rentDueDayOfMonth = 5
             )
         )
 

@@ -1,6 +1,7 @@
 package com.florent.location.domain.repository
 
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.Key
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -31,6 +32,21 @@ interface HousingRepository {
      * Supprime un logement par identifiant.
      */
     suspend fun deleteById(id: Long)
+
+    /**
+     * Observe les clés liées à un logement.
+     */
+    fun observeKeysForHousing(housingId: Long): Flow<List<Key>>
+
+    /**
+     * Insère une clé pour un logement.
+     */
+    suspend fun insertKey(key: Key): Long
+
+    /**
+     * Supprime une clé.
+     */
+    suspend fun deleteKeyById(id: Long)
 
     /**
      * Indique si un bail actif existe pour ce logement.

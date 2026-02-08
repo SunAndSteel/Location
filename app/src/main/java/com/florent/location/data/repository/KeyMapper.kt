@@ -6,16 +6,16 @@ import com.florent.location.domain.model.Key
 fun KeyEntity.toDomain(): Key =
     Key(
         id = id,
-        leaseId = leaseId,
+        housingId = housingId,
         type = type,
         deviceLabel = deviceLabel,
         handedOverEpochDay = handedOverEpochDay
     )
 
-fun Key.toEntity(overrideLeaseId: Long? = null): KeyEntity =
+fun Key.toEntity(overrideHousingId: Long? = null): KeyEntity =
     KeyEntity(
         id = id,
-        leaseId = overrideLeaseId ?: leaseId,
+        housingId = overrideHousingId ?: housingId,
         type = type,
         deviceLabel = deviceLabel,
         handedOverEpochDay = handedOverEpochDay

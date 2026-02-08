@@ -129,6 +129,45 @@ private fun HousingEditContent(
             }
 
             AppSectionHeader(
+                title = "Accès et compteurs",
+                supportingText = "Informations liées à la boîte aux lettres et aux compteurs."
+            )
+            SectionCard {
+                OutlinedTextField(
+                    value = state.mailboxLabel,
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.MailboxLabelChanged(it))
+                    },
+                    label = { Text(text = "Étiquette boîte aux lettres") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterGas,
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.MeterGasChanged(it))
+                    },
+                    label = { Text(text = "Compteur gaz") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterElectricity,
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.MeterElectricityChanged(it))
+                    },
+                    label = { Text(text = "Compteur électricité") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = state.meterWater,
+                    onValueChange = {
+                        onEvent(HousingEditUiEvent.MeterWaterChanged(it))
+                    },
+                    label = { Text(text = "Compteur eau") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            AppSectionHeader(
                 title = "Champs optionnels",
                 supportingText = "Informations complémentaires."
             )

@@ -63,6 +63,7 @@ import com.florent.location.ui.components.WindowWidthSize
 import com.florent.location.ui.components.formatCurrency
 import com.florent.location.ui.components.formatEpochDay
 import com.florent.location.ui.components.windowWidthSize
+import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.model.Key as LeaseKey
 
@@ -148,7 +149,11 @@ private fun LeaseDetailContent(
                                 modifier = Modifier.weight(0.55f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                LeaseSummarySection(lease = lease, isActive = state.isActive)
+                                LeaseSummarySection(
+                                    lease = lease,
+                                    housing = state.housing,
+                                    isActive = state.isActive
+                                )
                                 KeysSection(
                                     keys = state.keys,
                                     onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
@@ -178,7 +183,11 @@ private fun LeaseDetailContent(
                                 .verticalScroll(scrollState),
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
-                            LeaseSummarySection(lease = lease, isActive = state.isActive)
+                            LeaseSummarySection(
+                                lease = lease,
+                                housing = state.housing,
+                                isActive = state.isActive
+                            )
                             IndexationSection(state = state, onEvent = onEvent)
                             KeysSection(
                                 keys = state.keys,
@@ -319,6 +328,7 @@ private fun LeaseDetailContent(
 @Composable
 private fun LeaseSummarySection(
     lease: Lease,
+    housing: Housing?,
     isActive: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -356,19 +366,19 @@ private fun LeaseSummarySection(
                 icon = Icons.Outlined.Person
             )
             if (
-                lease.mailboxLabel != null ||
-                lease.meterGas != null ||
-                lease.meterElectricity != null ||
-                lease.meterWater != null
+                housing?.mailboxLabel != null ||
+                housing?.meterGas != null ||
+                housing?.meterElectricity != null ||
+                housing?.meterWater != null
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
-                    lease.mailboxLabel?.let {
+                    housing?.mailboxLabel?.let {
                         NonInteractiveChip(
                             label = "Boîte $it",
                             icon = Icons.Outlined.Inbox
                         )
                     }
-                    lease.meterGas?.let {
+                    housing?.meterGas?.let {
                         NonInteractiveChip(
                             label = "Gaz $it",
                             icon = Icons.Outlined.Payments
@@ -376,13 +386,13 @@ private fun LeaseSummarySection(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
-                    lease.meterElectricity?.let {
+                    housing?.meterElectricity?.let {
                         NonInteractiveChip(
                             label = "Élec. $it",
                             icon = Icons.Outlined.Payments
                         )
                     }
-                    lease.meterWater?.let {
+                    housing?.meterWater?.let {
                         NonInteractiveChip(
                             label = "Eau $it",
                             icon = Icons.Outlined.Payments

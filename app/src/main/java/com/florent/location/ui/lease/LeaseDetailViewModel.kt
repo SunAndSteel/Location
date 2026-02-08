@@ -2,12 +2,14 @@ package com.florent.location.ui.lease
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.IndexationEvent
 import com.florent.location.domain.model.IndexationPolicy
 import com.florent.location.domain.model.IndexationSimulation
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.usecase.bail.BailUseCases
+import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import java.time.LocalDate
 import java.time.ZoneId
@@ -16,6 +18,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +45,7 @@ data class CloseLeaseDialogState(
 data class LeaseDetailUiState(
     val isLoading: Boolean = true,
     val lease: Lease? = null,
+    val housing: Housing? = null,
     val keys: List<Key> = emptyList(),
     val isActive: Boolean = false,
     val indexationPolicy: IndexationPolicy? = null,
@@ -49,6 +54,13 @@ data class LeaseDetailUiState(
     val errorMessage: String? = null,
     val addKeyDialog: AddKeyDialogState = AddKeyDialogState(),
     val closeLeaseDialog: CloseLeaseDialogState = CloseLeaseDialogState()
+)
+
+private data class LeaseDetailSnapshot(
+    val lease: Lease?,
+    val housing: Housing?,
+    val keys: List<Key>,
+    val events: List<IndexationEvent>
 )
 
 enum class AddKeyField {
@@ -81,7 +93,8 @@ sealed interface LeaseDetailUiEvent {
 class LeaseDetailViewModel(
     private val leaseId: Long,
     private val bailUseCases: BailUseCases,
-    private val leaseUseCases: LeaseUseCases
+    private val leaseUseCases: LeaseUseCases,
+    private val housingUseCases: HousingUseCases
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeaseDetailUiState())
@@ -114,12 +127,25 @@ class LeaseDetailViewModel(
 
     private fun observeLeaseDetail() {
         viewModelScope.launch {
+            val leaseFlow = bailUseCases.observeBail(leaseId)
+            val housingFlow = leaseFlow.flatMapLatest { lease ->
+                lease?.let { housingUseCases.observeHousing(it.housingId) } ?: flowOf(null)
+            }
+            val keysFlow = leaseFlow.flatMapLatest { lease ->
+                lease?.let { housingUseCases.observeKeysForHousing(it.housingId) } ?: flowOf(emptyList())
+            }
             combine(
-                bailUseCases.observeBail(leaseId),
-                leaseUseCases.observeKeysForLease(leaseId),
+                leaseFlow,
+                housingFlow,
+                keysFlow,
                 bailUseCases.observeIndexationEvents(leaseId)
-            ) { lease, keys, events ->
-                Triple(lease, keys, events)
+            ) { lease, housing, keys, events ->
+                LeaseDetailSnapshot(
+                    lease = lease,
+                    housing = housing,
+                    keys = keys,
+                    events = events
+                )
             }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -132,16 +158,19 @@ class LeaseDetailViewModel(
                         )
                     }
                 }
-                .collect { (lease, keys, events) ->
-                    val policy = lease?.let { bailUseCases.buildIndexationPolicy(it, todayEpochDay) }
+                .collect { snapshot ->
+                    val policy = snapshot.lease?.let {
+                        bailUseCases.buildIndexationPolicy(it, todayEpochDay)
+                    }
                     _uiState.update { current ->
                         current.copy(
                             isLoading = false,
-                            lease = lease,
-                            keys = keys,
-                            isActive = lease?.endDateEpochDay == null,
+                            lease = snapshot.lease,
+                            housing = snapshot.housing,
+                            keys = snapshot.keys,
+                            isActive = snapshot.lease?.endDateEpochDay == null,
                             indexationPolicy = policy,
-                            indexationHistory = events,
+                            indexationHistory = snapshot.events,
                             errorMessage = null
                         )
                     }
@@ -181,9 +210,10 @@ class LeaseDetailViewModel(
                 ?: lease.startDateEpochDay
 
             try {
-                leaseUseCases.addKey(
-                    leaseId = lease.id,
+                housingUseCases.addKey(
+                    housingId = lease.housingId,
                     key = Key(
+                        housingId = lease.housingId,
                         type = event.type,
                         deviceLabel = event.deviceLabel,
                         handedOverEpochDay = handedOverEpochDay
@@ -204,7 +234,7 @@ class LeaseDetailViewModel(
     private fun deleteKey(keyId: Long) {
         viewModelScope.launch {
             try {
-                leaseUseCases.deleteKey(keyId)
+                housingUseCases.deleteKey(keyId)
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
             }

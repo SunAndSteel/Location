@@ -1,6 +1,7 @@
 package com.florent.location.domain.usecase.housing
 
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.Key
 import com.florent.location.domain.repository.HousingRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -33,6 +34,21 @@ interface HousingUseCases {
      * La suppression est interdite si un bail actif existe.
      */
     suspend fun deleteHousing(id: Long)
+
+    /**
+     * Observe les clés associées à un logement.
+     */
+    fun observeKeysForHousing(housingId: Long): Flow<List<Key>>
+
+    /**
+     * Ajoute une clé à un logement.
+     */
+    suspend fun addKey(housingId: Long, key: Key): Long
+
+    /**
+     * Supprime une clé.
+     */
+    suspend fun deleteKey(keyId: Long)
 }
 
 /**
@@ -75,5 +91,28 @@ class HousingUseCasesImpl(
             "Suppression impossible: un bail actif existe pour ce logement."
         }
         repository.deleteById(id)
+    }
+
+    override fun observeKeysForHousing(housingId: Long): Flow<List<Key>> =
+        repository.observeKeysForHousing(housingId)
+
+    override suspend fun addKey(housingId: Long, key: Key): Long {
+        require(housingId > 0) { "Le logement est obligatoire." }
+        val type = key.type.trim()
+        require(type.isNotBlank()) { "Le type de clé est obligatoire." }
+        require(key.handedOverEpochDay >= 0) { "La date de remise est obligatoire." }
+
+        val normalized = key.copy(
+            housingId = housingId,
+            type = type,
+            deviceLabel = key.deviceLabel?.trim()?.ifBlank { null }
+        )
+
+        return repository.insertKey(normalized)
+    }
+
+    override suspend fun deleteKey(keyId: Long) {
+        require(keyId > 0) { "Clé invalide." }
+        repository.deleteKeyById(keyId)
     }
 }

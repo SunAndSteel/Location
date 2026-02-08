@@ -1,13 +1,18 @@
 package com.florent.location.ui.lease
 
 import app.cash.turbine.test
+import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.bail.BailUseCasesImpl
+import com.florent.location.domain.usecase.housing.HousingUseCases
+import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.fake.FakeLeaseRepository
+import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
+import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_HOUSING_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
 import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
 import com.florent.location.testutils.MainDispatcherRule
@@ -39,7 +44,8 @@ class LeaseDetailViewModelTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
+        val housingUseCases = buildHousingUseCases()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -60,7 +66,8 @@ class LeaseDetailViewModelTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
+        val housingUseCases = buildHousingUseCases()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
         advanceUntilIdle()
 
@@ -94,7 +101,8 @@ class LeaseDetailViewModelTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
+        val housingUseCases = buildHousingUseCases()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
         advanceUntilIdle()
 
@@ -108,7 +116,7 @@ class LeaseDetailViewModelTest {
             }
             assertEquals(2, initialKeys.keys.size)
 
-            viewModel.onEvent(LeaseDetailUiEvent.DeleteKeyClicked(FakeLeaseRepository.KEY_ID_1))
+            viewModel.onEvent(LeaseDetailUiEvent.DeleteKeyClicked(DEFAULT_KEYS.first().id))
             advanceUntilIdle()
 
             val updated = awaitItem()
@@ -122,7 +130,8 @@ class LeaseDetailViewModelTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
+        val housingUseCases = buildHousingUseCases()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
         advanceUntilIdle()
 
@@ -151,7 +160,8 @@ class LeaseDetailViewModelTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases)
+        val housingUseCases = buildHousingUseCases()
+        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases, housingUseCases)
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -176,7 +186,8 @@ class LeaseDetailViewModelTest {
                     throw IllegalStateException("boom")
                 }
             ),
-            FakeLeaseUseCases()
+            FakeLeaseUseCases(),
+            FakeHousingUseCases()
         )
 
         advanceUntilIdle()
@@ -240,16 +251,53 @@ class LeaseDetailViewModelTest {
 
         override fun observeLease(leaseId: Long): Flow<Lease?> = flowOf(null)
 
-        override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> = flowOf(emptyList())
+        override suspend fun closeLease(leaseId: Long, endEpochDay: Long) = Unit
+    }
 
-        override suspend fun addKey(leaseId: Long, key: Key): Long = 0L
+    private class FakeHousingUseCases : HousingUseCases {
+        override fun observeHousings(): Flow<List<Housing>> = flowOf(emptyList())
+
+        override fun observeHousing(id: Long): Flow<Housing?> = flowOf(null)
+
+        override suspend fun createHousing(housing: Housing): Long = 0L
+
+        override suspend fun updateHousing(housing: Housing) = Unit
+
+        override suspend fun deleteHousing(id: Long) = Unit
+
+        override fun observeKeysForHousing(housingId: Long): Flow<List<Key>> = flowOf(emptyList())
+
+        override suspend fun addKey(housingId: Long, key: Key): Long = 0L
 
         override suspend fun deleteKey(keyId: Long) = Unit
+    }
 
-        override suspend fun closeLease(leaseId: Long, endEpochDay: Long) = Unit
+    private fun buildHousingUseCases(keys: List<Key> = DEFAULT_KEYS): HousingUseCases {
+        val housing = Housing(id = ACTIVE_HOUSING_ID, city = "Bruxelles", address = "Rue A")
+        val repository = FakeHousingRepository(initialHousings = listOf(housing), initialKeys = keys)
+        return HousingUseCasesImpl(repository)
     }
 
     private fun epochDayToDate(epochDay: Long): String {
         return LocalDate.ofEpochDay(epochDay).format(DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+
+    private companion object {
+        val DEFAULT_KEYS = listOf(
+            Key(
+                id = 101L,
+                housingId = ACTIVE_HOUSING_ID,
+                type = "Clé",
+                deviceLabel = "Entrée",
+                handedOverEpochDay = START_EPOCH_DAY
+            ),
+            Key(
+                id = 102L,
+                housingId = ACTIVE_HOUSING_ID,
+                type = "Badge",
+                deviceLabel = "Garage",
+                handedOverEpochDay = START_EPOCH_DAY
+            )
+        )
     }
 }
