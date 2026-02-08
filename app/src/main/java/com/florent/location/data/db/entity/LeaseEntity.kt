@@ -38,5 +38,11 @@ data class LeaseEntity(
         val chargesCents: Long,
         val depositCents: Long = 0L,
         val rentDueDayOfMonth: Int = 1,
-        val indexAnniversaryEpochDay: Long? = null // par défaut startDateEpochDay
+        val indexAnniversaryEpochDay: Long? = null, // par défaut startDateEpochDay
+        val rentOverridden: Boolean = false,
+        val chargesOverridden: Boolean = false,
+        val depositOverridden: Boolean = false,
+        val housingRentCentsSnapshot: Long = 0L,
+        val housingChargesCentsSnapshot: Long = 0L,
+        val housingDepositCentsSnapshot: Long = 0L
 )

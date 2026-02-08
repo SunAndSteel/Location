@@ -23,6 +23,9 @@ class FakeHousingRepository(
     override fun observeHousing(id: Long): Flow<Housing?> =
         housingsFlow.map { housings -> housings.firstOrNull { it.id == id } }
 
+    override suspend fun getHousing(id: Long): Housing? =
+        housingsFlow.value.firstOrNull { it.id == id }
+
     override suspend fun insert(housing: Housing): Long {
         val id = if (housing.id == 0L) nextId++ else housing.id
         val newHousing = housing.copy(id = id)

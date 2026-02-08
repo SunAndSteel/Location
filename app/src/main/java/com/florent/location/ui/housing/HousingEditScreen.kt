@@ -27,6 +27,7 @@ import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.formatCurrency
+import com.florent.location.ui.components.parseEuroInputToCents
 
 @ExperimentalMaterial3Api
 @Composable
@@ -104,27 +105,33 @@ private fun HousingEditContent(
             SectionCard {
                 MoneyField(
                     label = "Loyer (€)",
-                    value = state.defaultRentCents.toString(),
+                    value = state.defaultRent,
                     onValueChange = {
-                        onEvent(HousingEditUiEvent.DefaultRentChanged(it.toLongOrNull() ?: 0L))
+                        onEvent(HousingEditUiEvent.DefaultRentChanged(it))
                     },
-                    supportingText = "Actuel : ${formatCurrency(state.defaultRentCents)}"
+                    supportingText = parseEuroInputToCents(state.defaultRent)?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 750,00."
                 )
                 MoneyField(
                     label = "Charges (€)",
-                    value = state.defaultChargesCents.toString(),
+                    value = state.defaultCharges,
                     onValueChange = {
-                        onEvent(HousingEditUiEvent.DefaultChargesChanged(it.toLongOrNull() ?: 0L))
+                        onEvent(HousingEditUiEvent.DefaultChargesChanged(it))
                     },
-                    supportingText = "Actuel : ${formatCurrency(state.defaultChargesCents)}"
+                    supportingText = parseEuroInputToCents(state.defaultCharges)?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 120,00."
                 )
                 MoneyField(
                     label = "Caution (€)",
-                    value = state.depositCents.toString(),
+                    value = state.deposit,
                     onValueChange = {
-                        onEvent(HousingEditUiEvent.DepositChanged(it.toLongOrNull() ?: 0L))
+                        onEvent(HousingEditUiEvent.DepositChanged(it))
                     },
-                    supportingText = "Actuel : ${formatCurrency(state.depositCents)}"
+                    supportingText = parseEuroInputToCents(state.deposit)?.let {
+                        "Actuel : ${formatCurrency(it)}"
+                    } ?: "Saisissez un montant en euros, ex: 900,00."
                 )
             }
 

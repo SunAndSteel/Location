@@ -230,33 +230,42 @@ private fun LeaseCreateContent(
                 )
                 MoneyField(
                     label = "Loyer (€)",
-                    value = state.rentCents,
+                    value = state.rent,
                     onValueChange = {
                         onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, it))
                     },
-                    supportingText = state.rentCents.toLongOrNull()?.let {
-                        "Actuel : ${formatCurrency(it)}"
-                    } ?: "Saisissez un montant en euros, ex: 750,00"
+                    supportingText = buildAmountSupportingText(
+                        selectedHousingId = state.selectedHousingId,
+                        housingDefaultCents = state.housingDefaultRentCents,
+                        overridden = state.rentOverridden,
+                        fallback = "Saisissez un montant en euros, ex: 750,00"
+                    )
                 )
                 MoneyField(
                     label = "Charges (€)",
-                    value = state.chargesCents,
+                    value = state.charges,
                     onValueChange = {
                         onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, it))
                     },
-                    supportingText = state.chargesCents.toLongOrNull()?.let {
-                        "Actuel : ${formatCurrency(it)}"
-                    } ?: "Saisissez un montant en euros, ex: 120,00"
+                    supportingText = buildAmountSupportingText(
+                        selectedHousingId = state.selectedHousingId,
+                        housingDefaultCents = state.housingDefaultChargesCents,
+                        overridden = state.chargesOverridden,
+                        fallback = "Saisissez un montant en euros, ex: 120,00"
+                    )
                 )
                 MoneyField(
                     label = "Caution (€)",
-                    value = state.depositCents,
+                    value = state.deposit,
                     onValueChange = {
                         onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, it))
                     },
-                    supportingText = state.depositCents.toLongOrNull()?.let {
-                        "Actuel : ${formatCurrency(it)}"
-                    } ?: "Saisissez un montant en euros, ex: 900,00"
+                    supportingText = buildAmountSupportingText(
+                        selectedHousingId = state.selectedHousingId,
+                        housingDefaultCents = state.housingDepositCents,
+                        overridden = state.depositOverridden,
+                        fallback = "Saisissez un montant en euros, ex: 900,00"
+                    )
                 )
                 OutlinedTextField(
                     value = state.rentDueDayOfMonth,
@@ -279,5 +288,20 @@ private fun LeaseCreateContent(
                 }
             }
         }
+    }
+}
+
+private fun buildAmountSupportingText(
+    selectedHousingId: Long?,
+    housingDefaultCents: Long,
+    overridden: Boolean,
+    fallback: String
+): String {
+    if (selectedHousingId == null) return fallback
+    val defaultLabel = "Valeur logement : ${formatCurrency(housingDefaultCents)}"
+    return if (overridden) {
+        "Personnalisé • $defaultLabel"
+    } else {
+        defaultLabel
     }
 }

@@ -8,6 +8,8 @@ import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseCreateRequest
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
+import com.florent.location.ui.components.formatEuroInput
+import com.florent.location.ui.components.parseEuroInputToCents
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,9 +26,15 @@ data class LeaseCreateUiState(
     val selectedHousingId: Long? = null,
     val selectedTenantId: Long? = null,
     val startDate: String = "",
-    val rentCents: String = "",
-    val chargesCents: String = "",
-    val depositCents: String = "",
+    val rent: String = "",
+    val charges: String = "",
+    val deposit: String = "",
+    val housingDefaultRentCents: Long = 0L,
+    val housingDefaultChargesCents: Long = 0L,
+    val housingDepositCents: Long = 0L,
+    val rentOverridden: Boolean = false,
+    val chargesOverridden: Boolean = false,
+    val depositOverridden: Boolean = false,
     val rentDueDayOfMonth: String = "1",
     val housingDropdownExpanded: Boolean = false,
     val tenantDropdownExpanded: Boolean = false,
@@ -109,10 +117,23 @@ class LeaseCreateViewModel(
     }
 
     private fun selectHousing(housingId: Long) {
-        _uiState.update {
-            it.copy(
+        val housing = _uiState.value.housings.firstOrNull { it.id == housingId }
+        _uiState.update { current ->
+            val defaultRent = housing?.defaultRentCents ?: current.housingDefaultRentCents
+            val defaultCharges = housing?.defaultChargesCents ?: current.housingDefaultChargesCents
+            val defaultDeposit = housing?.depositCents ?: current.housingDepositCents
+            current.copy(
                 selectedHousingId = housingId,
                 housingDropdownExpanded = false,
+                rent = housing?.let { formatEuroInput(defaultRent) } ?: current.rent,
+                charges = housing?.let { formatEuroInput(defaultCharges) } ?: current.charges,
+                deposit = housing?.let { formatEuroInput(defaultDeposit) } ?: current.deposit,
+                housingDefaultRentCents = defaultRent,
+                housingDefaultChargesCents = defaultCharges,
+                housingDepositCents = defaultDeposit,
+                rentOverridden = false,
+                chargesOverridden = false,
+                depositOverridden = false,
                 errorMessage = null
             )
         }
@@ -132,9 +153,18 @@ class LeaseCreateViewModel(
         _uiState.update {
             when (field) {
                 LeaseField.StartDate -> it.copy(startDate = value, errorMessage = null)
-                LeaseField.Rent -> it.copy(rentCents = value, errorMessage = null)
-                LeaseField.Charges -> it.copy(chargesCents = value, errorMessage = null)
-                LeaseField.Deposit -> it.copy(depositCents = value, errorMessage = null)
+                LeaseField.Rent -> {
+                    val rentOverridden = isOverridden(value, it.housingDefaultRentCents)
+                    it.copy(rent = value, rentOverridden = rentOverridden, errorMessage = null)
+                }
+                LeaseField.Charges -> {
+                    val chargesOverridden = isOverridden(value, it.housingDefaultChargesCents)
+                    it.copy(charges = value, chargesOverridden = chargesOverridden, errorMessage = null)
+                }
+                LeaseField.Deposit -> {
+                    val depositOverridden = isOverridden(value, it.housingDepositCents)
+                    it.copy(deposit = value, depositOverridden = depositOverridden, errorMessage = null)
+                }
                 LeaseField.RentDueDay -> it.copy(rentDueDayOfMonth = value, errorMessage = null)
             }
         }
@@ -153,9 +183,9 @@ class LeaseCreateViewModel(
             }
 
             val startDateEpochDay = parseEpochDay(current.startDate)
-            val rentCents = current.rentCents.toLongOrNull() ?: 0L
-            val chargesCents = current.chargesCents.toLongOrNull() ?: 0L
-            val depositCents = current.depositCents.toLongOrNull() ?: 0L
+            val rentCents = parseEuroInputToCents(current.rent)
+            val chargesCents = parseEuroInputToCents(current.charges)
+            val depositCents = parseEuroInputToCents(current.deposit)
             val rentDueDay = current.rentDueDayOfMonth.toIntOrNull() ?: 0
 
             val request = LeaseCreateRequest(
@@ -196,5 +226,10 @@ class LeaseCreateViewModel(
         return runCatching {
             LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE).toEpochDay()
         }.getOrNull()
+    }
+
+    private fun isOverridden(value: String, housingDefaultCents: Long): Boolean {
+        val parsed = parseEuroInputToCents(value) ?: return false
+        return parsed != housingDefaultCents
     }
 }

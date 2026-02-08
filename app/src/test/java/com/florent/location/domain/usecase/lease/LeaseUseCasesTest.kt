@@ -1,6 +1,7 @@
 package com.florent.location.domain.usecase.lease
 
 import app.cash.turbine.test
+import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
@@ -23,7 +24,7 @@ class LeaseUseCasesTest {
     @Test
     fun observeLeaseEmitsUpdatesWhenLeaseChanges() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
+        val useCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
 
         useCases.observeLease(ACTIVE_LEASE_ID).test {
             val initial = awaitItem()
@@ -42,7 +43,7 @@ class LeaseUseCasesTest {
     @Test
     fun closeLeaseMarksLeaseInactiveAndEmitsUpdate() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
+        val useCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
 
         useCases.observeLease(ACTIVE_LEASE_ID).test {
             val initial = awaitItem()

@@ -43,7 +43,7 @@ class LeaseDetailViewModelTest {
     fun initialLoadShowsLeaseAndKeys() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
-        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
@@ -65,7 +65,7 @@ class LeaseDetailViewModelTest {
     fun addKeyEventUpdatesKeysList() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
-        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
@@ -100,7 +100,7 @@ class LeaseDetailViewModelTest {
     fun deleteKeyEventUpdatesKeysList() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
-        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
@@ -129,7 +129,7 @@ class LeaseDetailViewModelTest {
     fun closeLeaseEventMarksLeaseInactive() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
-        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
 
@@ -159,7 +159,7 @@ class LeaseDetailViewModelTest {
     fun missingLeaseIdShowsEmptyStateWithoutCrash() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
-        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases, housingUseCases)
 

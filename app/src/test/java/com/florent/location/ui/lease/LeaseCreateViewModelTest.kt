@@ -36,7 +36,7 @@ class LeaseCreateViewModelTest {
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
         )
 
         advanceUntilIdle()
@@ -45,9 +45,9 @@ class LeaseCreateViewModelTest {
         assertFalse(state.isSaving)
         assertFalse(state.isSaved)
         assertEquals("", state.startDate)
-        assertEquals("", state.rentCents)
-        assertEquals("", state.chargesCents)
-        assertEquals("", state.depositCents)
+        assertEquals("", state.rent)
+        assertEquals("", state.charges)
+        assertEquals("", state.deposit)
         assertNull(state.selectedHousingId)
         assertNull(state.selectedTenantId)
     }
@@ -64,7 +64,7 @@ class LeaseCreateViewModelTest {
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
         )
 
         advanceUntilIdle()
@@ -88,16 +88,16 @@ class LeaseCreateViewModelTest {
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
         )
 
         advanceUntilIdle()
         viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
         viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, epochDayToDate(1000)))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "100000"))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "10000"))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "50000"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "1000,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "100,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "500,00"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, "5"))
 
         viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
@@ -118,7 +118,7 @@ class LeaseCreateViewModelTest {
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
         )
         val leaseRepository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
-        val leaseUseCases = LeaseUseCasesImpl(leaseRepository)
+        val leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
         leaseUseCases.createLease(
             LeaseCreateRequest(
                 housingId = 1L,
@@ -141,9 +141,9 @@ class LeaseCreateViewModelTest {
         viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
         viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, epochDayToDate(1000)))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "100000"))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "10000"))
-        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "50000"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "1000,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "100,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "500,00"))
         viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, "5"))
 
         viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)

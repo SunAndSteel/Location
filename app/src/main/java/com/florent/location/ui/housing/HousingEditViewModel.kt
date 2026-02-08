@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.usecase.housing.HousingUseCases
+import com.florent.location.ui.components.formatEuroInput
+import com.florent.location.ui.components.parseEuroInputToCents
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -16,9 +18,9 @@ data class HousingEditUiState(
     val housingId: Long? = null,
     val city: String = "",
     val address: String = "",
-    val defaultRentCents: Long = 0L,
-    val defaultChargesCents: Long = 0L,
-    val depositCents: Long = 0L,
+    val defaultRent: String = "",
+    val defaultCharges: String = "",
+    val deposit: String = "",
     val mailboxLabel: String = "",
     val meterGas: String = "",
     val meterElectricity: String = "",
@@ -32,9 +34,9 @@ data class HousingEditUiState(
 sealed interface HousingEditUiEvent {
     data class CityChanged(val value: String) : HousingEditUiEvent
     data class AddressChanged(val value: String) : HousingEditUiEvent
-    data class DefaultRentChanged(val value: Long) : HousingEditUiEvent
-    data class DefaultChargesChanged(val value: Long) : HousingEditUiEvent
-    data class DepositChanged(val value: Long) : HousingEditUiEvent
+    data class DefaultRentChanged(val value: String) : HousingEditUiEvent
+    data class DefaultChargesChanged(val value: String) : HousingEditUiEvent
+    data class DepositChanged(val value: String) : HousingEditUiEvent
     data class MailboxLabelChanged(val value: String) : HousingEditUiEvent
     data class MeterGasChanged(val value: String) : HousingEditUiEvent
     data class MeterElectricityChanged(val value: String) : HousingEditUiEvent
@@ -66,11 +68,11 @@ class HousingEditViewModel(
             is HousingEditUiEvent.AddressChanged ->
                 _uiState.update { it.copy(address = event.value, errorMessage = null) }
             is HousingEditUiEvent.DefaultRentChanged ->
-                _uiState.update { it.copy(defaultRentCents = event.value) }
+                _uiState.update { it.copy(defaultRent = event.value) }
             is HousingEditUiEvent.DefaultChargesChanged ->
-                _uiState.update { it.copy(defaultChargesCents = event.value) }
+                _uiState.update { it.copy(defaultCharges = event.value) }
             is HousingEditUiEvent.DepositChanged ->
-                _uiState.update { it.copy(depositCents = event.value) }
+                _uiState.update { it.copy(deposit = event.value) }
             is HousingEditUiEvent.MailboxLabelChanged ->
                 _uiState.update { it.copy(mailboxLabel = event.value, errorMessage = null) }
             is HousingEditUiEvent.MeterGasChanged ->
@@ -104,9 +106,9 @@ class HousingEditViewModel(
                                 housingId = housing.id,
                                 city = housing.city,
                                 address = housing.address,
-                                defaultRentCents = housing.defaultRentCents,
-                                defaultChargesCents = housing.defaultChargesCents,
-                                depositCents = housing.depositCents,
+                                defaultRent = formatEuroInput(housing.defaultRentCents),
+                                defaultCharges = formatEuroInput(housing.defaultChargesCents),
+                                deposit = formatEuroInput(housing.depositCents),
                                 mailboxLabel = housing.mailboxLabel.orEmpty(),
                                 meterGas = housing.meterGas.orEmpty(),
                                 meterElectricity = housing.meterElectricity.orEmpty(),
@@ -124,13 +126,16 @@ class HousingEditViewModel(
     private fun saveHousing() {
         viewModelScope.launch {
             val current = _uiState.value
+            val defaultRentCents = parseEuroInputToCents(current.defaultRent) ?: 0L
+            val defaultChargesCents = parseEuroInputToCents(current.defaultCharges) ?: 0L
+            val depositCents = parseEuroInputToCents(current.deposit) ?: 0L
             val housing = Housing(
                 id = current.housingId ?: 0L,
                 city = current.city,
                 address = current.address,
-                defaultRentCents = current.defaultRentCents,
-                defaultChargesCents = current.defaultChargesCents,
-                depositCents = current.depositCents,
+                defaultRentCents = defaultRentCents,
+                defaultChargesCents = defaultChargesCents,
+                depositCents = depositCents,
                 mailboxLabel = current.mailboxLabel.trim().ifBlank { null },
                 meterGas = current.meterGas.trim().ifBlank { null },
                 meterElectricity = current.meterElectricity.trim().ifBlank { null },

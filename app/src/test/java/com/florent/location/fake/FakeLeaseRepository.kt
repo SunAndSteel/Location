@@ -88,7 +88,13 @@ class FakeLeaseRepository(
                 chargesCents = 20000,
                 depositCents = 50000,
                 rentDueDayOfMonth = 5,
-                indexAnniversaryEpochDay = START_EPOCH_DAY
+                indexAnniversaryEpochDay = START_EPOCH_DAY,
+                rentOverridden = false,
+                chargesOverridden = false,
+                depositOverridden = false,
+                housingRentCentsSnapshot = 100000,
+                housingChargesCentsSnapshot = 20000,
+                housingDepositCentsSnapshot = 50000
             )
             return FakeLeaseRepository(listOf(lease))
         }

@@ -19,6 +19,11 @@ interface HousingRepository {
     fun observeHousing(id: Long): Flow<Housing?>
 
     /**
+     * Récupère un logement par identifiant.
+     */
+    suspend fun getHousing(id: Long): Housing?
+
+    /**
      * Insère un logement et renvoie son identifiant.
      */
     suspend fun insert(housing: Housing): Long
