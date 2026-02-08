@@ -131,8 +131,8 @@ private fun TenantListContent(
                     TenantContextPanel(
                         total = state.tenants.size,
                         selectedName = state.tenants.firstOrNull {
-                            it.id == state.selectedTenantId
-                        }?.let { "${it.firstName} ${it.lastName}" },
+                            it.tenant.id == state.selectedTenantId
+                        }?.let { "${it.tenant.firstName} ${it.tenant.lastName}" },
                         modifier = Modifier.weight(0.6f)
                     )
                 }
@@ -207,13 +207,15 @@ private fun TenantListBody(
                 contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
             ) {
-                items(state.tenants, key = { it.id }) { tenant ->
+                items(state.tenants, key = { it.tenant.id }) { item ->
+                    val tenant = item.tenant
                     val openTenant = {
                         onEvent(TenantListUiEvent.TenantClicked(tenant.id))
                         onTenantClick(tenant.id)
                     }
                     TenantCard(
                         tenant = tenant,
+                        situation = item.situation,
                         onOpen = openTenant,
                         isSelected = tenant.id == state.selectedTenantId,
                         modifier = Modifier.fillMaxWidth()

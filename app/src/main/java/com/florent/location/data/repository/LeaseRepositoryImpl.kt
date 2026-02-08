@@ -42,6 +42,11 @@ class LeaseRepositoryImpl(
             entity?.toDomain()
         }
 
+    override fun observeActiveLeaseForTenant(tenantId: Long): Flow<Lease?> =
+        leaseDao.observeActiveLeaseForTenant(tenantId).map { entity ->
+            entity?.toDomain()
+        }
+
     override fun observeActiveLeases(): Flow<List<Lease>> =
         leaseDao.observeActiveLeases().map { entities ->
             entities.map { it.toDomain() }

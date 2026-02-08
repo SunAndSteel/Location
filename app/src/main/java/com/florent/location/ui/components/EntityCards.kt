@@ -30,10 +30,12 @@ import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.model.Tenant
+import com.florent.location.domain.model.TenantSituation
 
 @Composable
 fun TenantCard(
     tenant: Tenant,
+    situation: TenantSituation,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
     isSelected: Boolean = false
@@ -60,9 +62,7 @@ fun TenantCard(
                     text = "${tenant.firstName} ${tenant.lastName}",
                     style = MaterialTheme.typography.titleLarge
                 )
-                if (hasContact) {
-                    StatusBadge(text = "Contact")
-                }
+                StatusBadge(text = tenantSituationLabel(situation))
             }
             Spacer(modifier = Modifier.height(12.dp))
             val primaryContact = tenant.phone ?: tenant.email ?: "Aucun"

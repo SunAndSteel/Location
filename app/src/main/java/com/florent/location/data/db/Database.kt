@@ -22,7 +22,7 @@ import com.florent.location.data.db.entity.TenantEntity
                     KeyEntity::class,
                     IndexationEventEntity::class
                 ],
-        version = 2,
+        version = 3,
         exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

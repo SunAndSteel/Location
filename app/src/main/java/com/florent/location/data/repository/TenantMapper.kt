@@ -2,6 +2,7 @@ package com.florent.location.data.repository
 
 import com.florent.location.data.db.entity.TenantEntity
 import com.florent.location.domain.model.Tenant
+import com.florent.location.domain.model.TenantStatus
 
 /**
  * Transforme une entité Room en modèle de domaine.
@@ -13,7 +14,7 @@ fun TenantEntity.toDomain() : Tenant =
         lastName = lastName,
         phone = phone,
         email = email,
-
+        status = TenantStatus.entries.firstOrNull { it.name == status } ?: TenantStatus.INACTIVE
     )
 
 
@@ -27,4 +28,5 @@ fun Tenant.toEntity(): TenantEntity =
         lastName = lastName,
         phone = phone,
         email = email,
+        status = status.name
     )

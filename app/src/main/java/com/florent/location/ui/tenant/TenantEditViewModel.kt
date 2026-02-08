@@ -3,6 +3,7 @@ package com.florent.location.ui.tenant
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Tenant
+import com.florent.location.domain.model.TenantStatus
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,8 @@ data class TenantEditUiState(
     val lastName: String = "",
     val phone: String = "",
     val email: String = "",
+    val status: TenantStatus = TenantStatus.ACTIVE,
+    val statusDropdownExpanded: Boolean = false,
     val errorMessage: String? = null,
     val isSaved: Boolean = false
 )
@@ -31,6 +34,8 @@ enum class TenantField {
 
 sealed interface TenantEditUiEvent {
     data class FieldChanged(val field: TenantField, val value: String) : TenantEditUiEvent
+    data class StatusChanged(val status: TenantStatus) : TenantEditUiEvent
+    data class StatusDropdownExpanded(val expanded: Boolean) : TenantEditUiEvent
     data object SaveClicked : TenantEditUiEvent
 }
 
@@ -51,6 +56,9 @@ class TenantEditViewModel(
     fun onEvent(event: TenantEditUiEvent) {
         when (event) {
             is TenantEditUiEvent.FieldChanged -> updateField(event.field, event.value)
+            is TenantEditUiEvent.StatusChanged -> updateStatus(event.status)
+            is TenantEditUiEvent.StatusDropdownExpanded ->
+                _uiState.update { it.copy(statusDropdownExpanded = event.expanded) }
             TenantEditUiEvent.SaveClicked -> saveTenant()
         }
     }
@@ -74,6 +82,7 @@ class TenantEditViewModel(
                                 lastName = tenant.lastName,
                                 phone = tenant.phone.orEmpty(),
                                 email = tenant.email.orEmpty(),
+                                status = tenant.status,
                                 errorMessage = null
                             )
                         }
@@ -101,7 +110,8 @@ class TenantEditViewModel(
                 firstName = current.firstName.trim(),
                 lastName = current.lastName.trim(),
                 phone = current.phone.trim().ifBlank { null },
-                email = current.email.trim().ifBlank { null }
+                email = current.email.trim().ifBlank { null },
+                status = current.status
             )
             try {
                 if (current.tenantId == null) {
@@ -114,5 +124,9 @@ class TenantEditViewModel(
                 _uiState.update { it.copy(errorMessage = error.message, isSaved = false) }
             }
         }
+    }
+
+    private fun updateStatus(status: TenantStatus) {
+        _uiState.update { it.copy(status = status, errorMessage = null) }
     }
 }
