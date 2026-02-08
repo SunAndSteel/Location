@@ -10,6 +10,10 @@ data class Housing(
     val defaultRentCents: Long = 0L,
     val defaultChargesCents: Long = 0L,
     val depositCents: Long = 0L,
+    val mailboxLabel: String? = null,
+    val meterGas: String? = null,
+    val meterElectricity: String? = null,
+    val meterWater: String? = null,
     val peb: String? = null,
     val buildingLabel: String? = null
 )

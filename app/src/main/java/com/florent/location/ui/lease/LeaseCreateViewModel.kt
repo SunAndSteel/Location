@@ -3,7 +3,6 @@ package com.florent.location.ui.lease
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Housing
-import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseCreateRequest
@@ -18,12 +17,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class KeyDraft(
-    val type: String = "",
-    val deviceLabel: String = "",
-    val handedOverDate: String = ""
-)
-
 data class LeaseCreateUiState(
     val isLoading: Boolean = true,
     val housings: List<Housing> = emptyList(),
@@ -35,11 +28,6 @@ data class LeaseCreateUiState(
     val chargesCents: String = "",
     val depositCents: String = "",
     val rentDueDayOfMonth: String = "1",
-    val mailboxLabel: String = "",
-    val meterGas: String = "",
-    val meterElectricity: String = "",
-    val meterWater: String = "",
-    val keys: List<KeyDraft> = emptyList(),
     val housingDropdownExpanded: Boolean = false,
     val tenantDropdownExpanded: Boolean = false,
     val isSaving: Boolean = false,
@@ -53,28 +41,15 @@ enum class LeaseField {
     Rent,
     Charges,
     Deposit,
-    RentDueDay,
-    MailboxLabel,
-    MeterGas,
-    MeterElectricity,
-    MeterWater
-}
-
-enum class KeyField {
-    Type,
-    DeviceLabel,
-    HandedOverDate
+    RentDueDay
 }
 
 sealed interface LeaseCreateUiEvent {
     data class SelectHousing(val housingId: Long) : LeaseCreateUiEvent
     data class SelectTenant(val tenantId: Long) : LeaseCreateUiEvent
     data class FieldChanged(val field: LeaseField, val value: String) : LeaseCreateUiEvent
-    data class KeyFieldChanged(val index: Int, val field: KeyField, val value: String) : LeaseCreateUiEvent
     data class HousingDropdownExpanded(val expanded: Boolean) : LeaseCreateUiEvent
     data class TenantDropdownExpanded(val expanded: Boolean) : LeaseCreateUiEvent
-    data object AddKey : LeaseCreateUiEvent
-    data class RemoveKey(val index: Int) : LeaseCreateUiEvent
     data object SaveClicked : LeaseCreateUiEvent
 }
 
@@ -96,13 +71,10 @@ class LeaseCreateViewModel(
             is LeaseCreateUiEvent.SelectHousing -> selectHousing(event.housingId)
             is LeaseCreateUiEvent.SelectTenant -> selectTenant(event.tenantId)
             is LeaseCreateUiEvent.FieldChanged -> updateField(event.field, event.value)
-            is LeaseCreateUiEvent.KeyFieldChanged -> updateKeyField(event.index, event.field, event.value)
             is LeaseCreateUiEvent.HousingDropdownExpanded ->
                 _uiState.update { it.copy(housingDropdownExpanded = event.expanded) }
             is LeaseCreateUiEvent.TenantDropdownExpanded ->
                 _uiState.update { it.copy(tenantDropdownExpanded = event.expanded) }
-            LeaseCreateUiEvent.AddKey -> addKey()
-            is LeaseCreateUiEvent.RemoveKey -> removeKey(event.index)
             LeaseCreateUiEvent.SaveClicked -> saveLease()
         }
     }
@@ -164,43 +136,6 @@ class LeaseCreateViewModel(
                 LeaseField.Charges -> it.copy(chargesCents = value, errorMessage = null)
                 LeaseField.Deposit -> it.copy(depositCents = value, errorMessage = null)
                 LeaseField.RentDueDay -> it.copy(rentDueDayOfMonth = value, errorMessage = null)
-                LeaseField.MailboxLabel -> it.copy(mailboxLabel = value)
-                LeaseField.MeterGas -> it.copy(meterGas = value)
-                LeaseField.MeterElectricity -> it.copy(meterElectricity = value)
-                LeaseField.MeterWater -> it.copy(meterWater = value)
-            }
-        }
-    }
-
-    private fun updateKeyField(index: Int, field: KeyField, value: String) {
-        _uiState.update { current ->
-            val updatedKeys = current.keys.toMutableList()
-            if (index in updatedKeys.indices) {
-                val key = updatedKeys[index]
-                updatedKeys[index] = when (field) {
-                    KeyField.Type -> key.copy(type = value)
-                    KeyField.DeviceLabel -> key.copy(deviceLabel = value)
-                    KeyField.HandedOverDate -> key.copy(handedOverDate = value)
-                }
-            }
-            current.copy(keys = updatedKeys, errorMessage = null)
-        }
-    }
-
-    private fun addKey() {
-        _uiState.update { current ->
-            current.copy(keys = current.keys + KeyDraft())
-        }
-    }
-
-    private fun removeKey(index: Int) {
-        _uiState.update { current ->
-            if (index !in current.keys.indices) {
-                current
-            } else {
-                val updatedKeys = current.keys.toMutableList()
-                updatedKeys.removeAt(index)
-                current.copy(keys = updatedKeys)
             }
         }
     }
@@ -223,19 +158,6 @@ class LeaseCreateViewModel(
             val depositCents = current.depositCents.toLongOrNull() ?: 0L
             val rentDueDay = current.rentDueDayOfMonth.toIntOrNull() ?: 0
 
-            val keys = current.keys.map { draft ->
-                val handedOverEpochDay = parseEpochDay(draft.handedOverDate)
-                    ?: startDateEpochDay
-                    ?: 0L
-                Key(
-                    id = 0L,
-                    leaseId = 0L,
-                    type = draft.type.trim(),
-                    deviceLabel = draft.deviceLabel.trim().ifBlank { null },
-                    handedOverEpochDay = handedOverEpochDay
-                )
-            }
-
             val request = LeaseCreateRequest(
                 housingId = current.selectedHousingId,
                 tenantId = current.selectedTenantId,
@@ -243,12 +165,7 @@ class LeaseCreateViewModel(
                 rentCents = rentCents,
                 chargesCents = chargesCents,
                 depositCents = depositCents,
-                rentDueDayOfMonth = rentDueDay,
-                mailboxLabel = current.mailboxLabel.trim().ifBlank { null },
-                meterGas = current.meterGas.trim().ifBlank { null },
-                meterElectricity = current.meterElectricity.trim().ifBlank { null },
-                meterWater = current.meterWater.trim().ifBlank { null },
-                keys = keys
+                rentDueDayOfMonth = rentDueDay
             )
 
             try {

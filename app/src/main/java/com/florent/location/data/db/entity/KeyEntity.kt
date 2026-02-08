@@ -10,18 +10,18 @@ import androidx.room.PrimaryKey
         foreignKeys =
                 [
                         ForeignKey(
-                                entity = LeaseEntity::class,
+                                entity = HousingEntity::class,
                                 parentColumns = ["id"],
-                                childColumns = ["leaseId"],
+                                childColumns = ["housingId"],
                                 onDelete =
-                                        ForeignKey.CASCADE // si tu supprimes un bail, tu supprimes
+                                        ForeignKey.CASCADE // si tu supprimes un logement, tu supprimes
                                 // les clés associées
                                 )],
-        indices = [Index(value = ["leaseId"])]
+        indices = [Index(value = ["housingId"])]
 )
 data class KeyEntity(
         @PrimaryKey(autoGenerate = true) val id: Long = 0L,
-        val leaseId: Long,
+        val housingId: Long,
         val type: String, // "Clé", "Badge", "Télécommande", etc.
         val deviceLabel: String? = null, // "Garage", "Portail", ...
         val handedOverEpochDay: Long // LocalDate.toEpochDay()

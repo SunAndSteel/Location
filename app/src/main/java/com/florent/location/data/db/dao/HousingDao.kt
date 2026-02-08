@@ -23,10 +23,6 @@ interface HousingDao {
             l.chargesCents AS lease_chargesCents,
             l.depositCents AS lease_depositCents,
             l.rentDueDayOfMonth AS lease_rentDueDayOfMonth,
-            l.mailboxLabel AS lease_mailboxLabel,
-            l.meterGas AS lease_meterGas,
-            l.meterElectricity AS lease_meterElectricity,
-            l.meterWater AS lease_meterWater,
             l.indexAnniversaryEpochDay AS lease_indexAnniversaryEpochDay
         FROM housings h
         LEFT JOIN leases l 

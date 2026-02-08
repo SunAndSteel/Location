@@ -1,8 +1,10 @@
 package com.florent.location.data.repository
 
 import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.Key
 import com.florent.location.domain.repository.HousingRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -12,6 +14,7 @@ import kotlinx.coroutines.flow.map
  */
 class HousingRepositoryImpl(
     private val housingDao: HousingDao,
+    private val keyDao: KeyDao,
     private val leaseDao: LeaseDao
 ) : HousingRepository {
 
@@ -49,6 +52,19 @@ class HousingRepositoryImpl(
      */
     override suspend fun deleteById(id: Long) {
         housingDao.deleteById(id)
+    }
+
+    override fun observeKeysForHousing(housingId: Long): Flow<List<Key>> =
+        keyDao.observeKeysForHousing(housingId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+
+    override suspend fun insertKey(key: Key): Long =
+        keyDao.insert(key.toEntity())
+
+    override suspend fun deleteKeyById(id: Long) {
+        val deleted = keyDao.deleteById(id)
+        require(deleted == 1) { "Clé introuvable." }
     }
 
     /**

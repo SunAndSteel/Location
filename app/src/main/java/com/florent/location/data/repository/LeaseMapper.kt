@@ -14,10 +14,6 @@ fun LeaseEntity.toDomain() : Lease =
         chargesCents = chargesCents,
         depositCents = depositCents,
         rentDueDayOfMonth = rentDueDayOfMonth,
-        mailboxLabel = mailboxLabel,
-        meterGas = meterGas,
-        meterElectricity = meterElectricity,
-        meterWater = meterWater,
         indexAnniversaryEpochDay = indexAnniversaryEpochDay
     )
 
@@ -33,9 +29,5 @@ fun Lease.toEntity() : LeaseEntity =
         chargesCents = chargesCents,
         depositCents = depositCents,
         rentDueDayOfMonth = rentDueDayOfMonth,
-        mailboxLabel = mailboxLabel,
-        meterGas = meterGas,
-        meterElectricity = meterElectricity,
-        meterWater = meterWater,
         indexAnniversaryEpochDay = indexAnniversaryEpochDay
     )

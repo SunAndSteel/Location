@@ -22,6 +22,10 @@ data class HousingEntity(
         val defaultRentCents: Long = 0L,
         val defaultChargesCents: Long = 0L,
         val depositCents: Long = 0L,
+        val mailboxLabel: String? = null,
+        val meterGas: String? = null,
+        val meterElectricity: String? = null,
+        val meterWater: String? = null,
         val peb: String? = null, // ex: "C", ou "PEB C - 2021"
         val buildingLabel: String? = null // ex: "Bâtiment A"
 )

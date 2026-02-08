@@ -3,10 +3,8 @@ package com.florent.location.data.repository
 import androidx.room.withTransaction
 import com.florent.location.data.db.AppDatabase
 import com.florent.location.data.db.dao.IndexationEventDao
-import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.domain.model.IndexationEvent
-import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.repository.LeaseRepository
 import kotlinx.coroutines.flow.Flow
@@ -15,25 +13,17 @@ import kotlinx.coroutines.flow.map
 class LeaseRepositoryImpl(
     private val db: AppDatabase,
     private val leaseDao: LeaseDao,
-    private val keyDao: KeyDao,
     private val indexationEventDao: IndexationEventDao
 ) : LeaseRepository {
-    override suspend fun createLeaseWithKeys(
-        lease: Lease,
-        keys: List<Key>
+    override suspend fun createLease(
+        lease: Lease
     ): Long {
         return db.withTransaction {
             val leaseEntity = lease.toEntity()
             val existing = leaseDao.getActiveLeaseForHousing(leaseEntity.housingId)
             require(existing == null) { "Un bail actif existe déjà pour ce logement." }
 
-            val leaseId = leaseDao.insert(leaseEntity)
-
-            keys.forEach { key ->
-                keyDao.insert(key.toEntity(overrideLeaseId = leaseId))
-            }
-
-            leaseId
+            leaseDao.insert(leaseEntity)
         }
     }
 
@@ -59,26 +49,6 @@ class LeaseRepositoryImpl(
 
     override suspend fun getLease(leaseId: Long): Lease? =
         leaseDao.getById(leaseId)?.toDomain()
-
-    override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> =
-        keyDao.observeKeysForLease(leaseId).map { entities ->
-            entities.map { it.toDomain() }
-        }
-
-    override suspend fun insertKey(key: Key): Long {
-        return db.withTransaction {
-            val lease = leaseDao.getById(key.leaseId)
-            require(lease != null) { "Bail introuvable." }
-            keyDao.insert(key.toEntity())
-        }
-    }
-
-    override suspend fun deleteKeyById(id: Long) {
-        db.withTransaction {
-            val deleted = keyDao.deleteById(id)
-            require(deleted == 1) { "Clé introuvable." }
-        }
-    }
 
     override suspend fun housingExists(housingId: Long): Boolean =
         db.housingDao().exists(housingId)

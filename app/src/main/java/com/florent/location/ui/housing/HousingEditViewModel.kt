@@ -19,6 +19,10 @@ data class HousingEditUiState(
     val defaultRentCents: Long = 0L,
     val defaultChargesCents: Long = 0L,
     val depositCents: Long = 0L,
+    val mailboxLabel: String = "",
+    val meterGas: String = "",
+    val meterElectricity: String = "",
+    val meterWater: String = "",
     val peb: String? = null,
     val buildingLabel: String? = null,
     val errorMessage: String? = null,
@@ -31,6 +35,10 @@ sealed interface HousingEditUiEvent {
     data class DefaultRentChanged(val value: Long) : HousingEditUiEvent
     data class DefaultChargesChanged(val value: Long) : HousingEditUiEvent
     data class DepositChanged(val value: Long) : HousingEditUiEvent
+    data class MailboxLabelChanged(val value: String) : HousingEditUiEvent
+    data class MeterGasChanged(val value: String) : HousingEditUiEvent
+    data class MeterElectricityChanged(val value: String) : HousingEditUiEvent
+    data class MeterWaterChanged(val value: String) : HousingEditUiEvent
     data class PebChanged(val value: String?) : HousingEditUiEvent
     data class BuildingLabelChanged(val value: String?) : HousingEditUiEvent
     data object Save : HousingEditUiEvent
@@ -63,6 +71,14 @@ class HousingEditViewModel(
                 _uiState.update { it.copy(defaultChargesCents = event.value) }
             is HousingEditUiEvent.DepositChanged ->
                 _uiState.update { it.copy(depositCents = event.value) }
+            is HousingEditUiEvent.MailboxLabelChanged ->
+                _uiState.update { it.copy(mailboxLabel = event.value, errorMessage = null) }
+            is HousingEditUiEvent.MeterGasChanged ->
+                _uiState.update { it.copy(meterGas = event.value, errorMessage = null) }
+            is HousingEditUiEvent.MeterElectricityChanged ->
+                _uiState.update { it.copy(meterElectricity = event.value, errorMessage = null) }
+            is HousingEditUiEvent.MeterWaterChanged ->
+                _uiState.update { it.copy(meterWater = event.value, errorMessage = null) }
             is HousingEditUiEvent.PebChanged ->
                 _uiState.update { it.copy(peb = event.value) }
             is HousingEditUiEvent.BuildingLabelChanged ->
@@ -91,6 +107,10 @@ class HousingEditViewModel(
                                 defaultRentCents = housing.defaultRentCents,
                                 defaultChargesCents = housing.defaultChargesCents,
                                 depositCents = housing.depositCents,
+                                mailboxLabel = housing.mailboxLabel.orEmpty(),
+                                meterGas = housing.meterGas.orEmpty(),
+                                meterElectricity = housing.meterElectricity.orEmpty(),
+                                meterWater = housing.meterWater.orEmpty(),
                                 peb = housing.peb,
                                 buildingLabel = housing.buildingLabel,
                                 errorMessage = null
@@ -111,6 +131,10 @@ class HousingEditViewModel(
                 defaultRentCents = current.defaultRentCents,
                 defaultChargesCents = current.defaultChargesCents,
                 depositCents = current.depositCents,
+                mailboxLabel = current.mailboxLabel.trim().ifBlank { null },
+                meterGas = current.meterGas.trim().ifBlank { null },
+                meterElectricity = current.meterElectricity.trim().ifBlank { null },
+                meterWater = current.meterWater.trim().ifBlank { null },
                 peb = current.peb,
                 buildingLabel = current.buildingLabel
             )

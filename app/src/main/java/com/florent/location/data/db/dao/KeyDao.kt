@@ -7,15 +7,15 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface KeyDao {
 
-    // --- Clés par bail ---
+    // --- Clés par logement ---
     @Query(
             """
         SELECT * FROM keys
-        WHERE leaseId = :leaseId
+        WHERE housingId = :housingId
         ORDER BY handedOverEpochDay DESC, id DESC
     """
     )
-    fun observeKeysForLease(leaseId: Long): Flow<List<KeyEntity>>
+    fun observeKeysForHousing(housingId: Long): Flow<List<KeyEntity>>
 
     // --- CRUD ---
     @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insert(key: KeyEntity): Long

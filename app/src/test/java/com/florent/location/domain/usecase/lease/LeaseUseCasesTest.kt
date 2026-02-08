@@ -4,9 +4,7 @@ import app.cash.turbine.test
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
-import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
 import com.florent.location.testutils.MainDispatcherRule
-import com.florent.location.domain.model.Key
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -37,49 +35,6 @@ class LeaseUseCasesTest {
 
             val updated = awaitItem()
             assertEquals(CLOSE_EPOCH_DAY, updated?.endDateEpochDay)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun addKeyAddsKeyAndEmitsUpdatedList() = runTest {
-        val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-
-        useCases.observeKeysForLease(ACTIVE_LEASE_ID).test {
-            val initial = awaitItem()
-            assertEquals(2, initial.size)
-
-            useCases.addKey(
-                ACTIVE_LEASE_ID,
-                Key(
-                    type = "Télécommande",
-                    deviceLabel = "Portail",
-                    handedOverEpochDay = START_EPOCH_DAY
-                )
-            )
-            advanceUntilIdle()
-
-            val updated = awaitItem()
-            assertEquals(3, updated.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun deleteKeyRemovesKeyAndEmitsUpdatedList() = runTest {
-        val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-
-        useCases.observeKeysForLease(ACTIVE_LEASE_ID).test {
-            val initial = awaitItem()
-            assertEquals(2, initial.size)
-
-            useCases.deleteKey(FakeLeaseRepository.KEY_ID_1)
-            advanceUntilIdle()
-
-            val updated = awaitItem()
-            assertEquals(1, updated.size)
             cancelAndIgnoreRemainingEvents()
         }
     }

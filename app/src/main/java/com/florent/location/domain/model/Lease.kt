@@ -12,9 +12,5 @@ data class Lease(
     val chargesCents: Long,
     val depositCents: Long = 0L,
     val rentDueDayOfMonth: Int = 1,
-    val mailboxLabel: String? = null,
-    val meterGas: String? = null,
-    val meterElectricity: String? = null,
-    val meterWater: String? = null,
     val indexAnniversaryEpochDay: Long? = null // par défaut startDateEpochDay
 )
