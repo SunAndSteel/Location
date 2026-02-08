@@ -3,10 +3,16 @@ package com.florent.location.ui.housing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.HousingSituation
+import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -16,9 +22,14 @@ import kotlinx.coroutines.launch
  */
 data class HousingListUiState(
     val isLoading: Boolean = true,
-    val housings: List<Housing> = emptyList(),
+    val housings: List<HousingListItem> = emptyList(),
     val isEmpty: Boolean = false,
     val errorMessage: String? = null
+)
+
+data class HousingListItem(
+    val housing: Housing,
+    val situation: HousingSituation
 )
 
 /**
@@ -33,7 +44,8 @@ sealed interface HousingListUiEvent {
  * ViewModel qui orchestre les cas d'usage liés aux logements.
  */
 class HousingListViewModel(
-    private val useCases: HousingUseCases
+    private val useCases: HousingUseCases,
+    private val observeHousingSituation: ObserveHousingSituation
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HousingListUiState())
@@ -53,6 +65,18 @@ class HousingListViewModel(
     private fun observeHousings() {
         viewModelScope.launch {
             useCases.observeHousings()
+                .flatMapLatest { housings ->
+                    if (housings.isEmpty()) {
+                        flowOf(emptyList())
+                    } else {
+                        combine(
+                            housings.map { housing ->
+                                observeHousingSituation(housing)
+                                    .map { situation -> HousingListItem(housing, situation) }
+                            }
+                        ) { items -> items.toList() }
+                    }
+                }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 }

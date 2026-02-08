@@ -3,7 +3,9 @@ package com.florent.location.ui.housing
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
+import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.fake.FakeHousingRepository
+import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.testutils.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +29,8 @@ class HousingListViewModelTest {
     fun `initial state transitions to empty`() = runTest {
         val repository = FakeHousingRepository()
         val useCases = HousingUseCasesImpl(repository)
-        val viewModel = HousingListViewModel(useCases)
+        val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
+        val viewModel = HousingListViewModel(useCases, observeHousingSituation)
 
         advanceUntilIdle()
 
@@ -39,12 +42,14 @@ class HousingListViewModelTest {
 
     @Test
     fun `observe housings failure sets error state`() = runTest {
+        val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
         val viewModel = HousingListViewModel(
             FakeHousingUseCases(
                 flow {
                     throw IllegalStateException("boom")
                 }
-            )
+            ),
+            observeHousingSituation
         )
 
         advanceUntilIdle()
@@ -67,7 +72,8 @@ class HousingListViewModelTest {
         val repository = FakeHousingRepository(listOf(housing))
         repository.setActiveLease(housing.id, true)
         val useCases = HousingUseCasesImpl(repository)
-        val viewModel = HousingListViewModel(useCases)
+        val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
+        val viewModel = HousingListViewModel(useCases, observeHousingSituation)
 
         advanceUntilIdle()
         viewModel.onEvent(HousingListUiEvent.DeleteHousing(housing.id))

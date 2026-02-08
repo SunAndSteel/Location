@@ -18,6 +18,7 @@ import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
+import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import com.florent.location.domain.usecase.tenant.TenantUseCases
@@ -101,6 +102,7 @@ val appModule = module {
     // ---------------------------------------------------------------------
     single<TenantUseCases> { TenantUseCasesImpl(repository = get()) }
     single<HousingUseCases> { HousingUseCasesImpl(repository = get()) }
+    single { ObserveHousingSituation(leaseRepository = get()) }
     single<LeaseUseCases> { LeaseUseCasesImpl(repository = get()) }
     single<BailUseCases> { BailUseCasesImpl(repository = get()) }
 
@@ -109,8 +111,14 @@ val appModule = module {
     // ---------------------------------------------------------------------
 
     // Logements
-    viewModel { HousingListViewModel(useCases = get()) }
-    viewModel { (housingId: Long) -> HousingDetailViewModel(housingId = housingId, housingUseCases = get(), leaseUseCases = get()) }
+    viewModel { HousingListViewModel(useCases = get(), observeHousingSituation = get()) }
+    viewModel { (housingId: Long) ->
+        HousingDetailViewModel(
+            housingId = housingId,
+            housingUseCases = get(),
+            observeHousingSituation = get()
+        )
+    }
     viewModel { (housingId: Long?) -> HousingEditViewModel(housingId = housingId, useCases = get()) }
 
     // Baux
