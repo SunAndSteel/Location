@@ -3,11 +3,15 @@ package com.florent.location.ui.housing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.usecase.housing.HousingUseCases
-import com.florent.location.domain.usecase.lease.LeaseUseCases
+import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -18,6 +22,7 @@ import kotlinx.coroutines.launch
 data class HousingDetailUiState(
     val isLoading: Boolean = true,
     val housing: Housing? = null,
+    val situation: HousingSituation? = null,
     val isEmpty: Boolean = false,
     val errorMessage: String? = null
 )
@@ -36,7 +41,7 @@ sealed interface HousingDetailUiEvent {
 class HousingDetailViewModel(
     private val housingId: Long,
     private val housingUseCases: HousingUseCases,
-    private val leaseUseCases: LeaseUseCases
+    private val observeHousingSituation: ObserveHousingSituation
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HousingDetailUiState())
@@ -56,6 +61,15 @@ class HousingDetailViewModel(
     private fun observeHousing() {
         viewModelScope.launch {
             housingUseCases.observeHousing(housingId)
+                .flatMapLatest { housing ->
+                    if (housing == null) {
+                        flowOf(Pair<Housing?, HousingSituation?>(null, null))
+                    } else {
+                        observeHousingSituation(housing).map { situation ->
+                            housing to situation
+                        }
+                    }
+                }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 }
@@ -67,11 +81,12 @@ class HousingDetailViewModel(
                         )
                     }
                 }
-                .collect { housing ->
+                .collect { (housing, situation) ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             housing = housing,
+                            situation = situation,
                             isEmpty = housing == null,
                             errorMessage = null
                         )

@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.model.Tenant
 
 @Composable
@@ -89,9 +90,11 @@ fun TenantCard(
 @Composable
 fun HousingCard(
     housing: Housing,
+    situation: HousingSituation,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val situationLabel = housingSituationLabel(situation)
     Card(
         modifier = modifier.keyboardClickable(onOpen),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
@@ -112,20 +115,18 @@ fun HousingCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                if (housing.defaultRentCents > 0L) {
-                    StatusBadge(text = "Loyer défini")
-                }
+                StatusBadge(text = situationLabel)
             }
             Spacer(modifier = Modifier.height(12.dp))
-            if (housing.defaultRentCents > 0L) {
+            if (situation == HousingSituation.DRAFT) {
                 HeroMetric(
-                    value = formatCurrency(housing.defaultRentCents),
-                    label = "/ mois"
+                    value = "Statut",
+                    label = situationLabel
                 )
             } else {
                 HeroMetric(
-                    value = "Statut",
-                    label = "À renseigner"
+                    value = formatCurrency(housing.defaultRentCents),
+                    label = "/ mois"
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))

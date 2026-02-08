@@ -134,10 +134,11 @@ private fun HousingListContent(
                                 contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                items(state.housings, key = { it.id }) { housing ->
+                                items(state.housings, key = { it.housing.id }) { item ->
                                     HousingCard(
-                                        housing = housing,
-                                        onOpen = { onHousingClick(housing.id) },
+                                        housing = item.housing,
+                                        situation = item.situation,
+                                        onOpen = { onHousingClick(item.housing.id) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -152,10 +153,11 @@ private fun HousingListContent(
                             contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
-                            items(state.housings, key = { it.id }) { housing ->
+                            items(state.housings, key = { it.housing.id }) { item ->
                                 HousingCard(
-                                    housing = housing,
-                                    onOpen = { onHousingClick(housing.id) },
+                                    housing = item.housing,
+                                    situation = item.situation,
+                                    onOpen = { onHousingClick(item.housing.id) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }

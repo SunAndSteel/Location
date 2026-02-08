@@ -32,6 +32,7 @@ import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
+import com.florent.location.ui.components.housingSituationLabel
 import com.florent.location.ui.components.formatCurrency
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
@@ -115,7 +116,8 @@ private fun HousingDetailContent(
 
             else -> {
                 val housing = state.housing
-                if (housing != null) {
+                val situation = state.situation
+                if (housing != null && situation != null) {
                     BoxWithConstraints {
                         val sizeClass = windowWidthSize(maxWidth)
                         if (sizeClass == WindowWidthSize.Expanded) {
@@ -127,7 +129,7 @@ private fun HousingDetailContent(
                                     modifier = Modifier.weight(0.6f),
                                     verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                                 ) {
-                                    HousingHeroSection(housing = housing)
+                                    HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
                                     HousingInfoSection(housing = housing)
                                     HousingFinancialSection(housing = housing)
                                 }
@@ -156,7 +158,7 @@ private fun HousingDetailContent(
                             }
                         } else {
                             Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
-                                HousingHeroSection(housing = housing)
+                                HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
                                 HousingInfoSection(housing = housing)
                                 HousingFinancialSection(housing = housing)
                                 AppSectionHeader(title = "Actions")
@@ -188,6 +190,7 @@ private fun HousingDetailContent(
 @Composable
 private fun HousingHeroSection(
     housing: Housing,
+    situationLabel: String,
     modifier: Modifier = Modifier
 ) {
     HeroSummaryCard(
@@ -195,6 +198,7 @@ private fun HousingHeroSection(
         heroValue = formatCurrency(housing.defaultRentCents),
         heroLabel = "/ mois",
         facts = listOf(
+            "Statut" to situationLabel,
             "Charges" to formatCurrency(housing.defaultChargesCents),
             "Caution" to formatCurrency(housing.depositCents),
             "Ville" to housing.city
