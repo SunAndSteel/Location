@@ -1,4 +1,4 @@
-package com.florent.location.ui.bail
+package com.florent.location.ui.lease
 
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,9 +34,9 @@ import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
 import com.florent.location.ui.components.LeaseCard
-import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
+import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.components.WindowWidthSize
@@ -45,14 +44,14 @@ import org.koin.androidx.compose.koinViewModel
 
 @ExperimentalMaterial3Api
 @Composable
-fun BailsScreen(
-    viewModel: BailsViewModel = koinViewModel(),
+fun LeaseListScreen(
+    viewModel: LeaseListViewModel = koinViewModel(),
     onBailClick: (Long) -> Unit,
     onAddBail: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
-    BailsContent(
+    LeaseListContent(
         state = state,
         onBailClick = onBailClick,
         onAddBail = onAddBail,
@@ -62,8 +61,8 @@ fun BailsScreen(
 
 @ExperimentalMaterial3Api
 @Composable
-private fun BailsContent(
-    state: BailsUiState,
+private fun LeaseListContent(
+    state: LeaseListUiState,
     onBailClick: (Long) -> Unit,
     onAddBail: () -> Unit,
     modifier: Modifier = Modifier
@@ -142,7 +141,7 @@ private fun BailsContent(
                                     )
                                 }
                             }
-                            BailsContextPanel(
+                            LeaseContextPanel(
                                 total = state.bails.size,
                                 active = state.bails.count { it.endDateEpochDay == null },
                                 modifier = Modifier.weight(0.6f)
@@ -169,7 +168,7 @@ private fun BailsContent(
 }
 
 @Composable
-private fun BailsContextPanel(
+private fun LeaseContextPanel(
     total: Int,
     active: Int,
     modifier: Modifier = Modifier

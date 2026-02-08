@@ -3,6 +3,8 @@ package com.florent.location.ui.lease
 import app.cash.turbine.test
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.usecase.bail.BailUseCases
+import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
@@ -35,8 +37,9 @@ class LeaseDetailViewModelTest {
     @Test
     fun initialLoadShowsLeaseAndKeys() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, useCases)
+        val bailUseCases = BailUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -55,8 +58,9 @@ class LeaseDetailViewModelTest {
     @Test
     fun addKeyEventUpdatesKeysList() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, useCases)
+        val bailUseCases = BailUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
 
         advanceUntilIdle()
 
@@ -88,8 +92,9 @@ class LeaseDetailViewModelTest {
     @Test
     fun deleteKeyEventUpdatesKeysList() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, useCases)
+        val bailUseCases = BailUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
 
         advanceUntilIdle()
 
@@ -115,8 +120,9 @@ class LeaseDetailViewModelTest {
     @Test
     fun closeLeaseEventMarksLeaseInactive() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, useCases)
+        val bailUseCases = BailUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases)
 
         advanceUntilIdle()
 
@@ -143,8 +149,9 @@ class LeaseDetailViewModelTest {
     @Test
     fun missingLeaseIdShowsEmptyStateWithoutCrash() = runTest {
         val repository = FakeLeaseRepository.seeded()
-        val useCases = LeaseUseCasesImpl(repository)
-        val viewModel = LeaseDetailViewModel(999L, useCases)
+        val bailUseCases = BailUseCasesImpl(repository)
+        val leaseUseCases = LeaseUseCasesImpl(repository)
+        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases)
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -164,11 +171,12 @@ class LeaseDetailViewModelTest {
     fun observeLeaseFailureUpdatesErrorMessage() = runTest {
         val viewModel = LeaseDetailViewModel(
             ACTIVE_LEASE_ID,
-            FakeLeaseUseCases(
+            FakeBailUseCases(
                 flow {
                     throw IllegalStateException("boom")
                 }
-            )
+            ),
+            FakeLeaseUseCases()
         )
 
         advanceUntilIdle()
@@ -178,12 +186,59 @@ class LeaseDetailViewModelTest {
         assertEquals("boom", state.errorMessage)
     }
 
-    private class FakeLeaseUseCases(
+    private class FakeBailUseCases(
         private val leaseFlow: Flow<Lease?>
-    ) : LeaseUseCases {
+    ) : BailUseCases {
+        override fun observeBails(): Flow<List<Lease>> = flowOf(emptyList())
+
+        override fun observeBail(leaseId: Long): Flow<Lease?> = leaseFlow
+
+        override fun observeIndexationEvents(leaseId: Long): Flow<List<com.florent.location.domain.model.IndexationEvent>> =
+            flowOf(emptyList())
+
+        override fun buildIndexationPolicy(
+            bail: Lease,
+            todayEpochDay: Long
+        ): com.florent.location.domain.model.IndexationPolicy {
+            return com.florent.location.domain.model.IndexationPolicy(
+                anniversaryEpochDay = bail.startDateEpochDay,
+                nextIndexationEpochDay = bail.startDateEpochDay
+            )
+        }
+
+        override suspend fun simulateIndexationForBail(
+            leaseId: Long,
+            indexPercent: Double,
+            effectiveEpochDay: Long
+        ): com.florent.location.domain.model.IndexationSimulation {
+            return com.florent.location.domain.model.IndexationSimulation(
+                leaseId = leaseId,
+                baseRentCents = 0L,
+                indexPercent = indexPercent,
+                newRentCents = 0L,
+                effectiveEpochDay = effectiveEpochDay
+            )
+        }
+
+        override suspend fun applyIndexationToBail(
+            leaseId: Long,
+            indexPercent: Double,
+            effectiveEpochDay: Long
+        ): com.florent.location.domain.model.IndexationEvent {
+            return com.florent.location.domain.model.IndexationEvent(
+                leaseId = leaseId,
+                appliedEpochDay = effectiveEpochDay,
+                baseRentCents = 0L,
+                indexPercent = indexPercent,
+                newRentCents = 0L
+            )
+        }
+    }
+
+    private class FakeLeaseUseCases : LeaseUseCases {
         override suspend fun createLease(request: com.florent.location.domain.usecase.lease.LeaseCreateRequest): Long = 0L
 
-        override fun observeLease(leaseId: Long): Flow<Lease?> = leaseFlow
+        override fun observeLease(leaseId: Long): Flow<Lease?> = flowOf(null)
 
         override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> = flowOf(emptyList())
 

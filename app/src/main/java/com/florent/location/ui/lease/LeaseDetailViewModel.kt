@@ -2,10 +2,15 @@ package com.florent.location.ui.lease
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.florent.location.domain.model.IndexationEvent
+import com.florent.location.domain.model.IndexationPolicy
+import com.florent.location.domain.model.IndexationSimulation
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +19,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class IndexationFormState(
+    val indexPercent: String = "",
+    val effectiveDate: String = "",
+    val simulation: IndexationSimulation? = null
+)
 
 data class AddKeyDialogState(
     val isOpen: Boolean = false,
@@ -32,6 +43,9 @@ data class LeaseDetailUiState(
     val lease: Lease? = null,
     val keys: List<Key> = emptyList(),
     val isActive: Boolean = false,
+    val indexationPolicy: IndexationPolicy? = null,
+    val indexationHistory: List<IndexationEvent> = emptyList(),
+    val indexationForm: IndexationFormState = IndexationFormState(),
     val errorMessage: String? = null,
     val addKeyDialog: AddKeyDialogState = AddKeyDialogState(),
     val closeLeaseDialog: CloseLeaseDialogState = CloseLeaseDialogState()
@@ -58,15 +72,23 @@ sealed interface LeaseDetailUiEvent {
     data class ConfirmCloseLease(val endDate: String) : LeaseDetailUiEvent
     data object DismissAddKeyDialog : LeaseDetailUiEvent
     data object DismissCloseLeaseDialog : LeaseDetailUiEvent
+    data class IndexationPercentChanged(val value: String) : LeaseDetailUiEvent
+    data class IndexationEffectiveDateChanged(val value: String) : LeaseDetailUiEvent
+    data object SimulateIndexation : LeaseDetailUiEvent
+    data object ApplyIndexation : LeaseDetailUiEvent
 }
 
 class LeaseDetailViewModel(
     private val leaseId: Long,
+    private val bailUseCases: BailUseCases,
     private val leaseUseCases: LeaseUseCases
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeaseDetailUiState())
     val uiState: StateFlow<LeaseDetailUiState> = _uiState
+
+    private val todayEpochDay =
+        LocalDate.now(ZoneId.of("Europe/Brussels")).toEpochDay()
 
     init {
         observeLeaseDetail()
@@ -83,16 +105,21 @@ class LeaseDetailViewModel(
             is LeaseDetailUiEvent.ConfirmCloseLease -> closeLease(event.endDate)
             LeaseDetailUiEvent.DismissAddKeyDialog -> dismissAddKeyDialog()
             LeaseDetailUiEvent.DismissCloseLeaseDialog -> dismissCloseLeaseDialog()
+            is LeaseDetailUiEvent.IndexationPercentChanged -> updateIndexationPercent(event.value)
+            is LeaseDetailUiEvent.IndexationEffectiveDateChanged -> updateIndexationEffectiveDate(event.value)
+            LeaseDetailUiEvent.SimulateIndexation -> simulateIndexation()
+            LeaseDetailUiEvent.ApplyIndexation -> applyIndexation()
         }
     }
 
     private fun observeLeaseDetail() {
         viewModelScope.launch {
             combine(
-                leaseUseCases.observeLease(leaseId),
-                leaseUseCases.observeKeysForLease(leaseId)
-            ) { lease, keys ->
-                lease to keys
+                bailUseCases.observeBail(leaseId),
+                leaseUseCases.observeKeysForLease(leaseId),
+                bailUseCases.observeIndexationEvents(leaseId)
+            ) { lease, keys, events ->
+                Triple(lease, keys, events)
             }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -105,13 +132,16 @@ class LeaseDetailViewModel(
                         )
                     }
                 }
-                .collect { (lease, keys) ->
+                .collect { (lease, keys, events) ->
+                    val policy = lease?.let { bailUseCases.buildIndexationPolicy(it, todayEpochDay) }
                     _uiState.update { current ->
                         current.copy(
                             isLoading = false,
                             lease = lease,
                             keys = keys,
                             isActive = lease?.endDateEpochDay == null,
+                            indexationPolicy = policy,
+                            indexationHistory = events,
                             errorMessage = null
                         )
                     }
@@ -229,10 +259,91 @@ class LeaseDetailViewModel(
         _uiState.update { it.copy(closeLeaseDialog = CloseLeaseDialogState(isOpen = false)) }
     }
 
+    private fun updateIndexationPercent(value: String) {
+        _uiState.update { current ->
+            current.copy(
+                indexationForm = current.indexationForm.copy(
+                    indexPercent = value,
+                    simulation = null
+                ),
+                errorMessage = null
+            )
+        }
+    }
+
+    private fun updateIndexationEffectiveDate(value: String) {
+        _uiState.update { current ->
+            current.copy(
+                indexationForm = current.indexationForm.copy(
+                    effectiveDate = value,
+                    simulation = null
+                ),
+                errorMessage = null
+            )
+        }
+    }
+
+    private fun simulateIndexation() {
+        viewModelScope.launch {
+            val percent = parsePercent(_uiState.value.indexationForm.indexPercent)
+            val effectiveEpochDay = parseEpochDay(_uiState.value.indexationForm.effectiveDate)
+            if (percent == null || effectiveEpochDay == null) {
+                _uiState.update { it.copy(errorMessage = "Simulation invalide: valeurs manquantes.") }
+                return@launch
+            }
+            try {
+                val simulation = bailUseCases.simulateIndexationForBail(
+                    leaseId = leaseId,
+                    indexPercent = percent,
+                    effectiveEpochDay = effectiveEpochDay
+                )
+                _uiState.update { current ->
+                    current.copy(
+                        indexationForm = current.indexationForm.copy(simulation = simulation),
+                        errorMessage = null
+                    )
+                }
+            } catch (error: IllegalArgumentException) {
+                _uiState.update { it.copy(errorMessage = error.message) }
+            }
+        }
+    }
+
+    private fun applyIndexation() {
+        viewModelScope.launch {
+            val percent = parsePercent(_uiState.value.indexationForm.indexPercent)
+            val effectiveEpochDay = parseEpochDay(_uiState.value.indexationForm.effectiveDate)
+            if (percent == null || effectiveEpochDay == null) {
+                _uiState.update { it.copy(errorMessage = "Application invalide: valeurs manquantes.") }
+                return@launch
+            }
+            try {
+                bailUseCases.applyIndexationToBail(
+                    leaseId = leaseId,
+                    indexPercent = percent,
+                    effectiveEpochDay = effectiveEpochDay
+                )
+                _uiState.update {
+                    it.copy(
+                        indexationForm = IndexationFormState(),
+                        errorMessage = null
+                    )
+                }
+            } catch (error: IllegalArgumentException) {
+                _uiState.update { it.copy(errorMessage = error.message) }
+            }
+        }
+    }
+
     private fun parseEpochDay(value: String): Long? {
         if (value.isBlank()) return null
         return runCatching {
             LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE).toEpochDay()
         }.getOrNull()
+    }
+
+    private fun parsePercent(value: String): Double? {
+        if (value.isBlank()) return null
+        return value.replace(',', '.').toDoubleOrNull()
     }
 }

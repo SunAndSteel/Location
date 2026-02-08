@@ -2,6 +2,7 @@ package com.florent.location.fake
 
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.model.IndexationEvent
 import com.florent.location.domain.repository.LeaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,11 +16,16 @@ class FakeLeaseRepository(
 ) : LeaseRepository {
     private val leaseFlow = MutableStateFlow(leases.associateBy { it.id })
     private val keysFlow = MutableStateFlow(keys.groupBy { it.leaseId })
+    private val indexationEventsFlow = MutableStateFlow(emptyMap<Long, List<IndexationEvent>>())
     private var nextKeyId: Long = (keys.maxOfOrNull { it.id } ?: 0L) + 1L
 
     override suspend fun createLeaseWithKeys(lease: Lease, keys: List<Key>): Long {
         val leaseId = lease.id.takeIf { it != 0L } ?: (leaseFlow.value.keys.maxOrNull() ?: 0L) + 1L
         val newLease = lease.copy(id = leaseId)
+        val existing = leaseFlow.value.values.firstOrNull {
+            it.housingId == newLease.housingId && it.endDateEpochDay == null
+        }
+        require(existing == null) { "Un bail actif existe déjà pour ce logement." }
         leaseFlow.value = leaseFlow.value + (leaseId to newLease)
         if (keys.isNotEmpty()) {
             val updatedKeys = keys.map { key ->
@@ -46,6 +52,8 @@ class FakeLeaseRepository(
     override fun observeLease(leaseId: Long): Flow<Lease?> {
         return leaseFlow.map { it[leaseId] }
     }
+
+    override suspend fun getLease(leaseId: Long): Lease? = leaseFlow.value[leaseId]
 
     override fun observeKeysForLease(leaseId: Long): Flow<List<Key>> {
         return keysFlow.map { it[leaseId].orEmpty() }
@@ -80,6 +88,15 @@ class FakeLeaseRepository(
         val lease = leaseFlow.value[leaseId]
             ?: throw IllegalArgumentException("Bail introuvable.")
         leaseFlow.value = leaseFlow.value + (leaseId to lease.copy(endDateEpochDay = endEpochDay))
+    }
+
+    override fun observeIndexationEvents(leaseId: Long): Flow<List<IndexationEvent>> {
+        return indexationEventsFlow.map { events -> events[leaseId].orEmpty() }
+    }
+
+    override suspend fun applyIndexation(event: IndexationEvent) {
+        val current = indexationEventsFlow.value[event.leaseId].orEmpty()
+        indexationEventsFlow.value = indexationEventsFlow.value + (event.leaseId to (current + event))
     }
 
     companion object {

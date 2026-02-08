@@ -1,4 +1,4 @@
-package com.florent.location.ui.bail
+package com.florent.location.ui.lease
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,19 +11,19 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class BailsUiState(
+data class LeaseListUiState(
     val isLoading: Boolean = true,
     val bails: List<Bail> = emptyList(),
     val isEmpty: Boolean = false,
     val errorMessage: String? = null
 )
 
-class BailsViewModel(
+class LeaseListViewModel(
     private val useCases: BailUseCases
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(BailsUiState())
-    val uiState: StateFlow<BailsUiState> = _uiState
+    private val _uiState = MutableStateFlow(LeaseListUiState())
+    val uiState: StateFlow<LeaseListUiState> = _uiState
 
     init {
         observeBails()

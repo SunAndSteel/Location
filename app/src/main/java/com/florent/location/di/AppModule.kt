@@ -24,8 +24,6 @@ import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 
 // --- UI: viewmodels ---
-import com.florent.location.ui.bail.BailDetailViewModel
-import com.florent.location.ui.bail.BailsViewModel
 import com.florent.location.ui.housing.HousingListViewModel
 import com.florent.location.ui.housing.HousingDetailViewModel
 import com.florent.location.ui.housing.HousingEditViewModel
@@ -36,6 +34,7 @@ import com.florent.location.ui.tenant.TenantEditViewModel
 
 import com.florent.location.ui.lease.LeaseCreateViewModel
 import com.florent.location.ui.lease.LeaseDetailViewModel
+import com.florent.location.ui.lease.LeaseListViewModel
 
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
@@ -115,14 +114,7 @@ val appModule = module {
     viewModel { (housingId: Long?) -> HousingEditViewModel(housingId = housingId, useCases = get()) }
 
     // Baux
-    viewModel { BailsViewModel(useCases = get()) }
-    viewModel { (leaseId: Long) ->
-        BailDetailViewModel(
-            leaseId = leaseId,
-            bailUseCases = get(),
-            leaseUseCases = get()
-        )
-    }
+    viewModel { LeaseListViewModel(useCases = get()) }
 
     // Locataires
     viewModel { TenantListViewModel(useCases = get()) }
@@ -141,6 +133,7 @@ val appModule = module {
     viewModel { (leaseId: Long) ->
         LeaseDetailViewModel(
             leaseId = leaseId,
+            bailUseCases = get(),
             leaseUseCases = get()
         )
     }
