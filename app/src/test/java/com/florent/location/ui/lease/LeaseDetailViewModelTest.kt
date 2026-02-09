@@ -15,6 +15,7 @@ import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_HOUSING_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
 import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
+import com.florent.location.sampleHousing
 import com.florent.location.testutils.MainDispatcherRule
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -273,7 +274,7 @@ class LeaseDetailViewModelTest {
     }
 
     private fun buildHousingUseCases(keys: List<Key> = DEFAULT_KEYS): HousingUseCases {
-        val housing = Housing(id = ACTIVE_HOUSING_ID, city = "Bruxelles", address = "Rue A")
+        val housing = sampleHousing(id = ACTIVE_HOUSING_ID, city = "Bruxelles")
         val repository = FakeHousingRepository(initialHousings = listOf(housing), initialKeys = keys)
         return HousingUseCasesImpl(repository)
     }

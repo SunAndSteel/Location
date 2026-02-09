@@ -16,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -158,71 +160,109 @@ private fun LeaseCreateContent(
                         supportingText = "Choisissez le logement et le locataire."
                     )
                     SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainer) {
-                        ListItem(
-                            headlineContent = { Text(text = "Logement") },
-                            supportingContent = {
-                                Text(
-                                    text = state.housings.firstOrNull { it.id == state.selectedHousingId }
-                                        ?.let { it.address.fullString() }
-                                        ?: "Choisir un logement"
-                                )
-                            },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Home,
-                                    contentDescription = null
-                                )
-                            },
-                            trailingContent = {
-                                Icon(
-                                    imageVector = Icons.Outlined.KeyboardArrowRight,
-                                    contentDescription = null
-                                )
-                            },
-                            colors = ListItemDefaults.colors(
-                                containerColor = if (state.selectedHousingId != null) {
-                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHigh
+                        Box {
+                            ListItem(
+                                headlineContent = { Text(text = "Logement") },
+                                supportingContent = {
+                                    Text(
+                                        text = state.housings.firstOrNull { it.id == state.selectedHousingId }
+                                            ?.let { it.address.fullString() }
+                                            ?: "Choisir un logement"
+                                    )
+                                },
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Home,
+                                        contentDescription = null
+                                    )
+                                },
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.KeyboardArrowRight,
+                                        contentDescription = null
+                                    )
+                                },
+                                colors = ListItemDefaults.colors(
+                                    containerColor = if (state.selectedHousingId != null) {
+                                        MaterialTheme.colorScheme.surfaceContainerHighest
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(true))
+                                    }
+                            )
+                            DropdownMenu(
+                                expanded = state.housingDropdownExpanded,
+                                onDismissRequest = {
+                                    onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(false))
                                 }
-                            ),
-                            modifier = Modifier.clickable {
-                                onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(true))
+                            ) {
+                                state.housings.forEach { housing ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = housing.address.fullString()) },
+                                        onClick = {
+                                            onEvent(LeaseCreateUiEvent.SelectHousing(housing.id))
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                         Divider()
-                        ListItem(
-                            headlineContent = { Text(text = "Locataire") },
-                            supportingContent = {
-                                Text(
-                                    text = state.tenants.firstOrNull { it.id == state.selectedTenantId }
-                                        ?.let { "${it.firstName} ${it.lastName}" }
-                                        ?: "Choisir un locataire"
-                                )
-                            },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null
-                                )
-                            },
-                            trailingContent = {
-                                Icon(
-                                    imageVector = Icons.Outlined.KeyboardArrowRight,
-                                    contentDescription = null
-                                )
-                            },
-                            colors = ListItemDefaults.colors(
-                                containerColor = if (state.selectedTenantId != null) {
-                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHigh
+                        Box {
+                            ListItem(
+                                headlineContent = { Text(text = "Locataire") },
+                                supportingContent = {
+                                    Text(
+                                        text = state.tenants.firstOrNull { it.id == state.selectedTenantId }
+                                            ?.let { "${it.firstName} ${it.lastName}" }
+                                            ?: "Choisir un locataire"
+                                    )
+                                },
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Person,
+                                        contentDescription = null
+                                    )
+                                },
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.KeyboardArrowRight,
+                                        contentDescription = null
+                                    )
+                                },
+                                colors = ListItemDefaults.colors(
+                                    containerColor = if (state.selectedTenantId != null) {
+                                        MaterialTheme.colorScheme.surfaceContainerHighest
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
+                                    }
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(true))
+                                    }
+                            )
+                            DropdownMenu(
+                                expanded = state.tenantDropdownExpanded,
+                                onDismissRequest = {
+                                    onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(false))
                                 }
-                            ),
-                            modifier = Modifier.clickable {
-                                onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(true))
+                            ) {
+                                state.tenants.forEach { tenant ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = "${tenant.firstName} ${tenant.lastName}") },
+                                        onClick = {
+                                            onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id))
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
 
                     AppSectionHeader(
