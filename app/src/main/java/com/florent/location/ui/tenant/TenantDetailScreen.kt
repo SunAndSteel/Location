@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -133,9 +135,12 @@ private fun TenantDetailContent(
                 val tenant = state.tenant
                 BoxWithConstraints {
                     val sizeClass = windowWidthSize(maxWidth)
+                    val scrollState = rememberScrollState()
                     if (sizeClass == WindowWidthSize.Expanded) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState),
                             horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
                         ) {
                             Column(
@@ -161,7 +166,12 @@ private fun TenantDetailContent(
                             }
                         }
                     } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(scrollState),
+                            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                        ) {
                             TenantHeroSection(tenant = tenant, situation = state.situation)
                             TenantContactSection(tenant = tenant)
                             TenantSituationSection(situation = state.situation)

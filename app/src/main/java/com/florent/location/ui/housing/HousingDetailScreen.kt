@@ -4,7 +4,9 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.outlined.*
@@ -140,6 +142,7 @@ private fun HousingDetailContent(
                 if (housing != null && situation != null) {
                     BoxWithConstraints {
                         val sizeClass = windowWidthSize(maxWidth)
+                        val scrollState = rememberScrollState()
                         if (sizeClass == WindowWidthSize.Expanded) {
                             // Layout desktop/tablette
                             ExpandedLayout(
@@ -147,14 +150,20 @@ private fun HousingDetailContent(
                                 situation = situation,
                                 onEdit = onEdit,
                                 onCreateLease = onCreateLease,
-                                onDeleteClick = onDeleteClick
+                                onDeleteClick = onDeleteClick,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState)
                             )
                         } else {
                             // Layout mobile
                             CompactLayout(
                                 housing = housing,
                                 situation = situation,
-                                onShowActions = onShowActions
+                                onShowActions = onShowActions,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState)
                             )
                         }
                     }
@@ -172,10 +181,11 @@ private fun ExpandedLayout(
     situation: HousingSituation,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
     ) {
         // Contenu principal
@@ -207,9 +217,13 @@ private fun ExpandedLayout(
 private fun CompactLayout(
     housing: Housing,
     situation: HousingSituation,
-    onShowActions: () -> Unit
+    onShowActions: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+    ) {
         EnhancedHeroSection(housing = housing, situation = situation)
 
         // Bouton d'actions flottant pour mobile
