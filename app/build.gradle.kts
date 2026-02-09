@@ -18,6 +18,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${project.properties["SUPABASE_URL"]}\""
+        )
+
+        buildConfigField(
+            "String",
+            "SUPABASE_PUB_KEY",
+            "\"${project.properties["SUPABASE_PUB_KEY"]}\""
+        )
     }
 
     buildTypes {
@@ -86,6 +98,7 @@ dependencies {
     implementation("io.ktor:ktor-client-android:3.4.0")
     // WorkManager pour la sync en arrière-plan
     implementation(libs.androidx.work.runtime.ktx)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
