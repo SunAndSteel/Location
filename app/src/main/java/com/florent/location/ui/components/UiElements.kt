@@ -53,6 +53,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -606,13 +609,29 @@ fun DateFieldWithPicker(
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate?.let { toEpochMillis(it) }
     )
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(isDialogOpen, initialDate) {
+        if (isDialogOpen) {
+            datePickerState.selectedDateMillis = initialDate?.let { toEpochMillis(it) }
+        }
+    }
 
     OutlinedTextField(
         value = initialDate?.let { formatEpochDay(it.toEpochDay()) } ?: "",
         onValueChange = {},
         modifier = modifier
             .fillMaxWidth()
-            .clickable { isDialogOpen = true },
+            .onFocusChanged { focusState ->
+                if (focusState.isFocused) {
+                    focusManager.clearFocus()
+                    isDialogOpen = true
+                }
+            }
+            .clickable {
+                focusManager.clearFocus()
+                isDialogOpen = true
+            },
         label = { Text(text = label) },
         readOnly = true,
         trailingIcon = {
