@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
+import com.florent.location.domain.model.PebRating
+import com.florent.location.domain.model.toDisplayLabel
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantSituation
 
@@ -108,9 +110,9 @@ fun HousingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = housing.address, style = MaterialTheme.typography.titleLarge)
+                    Text(text = housing.address.fullString(), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        text = housing.city,
+                        text = housing.address.city,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -125,21 +127,22 @@ fun HousingCard(
                 )
             } else {
                 HeroMetric(
-                    value = formatCurrency(housing.defaultRentCents),
+                    value = formatCurrency(housing.rentCents),
                     label = "/ mois"
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
             DetailChipRow {
                 NonInteractiveChip(
-                    label = "Charges ${formatCurrency(housing.defaultChargesCents)}",
+                    label = "Charges ${formatCurrency(housing.chargesCents)}",
                     icon = Icons.Outlined.Payments
                 )
                 NonInteractiveChip(
                     label = "Caution ${formatCurrency(housing.depositCents)}",
                     icon = Icons.Outlined.Payments
                 )
-                val optionalBadge = housing.peb?.let { "PEB $it" }
+                val optionalBadge = housing.pebRating.takeIf { it != PebRating.UNKNOWN }
+                    ?.let { "PEB ${it.toDisplayLabel()}" }
                     ?: housing.buildingLabel?.let { "Bâtiment $it" }
                 optionalBadge?.let {
                     NonInteractiveChip(label = it, icon = Icons.Outlined.Home)

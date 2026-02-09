@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
  */
 data class HousingListUiState(
     val isLoading: Boolean = true,
+    val searchQuery: String = "",
     val housings: List<HousingListItem> = emptyList(),
     val isEmpty: Boolean = false,
     val errorMessage: String? = null
@@ -38,6 +39,7 @@ data class HousingListItem(
 sealed interface HousingListUiEvent {
     data class CreateHousing(val housing: Housing) : HousingListUiEvent
     data class DeleteHousing(val id: Long) : HousingListUiEvent
+    data class SearchQueryChanged(val query: String) : HousingListUiEvent
 }
 
 /**
@@ -50,6 +52,7 @@ class HousingListViewModel(
 
     private val _uiState = MutableStateFlow(HousingListUiState())
     val uiState: StateFlow<HousingListUiState> = _uiState
+    private val searchQuery = MutableStateFlow("")
 
     init {
         observeHousings()
@@ -59,24 +62,27 @@ class HousingListViewModel(
         when (event) {
             is HousingListUiEvent.CreateHousing -> createHousing(event.housing)
             is HousingListUiEvent.DeleteHousing -> deleteHousing(event.id)
+            is HousingListUiEvent.SearchQueryChanged -> updateSearchQuery(event.query)
         }
     }
 
     private fun observeHousings() {
         viewModelScope.launch {
-            useCases.observeHousings()
-                .flatMapLatest { housings ->
-                    if (housings.isEmpty()) {
-                        flowOf(emptyList())
-                    } else {
-                        combine(
-                            housings.map { housing ->
-                                observeHousingSituation(housing)
-                                    .map { situation -> HousingListItem(housing, situation) }
-                            }
-                        ) { items -> items.toList() }
-                    }
+            combine(useCases.observeHousings(), searchQuery) { housings, query ->
+                val filtered = filterHousings(housings, query)
+                query to filtered
+            }.flatMapLatest { (query, housings) ->
+                if (housings.isEmpty()) {
+                    flowOf(query to emptyList())
+                } else {
+                    combine(
+                        housings.map { housing ->
+                            observeHousingSituation(housing)
+                                .map { situation -> HousingListItem(housing, situation) }
+                        }
+                    ) { items -> query to items.toList() }
                 }
+            }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 }
@@ -88,10 +94,11 @@ class HousingListViewModel(
                         )
                     }
                 }
-                .collect { housings ->
+                .collect { (query, housings) ->
                     _uiState.update {
                         it.copy(
                             isLoading = false,
+                            searchQuery = query,
                             housings = housings,
                             isEmpty = housings.isEmpty(),
                             errorMessage = null
@@ -118,6 +125,36 @@ class HousingListViewModel(
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
             }
+        }
+    }
+
+    private fun updateSearchQuery(query: String) {
+        searchQuery.value = query
+    }
+
+    private fun filterHousings(housings: List<Housing>, query: String): List<Housing> {
+        val normalizedQuery = query.trim().lowercase()
+        if (normalizedQuery.isBlank()) {
+            return housings
+        }
+        return housings.filter { housing ->
+            val searchable = buildString {
+                append(housing.address.fullString())
+                append(" ")
+                append(housing.address.city)
+                append(" ")
+                append(housing.address.street)
+                append(" ")
+                append(housing.address.number)
+                append(" ")
+                append(housing.address.zipCode)
+                append(" ")
+                append(housing.address.country)
+                housing.buildingLabel?.let { append(" $it") }
+                housing.internalNote?.let { append(" $it") }
+                housing.mailboxLabel?.let { append(" $it") }
+            }
+            searchable.lowercase().contains(normalizedQuery)
         }
     }
 }
