@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.florent.location.domain.model.PebRating
+import com.florent.location.domain.model.toDisplayLabel
 import com.florent.location.ui.components.*
 import kotlinx.coroutines.delay
 
@@ -53,8 +55,10 @@ private fun HousingEditContent(
     // Calcul de la validation du formulaire
     val validationState = remember(state) {
         FormValidationState(
+            isStreetValid = state.street.isNotBlank(),
+            isNumberValid = state.number.isNotBlank(),
+            isZipCodeValid = state.zipCode.isNotBlank(),
             isCityValid = state.city.isNotBlank(),
-            isAddressValid = state.address.isNotBlank(),
             isRentValid = parseEuroInputToCents(state.defaultRent) != null && parseEuroInputToCents(state.defaultRent)!! > 0,
             isChargesValid = parseEuroInputToCents(state.defaultCharges) != null,
             isDepositValid = parseEuroInputToCents(state.deposit) != null
@@ -98,23 +102,71 @@ private fun HousingEditContent(
                     FormSection(
                         title = "Informations essentielles",
                         subtitle = "Ces champs sont obligatoires",
-                        isCompleted = validationState.isCityValid && validationState.isAddressValid
+                        isCompleted =
+                            validationState.isStreetValid &&
+                                validationState.isNumberValid &&
+                                validationState.isZipCodeValid &&
+                                validationState.isCityValid
                     ) {
                         ValidatedTextField(
-                            value = state.city,
-                            onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
-                            label = "Ville",
-                            isValid = validationState.isCityValid,
-                            errorMessage = "La ville est obligatoire",
+                            value = state.street,
+                            onValueChange = { onEvent(HousingEditUiEvent.StreetChanged(it)) },
+                            label = "Rue",
+                            isValid = validationState.isStreetValid,
+                            errorMessage = "La rue est obligatoire",
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        ValidatedTextField(
-                            value = state.address,
-                            onValueChange = { onEvent(HousingEditUiEvent.AddressChanged(it)) },
-                            label = "Adresse complète",
-                            isValid = validationState.isAddressValid,
-                            errorMessage = "L'adresse est obligatoire",
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingM),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ValidatedTextField(
+                                value = state.number,
+                                onValueChange = { onEvent(HousingEditUiEvent.NumberChanged(it)) },
+                                label = "Numéro",
+                                isValid = validationState.isNumberValid,
+                                errorMessage = "Le numéro est obligatoire",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            OutlinedTextField(
+                                value = state.box,
+                                onValueChange = { onEvent(HousingEditUiEvent.BoxChanged(it)) },
+                                label = { Text("Boîte") },
+                                placeholder = { Text("Bte 2") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingM),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ValidatedTextField(
+                                value = state.zipCode,
+                                onValueChange = { onEvent(HousingEditUiEvent.ZipCodeChanged(it)) },
+                                label = "Code postal",
+                                isValid = validationState.isZipCodeValid,
+                                errorMessage = "Le code postal est obligatoire",
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            ValidatedTextField(
+                                value = state.city,
+                                onValueChange = { onEvent(HousingEditUiEvent.CityChanged(it)) },
+                                label = "Ville",
+                                isValid = validationState.isCityValid,
+                                errorMessage = "La ville est obligatoire",
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = state.country,
+                            onValueChange = { onEvent(HousingEditUiEvent.CountryChanged(it)) },
+                            label = { Text("Pays") },
+                            placeholder = { Text("BE") },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -170,10 +222,26 @@ private fun HousingEditContent(
                         subtitle = "Champs optionnels"
                     ) {
                         OutlinedTextField(
-                            value = state.peb.orEmpty(),
-                            onValueChange = { onEvent(HousingEditUiEvent.PebChanged(it.trim().ifBlank { null })) },
+                            value = state.pebRating.takeIf { it != PebRating.UNKNOWN }
+                                ?.toDisplayLabel()
+                                .orEmpty(),
+                            onValueChange = { input ->
+                                onEvent(
+                                    HousingEditUiEvent.PebRatingChanged(
+                                        parsePebRating(input)
+                                    )
+                                )
+                            },
                             label = { Text("PEB (Performance Énergétique)") },
-                            placeholder = { Text("Ex: A, B+, C...") },
+                            placeholder = { Text("Ex: A+, A, B, C") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = state.pebDate.orEmpty(),
+                            onValueChange = { onEvent(HousingEditUiEvent.PebDateChanged(it.trim().ifBlank { null })) },
+                            label = { Text("Année du PEB") },
+                            placeholder = { Text("Ex: 2021") },
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -182,6 +250,14 @@ private fun HousingEditContent(
                             onValueChange = { onEvent(HousingEditUiEvent.BuildingLabelChanged(it.trim().ifBlank { null })) },
                             label = { Text("Nom du bâtiment") },
                             placeholder = { Text("Ex: Résidence les Platanes") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = state.internalNote,
+                            onValueChange = { onEvent(HousingEditUiEvent.InternalNoteChanged(it)) },
+                            label = { Text("Note interne") },
+                            placeholder = { Text("Informations supplémentaires...") },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -542,25 +618,34 @@ private fun SmartSaveButton(
 // === HELPERS ===
 
 data class FormValidationState(
+    val isStreetValid: Boolean,
+    val isNumberValid: Boolean,
+    val isZipCodeValid: Boolean,
     val isCityValid: Boolean,
-    val isAddressValid: Boolean,
     val isRentValid: Boolean,
     val isChargesValid: Boolean,
     val isDepositValid: Boolean
 ) {
     val isFormValid: Boolean
-        get() = isCityValid && isAddressValid && isRentValid
+        get() = isStreetValid && isNumberValid && isZipCodeValid && isCityValid && isRentValid
 
     val completionPercentage: Float
         get() {
-            val total = 5
+            val total = 7
             val completed = listOf(
+                isStreetValid,
+                isNumberValid,
+                isZipCodeValid,
                 isCityValid,
-                isAddressValid,
                 isRentValid,
                 isChargesValid,
                 isDepositValid
             ).count { it }
             return completed.toFloat() / total.toFloat()
         }
+}
+
+private fun parsePebRating(input: String): PebRating {
+    val normalized = input.trim().uppercase().replace("+", "_PLUS")
+    return runCatching { PebRating.valueOf(normalized) }.getOrDefault(PebRating.UNKNOWN)
 }

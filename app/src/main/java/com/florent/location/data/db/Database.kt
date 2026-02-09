@@ -2,6 +2,7 @@ package com.florent.location.data.db
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.florent.location.data.db.dao.HousingDao
 import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.KeyDao
@@ -22,9 +23,10 @@ import com.florent.location.data.db.entity.TenantEntity
                     KeyEntity::class,
                     IndexationEventEntity::class
                 ],
-        version = 5,
+        version = 6,
         exportSchema = true
 )
+@TypeConverters(PebRatingConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun tenantDao(): TenantDao
     abstract fun housingDao(): HousingDao

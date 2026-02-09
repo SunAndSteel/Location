@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
+import com.florent.location.domain.model.PebRating
+import com.florent.location.domain.model.toDisplayLabel
 import com.florent.location.ui.components.*
 import kotlinx.coroutines.delay
 
@@ -47,7 +49,7 @@ fun HousingDetailScreen(
     // Modal de confirmation de suppression
     if (showDeleteDialog) {
         DeleteConfirmationDialog(
-            housingAddress = state.housing?.address ?: "",
+            housingAddress = state.housing?.address?.fullString() ?: "",
             onConfirm = {
                 state.housing?.let { housing ->
                     viewModel.onEvent(HousingDetailUiEvent.DeleteHousing(housing.id))
@@ -273,14 +275,14 @@ private fun EnhancedHeroSection(
 
             // Adresse avec typographie expressive
             Text(
-                text = housing.address,
+                text = housing.address.fullString(),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
             Text(
-                text = housing.city,
+                text = housing.address.city,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
@@ -303,7 +305,7 @@ private fun EnhancedHeroSection(
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
                     Text(
-                        text = formatCurrency(housing.defaultRentCents),
+                        text = formatCurrency(housing.rentCents),
                         style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -312,7 +314,7 @@ private fun EnhancedHeroSection(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "+ ${formatCurrency(housing.defaultChargesCents)}",
+                        text = "+ ${formatCurrency(housing.chargesCents)}",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
@@ -344,7 +346,7 @@ private fun EnhancedHeroSection(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = formatCurrency(housing.defaultRentCents + housing.defaultChargesCents),
+                        text = formatCurrency(housing.rentCents + housing.chargesCents),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -582,9 +584,16 @@ private fun HousingInfoSection(
             supportingText = "Détails complémentaires sur le bien."
         )
         SectionCard {
-            LabeledValueRow(label = "Ville", value = housing.city)
-            LabeledValueRow(label = "PEB", value = housing.peb ?: "Non renseigné")
+            LabeledValueRow(label = "Adresse", value = housing.address.fullString())
+            LabeledValueRow(label = "Ville", value = housing.address.city)
+            LabeledValueRow(
+                label = "PEB",
+                value = housing.pebRating.takeIf { it != PebRating.UNKNOWN }?.toDisplayLabel()
+                    ?: "Non renseigné"
+            )
+            LabeledValueRow(label = "Année PEB", value = housing.pebDate ?: "Non renseigné")
             LabeledValueRow(label = "Bâtiment", value = housing.buildingLabel ?: "Non renseigné")
+            LabeledValueRow(label = "Note interne", value = housing.internalNote ?: "Non renseigné")
         }
     }
 }
@@ -603,8 +612,8 @@ private fun HousingFinancialSection(
             supportingText = "Montants enregistrés pour ce logement."
         )
         SectionCard {
-            LabeledValueRow(label = "Loyer", value = formatCurrency(housing.defaultRentCents))
-            LabeledValueRow(label = "Charges", value = formatCurrency(housing.defaultChargesCents))
+            LabeledValueRow(label = "Loyer", value = formatCurrency(housing.rentCents))
+            LabeledValueRow(label = "Charges", value = formatCurrency(housing.chargesCents))
             LabeledValueRow(label = "Caution", value = formatCurrency(housing.depositCents))
         }
     }
@@ -625,9 +634,9 @@ private fun HousingAccessSection(
         )
         SectionCard {
             LabeledValueRow(label = "Boîte aux lettres", value = housing.mailboxLabel ?: "Non renseigné")
-            LabeledValueRow(label = "Compteur gaz", value = housing.meterGas ?: "Non renseigné")
-            LabeledValueRow(label = "Compteur électricité", value = housing.meterElectricity ?: "Non renseigné")
-            LabeledValueRow(label = "Compteur eau", value = housing.meterWater ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur gaz", value = housing.meterGasId ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur électricité", value = housing.meterElectricityId ?: "Non renseigné")
+            LabeledValueRow(label = "Compteur eau", value = housing.meterWaterId ?: "Non renseigné")
         }
     }
 }

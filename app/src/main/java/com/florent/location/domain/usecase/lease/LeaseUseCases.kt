@@ -56,8 +56,8 @@ class LeaseUseCasesImpl(
         val housing = requireNotNull(housingRepository.getHousing(housingId)) {
             "Le logement sélectionné n'existe pas."
         }
-        val defaultRentCents = housing.defaultRentCents
-        val defaultChargesCents = housing.defaultChargesCents
+        val defaultRentCents = housing.rentCents
+        val defaultChargesCents = housing.chargesCents
         val defaultDepositCents = housing.depositCents
         val rentCents = request.rentCents ?: defaultRentCents
         val chargesCents = request.chargesCents ?: defaultChargesCents

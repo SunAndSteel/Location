@@ -33,12 +33,14 @@ interface HousingDao {
         FROM housings h
         LEFT JOIN leases l 
             ON l.housingId = h.id AND l.endDateEpochDay IS NULL
-        ORDER BY h.city COLLATE NOCASE, h.address COLLATE NOCASE
+        ORDER BY h.addr_city COLLATE NOCASE, h.addr_street COLLATE NOCASE, h.addr_number COLLATE NOCASE
     """
     )
     fun observeHousingsWithActiveLease(): Flow<List<HousingWithActiveLease>>
 
-    @Query("SELECT * FROM housings ORDER BY city COLLATE NOCASE, address COLLATE NOCASE")
+    @Query(
+        "SELECT * FROM housings ORDER BY addr_city COLLATE NOCASE, addr_street COLLATE NOCASE, addr_number COLLATE NOCASE"
+    )
     fun observeHousings(): Flow<List<HousingEntity>>
 
     @Query("SELECT * FROM housings WHERE id = :id")

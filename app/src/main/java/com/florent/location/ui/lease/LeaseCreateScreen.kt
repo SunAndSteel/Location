@@ -163,7 +163,7 @@ private fun LeaseCreateContent(
                             supportingContent = {
                                 Text(
                                     text = state.housings.firstOrNull { it.id == state.selectedHousingId }
-                                        ?.let { "${it.address}, ${it.city}" }
+                                        ?.let { it.address.fullString() }
                                         ?: "Choisir un logement"
                                 )
                             },

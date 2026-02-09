@@ -119,8 +119,8 @@ class LeaseCreateViewModel(
     private fun selectHousing(housingId: Long) {
         val housing = _uiState.value.housings.firstOrNull { it.id == housingId }
         _uiState.update { current ->
-            val defaultRent = housing?.defaultRentCents ?: current.housingDefaultRentCents
-            val defaultCharges = housing?.defaultChargesCents ?: current.housingDefaultChargesCents
+            val defaultRent = housing?.rentCents ?: current.housingDefaultRentCents
+            val defaultCharges = housing?.chargesCents ?: current.housingDefaultChargesCents
             val defaultDeposit = housing?.depositCents ?: current.housingDepositCents
             current.copy(
                 selectedHousingId = housingId,
