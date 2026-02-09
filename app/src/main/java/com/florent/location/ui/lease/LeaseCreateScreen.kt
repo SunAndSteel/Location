@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -239,7 +237,7 @@ private fun LeaseCreateContent(
                         housingDefaultCents = state.housingDefaultRentCents,
                         overridden = state.rentOverridden,
                         fallback = "Saisissez un montant en euros, ex: 750,00"
-                    )
+                    ),
                 )
                 MoneyField(
                     label = "Charges (€)",
@@ -252,7 +250,7 @@ private fun LeaseCreateContent(
                         housingDefaultCents = state.housingDefaultChargesCents,
                         overridden = state.chargesOverridden,
                         fallback = "Saisissez un montant en euros, ex: 120,00"
-                    )
+                    ),
                 )
                 MoneyField(
                     label = "Caution (€)",
@@ -265,7 +263,7 @@ private fun LeaseCreateContent(
                         housingDefaultCents = state.housingDepositCents,
                         overridden = state.depositOverridden,
                         fallback = "Saisissez un montant en euros, ex: 900,00"
-                    )
+                    ),
                 )
                 OutlinedTextField(
                     value = state.rentDueDayOfMonth,

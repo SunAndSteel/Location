@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material3.Button
@@ -658,7 +657,7 @@ fun MoneyField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    supportingText: String? = null
+    supportingText: String? = null,
 ) {
     OutlinedTextField(
         value = value,

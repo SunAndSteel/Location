@@ -1,75 +1,95 @@
 package com.florent.location.ui.housing
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AppSectionHeader
-import com.florent.location.ui.components.CardVariant
-import com.florent.location.ui.components.DestructiveActionCard
-import com.florent.location.ui.components.ExpressiveEmptyState
-import com.florent.location.ui.components.ExpressiveErrorState
-import com.florent.location.ui.components.ExpressiveLoadingState
-import com.florent.location.ui.components.HeroSummaryCard
-import com.florent.location.ui.components.LabeledValueRow
-import com.florent.location.ui.components.NonInteractiveChip
-import com.florent.location.ui.components.PrimaryActionRow
-import com.florent.location.ui.components.ScreenScaffold
-import com.florent.location.ui.components.SectionCard
-import com.florent.location.ui.components.UiTokens
-import com.florent.location.ui.components.housingSituationLabel
-import com.florent.location.ui.components.formatCurrency
-import com.florent.location.ui.components.windowWidthSize
-import com.florent.location.ui.components.WindowWidthSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.HomeWork
-import androidx.compose.material.icons.outlined.ReportProblem
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.HousingSituation
+import com.florent.location.ui.components.*
+import kotlinx.coroutines.delay
 
 @Composable
 fun HousingDetailScreen(
     viewModel: HousingDetailViewModel,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
+    onDeleted: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showActionsSheet by remember { mutableStateOf(false) }
+
     HousingDetailContent(
         state = state,
-        onEvent = viewModel::onEvent,
         onEdit = onEdit,
         onCreateLease = onCreateLease,
+        onDeleteClick = { showDeleteDialog = true },
+        onShowActions = { showActionsSheet = true },
         modifier = modifier
     )
+
+    // Modal de confirmation de suppression
+    if (showDeleteDialog) {
+        DeleteConfirmationDialog(
+            housingAddress = state.housing?.address ?: "",
+            onConfirm = {
+                state.housing?.let { housing ->
+                    viewModel.onEvent(HousingDetailUiEvent.DeleteHousing(housing.id))
+                }
+                showDeleteDialog = false
+                // Navigation après suppression
+                onDeleted()
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
+    // Bottom sheet d'actions (mobile)
+    if (showActionsSheet) {
+        ActionsBottomSheet(
+            onEdit = {
+                showActionsSheet = false
+                onEdit()
+            },
+            onCreateLease = {
+                showActionsSheet = false
+                onCreateLease()
+            },
+            onDelete = {
+                showActionsSheet = false
+                showDeleteDialog = true
+            },
+            onDismiss = { showActionsSheet = false }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HousingDetailContent(
     state: HousingDetailUiState,
-    onEvent: (HousingDetailUiEvent) -> Unit,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onShowActions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenScaffold(
-        title = "Logement",
+        title = "Détail du logement",
         contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
         modifier = modifier
     ) {
@@ -121,66 +141,21 @@ private fun HousingDetailContent(
                     BoxWithConstraints {
                         val sizeClass = windowWidthSize(maxWidth)
                         if (sizeClass == WindowWidthSize.Expanded) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
-                            ) {
-                                Column(
-                                    modifier = Modifier.weight(0.6f),
-                                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
-                                ) {
-                                    HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
-                                    HousingInfoSection(housing = housing)
-                                    HousingAccessSection(housing = housing)
-                                    HousingFinancialSection(housing = housing)
-                                }
-                                Column(
-                                    modifier = Modifier.weight(0.4f),
-                                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
-                                ) {
-                                    AppSectionHeader(title = "Actions")
-                                    PrimaryActionRow(
-                                        primaryLabel = "Modifier",
-                                        onPrimary = onEdit,
-                                        secondaryLabel = "Créer un bail",
-                                        onSecondary = onCreateLease
-                                    )
-                                    AppSectionHeader(title = "Zone dangereuse")
-                                    DestructiveActionCard(
-                                        title = "Supprimer le logement",
-                                        message = "Cette action est définitive.",
-                                        actionLabel = "Supprimer",
-                                        onAction = {
-                                            onEvent(HousingDetailUiEvent.DeleteHousing(housing.id))
-                                        },
-                                        icon = Icons.Outlined.ReportProblem
-                                    )
-                                }
-                            }
+                            // Layout desktop/tablette
+                            ExpandedLayout(
+                                housing = housing,
+                                situation = situation,
+                                onEdit = onEdit,
+                                onCreateLease = onCreateLease,
+                                onDeleteClick = onDeleteClick
+                            )
                         } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
-                                HousingHeroSection(housing = housing, situationLabel = housingSituationLabel(situation))
-                                HousingInfoSection(housing = housing)
-                                HousingAccessSection(housing = housing)
-                                HousingFinancialSection(housing = housing)
-                                AppSectionHeader(title = "Actions")
-                                PrimaryActionRow(
-                                    primaryLabel = "Modifier",
-                                    onPrimary = onEdit,
-                                    secondaryLabel = "Créer un bail",
-                                    onSecondary = onCreateLease
-                                )
-                                AppSectionHeader(title = "Zone dangereuse")
-                                DestructiveActionCard(
-                                    title = "Supprimer le logement",
-                                    message = "Cette action est définitive.",
-                                    actionLabel = "Supprimer",
-                                    onAction = {
-                                        onEvent(HousingDetailUiEvent.DeleteHousing(housing.id))
-                                    },
-                                    icon = Icons.Outlined.ReportProblem
-                                )
-                            }
+                            // Layout mobile
+                            CompactLayout(
+                                housing = housing,
+                                situation = situation,
+                                onShowActions = onShowActions
+                            )
                         }
                     }
                 }
@@ -189,26 +164,395 @@ private fun HousingDetailContent(
     }
 }
 
+// === LAYOUTS ===
+
 @Composable
-private fun HousingHeroSection(
+private fun ExpandedLayout(
     housing: Housing,
-    situationLabel: String,
+    situation: HousingSituation,
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
+    ) {
+        // Contenu principal
+        Column(
+            modifier = Modifier.weight(0.6f),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+        ) {
+            EnhancedHeroSection(housing = housing, situation = situation)
+            HousingInfoSection(housing = housing)
+            HousingAccessSection(housing = housing)
+            HousingFinancialSection(housing = housing)
+        }
+
+        // Panel d'actions
+        Column(
+            modifier = Modifier.weight(0.4f),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+        ) {
+            ActionsPanel(
+                onEdit = onEdit,
+                onCreateLease = onCreateLease,
+                onDeleteClick = onDeleteClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactLayout(
+    housing: Housing,
+    situation: HousingSituation,
+    onShowActions: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+        EnhancedHeroSection(housing = housing, situation = situation)
+
+        // Bouton d'actions flottant pour mobile
+        Button(
+            onClick = onShowActions,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.MoreHoriz,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Actions")
+        }
+
+        HousingInfoSection(housing = housing)
+        HousingAccessSection(housing = housing)
+        HousingFinancialSection(housing = housing)
+    }
+}
+
+// === SECTIONS AMÉLIORÉES ===
+
+@Composable
+private fun EnhancedHeroSection(
+    housing: Housing,
+    situation: HousingSituation,
     modifier: Modifier = Modifier
 ) {
-    HeroSummaryCard(
-        title = "${housing.address}, ${housing.city}",
-        heroValue = formatCurrency(housing.defaultRentCents),
-        heroLabel = "/ mois",
-        facts = listOf(
-            "Statut" to situationLabel,
-            "Charges" to formatCurrency(housing.defaultChargesCents),
-            "Caution" to formatCurrency(housing.depositCents),
-            "Ville" to housing.city
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
-        variant = CardVariant.Highlighted,
-        modifier = modifier
-    )
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(UiTokens.SpacingL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)
+        ) {
+            // Badge de statut animé
+            SituationBadge(situation = situation)
+
+            // Adresse avec typographie expressive
+            Text(
+                text = housing.address,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Text(
+                text = housing.city,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            )
+
+            Divider(
+                modifier = Modifier.padding(vertical = UiTokens.SpacingS),
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+            )
+
+            // Prix principal avec hiérarchie forte
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "Loyer mensuel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = formatCurrency(housing.defaultRentCents),
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "+ ${formatCurrency(housing.defaultChargesCents)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "charges",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            // Total
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(UiTokens.SpacingM),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Total mensuel",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = formatCurrency(housing.defaultRentCents + housing.defaultChargesCents),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            // Caution
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Caution",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = formatCurrency(housing.depositCents),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+    }
 }
+
+@Composable
+private fun SituationBadge(situation: HousingSituation) {
+    val (label, color, icon) = when (situation) {
+        HousingSituation.LIBRE -> Triple(
+            "Disponible",
+            MaterialTheme.colorScheme.tertiary,
+            Icons.Outlined.CheckCircle
+        )
+        HousingSituation.OCCUPE -> Triple(
+            "Occupé",
+            MaterialTheme.colorScheme.error,
+            Icons.Outlined.Home
+        )
+        HousingSituation.DRAFT -> Triple(
+            "Bail se termine",
+            MaterialTheme.colorScheme.secondary,
+            Icons.Outlined.Schedule
+        )
+    }
+
+    // Animation pulse pour statut occupé
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = color.copy(alpha = 0.2f),
+        modifier = Modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+
+            if(situation == HousingSituation.OCCUPE) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = alpha))
+                )
+            }
+
+        }
+    }
+}
+
+@Composable
+private fun ActionsPanel(
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+        AppSectionHeader(title = "Actions rapides")
+
+        // Actions principales
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(UiTokens.SpacingM),
+                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+            ) {
+                ActionButton(
+                    text = "Modifier le logement",
+                    icon = Icons.Outlined.Edit,
+                    onClick = onEdit,
+                    isPrimary = true
+                )
+
+                ActionButton(
+                    text = "Créer un bail",
+                    icon = Icons.Outlined.Add,
+                    onClick = onCreateLease
+                )
+            }
+        }
+
+        AppSectionHeader(
+            title = "Zone dangereuse",
+            supportingText = "Actions irréversibles"
+        )
+
+        // Zone de suppression
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(UiTokens.SpacingM),
+                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.ReportProblem,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Supprimer le logement",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+
+                Text(
+                    text = "Cette action supprimera définitivement le logement et tous les baux associés.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                )
+
+                OutlinedButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.error)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Supprimer")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    isPrimary: Boolean = false
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = if (isPrimary) {
+            ButtonDefaults.buttonColors()
+        } else {
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text)
+    }
+}
+
+// Sections info (identiques mais avec SectionCard au lieu de Card simple)
 
 @Composable
 private fun HousingInfoSection(
@@ -270,6 +614,184 @@ private fun HousingAccessSection(
             LabeledValueRow(label = "Compteur gaz", value = housing.meterGas ?: "Non renseigné")
             LabeledValueRow(label = "Compteur électricité", value = housing.meterElectricity ?: "Non renseigné")
             LabeledValueRow(label = "Compteur eau", value = housing.meterWater ?: "Non renseigné")
+        }
+    }
+}
+
+// === DIALOGS & BOTTOM SHEETS ===
+
+@Composable
+private fun DeleteConfirmationDialog(
+    housingAddress: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var confirmText by remember { mutableStateOf("") }
+    val isConfirmEnabled = confirmText.equals("SUPPRIMER", ignoreCase = true)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.ReportProblem,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                text = "Supprimer ce logement ?",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Vous êtes sur le point de supprimer définitivement :",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Text(
+                        text = housingAddress,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+
+                Text(
+                    text = "⚠️ Cette action supprimera également tous les baux associés. Cette opération est irréversible.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Pour confirmer, tapez SUPPRIMER :",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
+
+                OutlinedTextField(
+                    value = confirmText,
+                    onValueChange = { confirmText = it },
+                    placeholder = { Text("SUPPRIMER") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = isConfirmEnabled,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Supprimer définitivement")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annuler")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ActionsBottomSheet(
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(UiTokens.SpacingL)
+                .padding(bottom = UiTokens.SpacingXL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)
+        ) {
+            Text(
+                text = "Actions",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Divider()
+
+            BottomSheetAction(
+                text = "Modifier le logement",
+                icon = Icons.Outlined.Edit,
+                onClick = onEdit
+            )
+
+            BottomSheetAction(
+                text = "Créer un bail",
+                icon = Icons.Outlined.Add,
+                onClick = onCreateLease
+            )
+
+            Divider()
+
+            BottomSheetAction(
+                text = "Supprimer le logement",
+                icon = Icons.Outlined.Delete,
+                onClick = onDelete,
+                isDestructive = true
+            )
+        }
+    }
+}
+
+@Composable
+private fun BottomSheetAction(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isDestructive)
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        else
+            Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier.padding(UiTokens.SpacingM),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
