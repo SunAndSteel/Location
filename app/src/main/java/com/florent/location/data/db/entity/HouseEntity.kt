@@ -32,5 +32,8 @@ data class HousingEntity(
     val pebRating: PebRating = PebRating.UNKNOWN,
     val pebDate: String? = null,
     val buildingLabel: String? = null,
-    val internalNote: String? = null
+    val internalNote: String? = null,
+    val dirty: Boolean = true,
+    val serverUpdatedAtEpochSeconds: Long? = null
+
 )

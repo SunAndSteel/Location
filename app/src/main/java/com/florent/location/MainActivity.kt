@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.florent.location.ui.auth.AuthGate
 import com.florent.location.ui.navigation.LocationNavHost
 import com.florent.location.ui.theme.LocationTheme
 
@@ -19,7 +20,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LocationTheme {
-                LocationNavHost()
+                AuthGate()
             }
         }
     }

@@ -60,4 +60,25 @@ interface HousingDao {
     @Delete suspend fun delete(housing: HousingEntity)
 
     @Query("DELETE FROM housings WHERE id = :id") suspend fun deleteById(id: Long): Int
+
+    @Query("SELECT * FROM housings WHERE dirty = 1")
+    suspend fun getDirty(): List<HousingEntity>
+
+    @Query("SELECT * FROM housings WHERE remoteId = :remoteId LIMIT 1")
+    suspend fun getByRemoteId(remoteId: String): HousingEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(items: List<HousingEntity>)
+
+    @Query("UPDATE housings SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdatedAt WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdatedAt: Long)
+
+    @Query("SELECT serverUpdatedAtEpochSeconds FROM housings ORDER BY serverUpdatedAtEpochSeconds DESC LIMIT 1")
+    suspend fun getMaxServerUpdatedAtOrNull(): Long?
+
+    @Query("UPDATE housings SET dirty = 1 WHERE id = :id")
+    suspend fun markDirtyById(id: Long)
+
+    @Query("UPDATE housings SET dirty = 1 WHERE remoteId = :remoteId")
+    suspend fun markDirtyByRemoteId(remoteId: String)
 }

@@ -65,6 +65,7 @@ val appModule = module {
             .fallbackToDestructiveMigration()
             .build()
     }
+    single { com.florent.location.data.supabase.provideSupabaseClient() }
 
     // ---------------------------------------------------------------------
     // DAOs
@@ -74,6 +75,7 @@ val appModule = module {
     single { get<AppDatabase>().leaseDao() }
     single { get<AppDatabase>().keyDao() }
     single { get<AppDatabase>().indexationEventDao() }
+    single { get<AppDatabase>().authSessionDao() }
 
     // ---------------------------------------------------------------------
     // Repositories (Domain interfaces -> Data impl)
@@ -97,6 +99,10 @@ val appModule = module {
             indexationEventDao = get()
         )
     }
+
+    single { com.florent.location.data.auth.AuthRepository(supabase = get(), sessionDao = get()) }
+    single { com.florent.location.data.sync.HousingSyncRepository(supabase = get(), housingDao = get()) }
+
 
     // ---------------------------------------------------------------------
     // UseCases (bundles)
@@ -154,4 +160,6 @@ val appModule = module {
             housingUseCases = get()
         )
     }
+    viewModel { com.florent.location.ui.auth.AuthGateViewModel(authRepository = get(), syncManager = get()) }
+    viewModel { com.florent.location.ui.auth.LoginViewModel(authRepository = get(), syncManager = get())}
 }
