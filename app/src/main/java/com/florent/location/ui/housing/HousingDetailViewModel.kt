@@ -6,6 +6,7 @@ import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
+import com.florent.location.ui.sync.HousingSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -41,7 +42,8 @@ sealed interface HousingDetailUiEvent {
 class HousingDetailViewModel(
     private val housingId: Long,
     private val housingUseCases: HousingUseCases,
-    private val observeHousingSituation: ObserveHousingSituation
+    private val observeHousingSituation: ObserveHousingSituation,
+    private val syncManager: HousingSyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HousingDetailUiState())
@@ -99,6 +101,7 @@ class HousingDetailViewModel(
         viewModelScope.launch {
             try {
                 housingUseCases.updateHousing(housing)
+                syncManager.requestSync("housing_update")
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
             }
@@ -109,6 +112,7 @@ class HousingDetailViewModel(
         viewModelScope.launch {
             try {
                 housingUseCases.deleteHousing(id)
+                syncManager.requestSync("housing_delete")
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
             }

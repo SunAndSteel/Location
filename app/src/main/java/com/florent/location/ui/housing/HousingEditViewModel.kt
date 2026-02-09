@@ -8,6 +8,7 @@ import com.florent.location.domain.model.PebRating
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.ui.components.formatEuroInput
 import com.florent.location.ui.components.parseEuroInputToCents
+import com.florent.location.ui.sync.HousingSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -67,7 +68,8 @@ sealed interface HousingEditUiEvent {
 
 class HousingEditViewModel(
     private val housingId: Long?,
-    private val useCases: HousingUseCases
+    private val useCases: HousingUseCases,
+    private val syncManager: HousingSyncManager
 ) : ViewModel() {
 
     private val _uiState =
@@ -201,8 +203,10 @@ class HousingEditViewModel(
             try {
                 if (current.housingId == null) {
                     useCases.createHousing(housing)
+                    syncManager.requestSync("housing_create")
                 } else {
                     useCases.updateHousing(housing)
+                    syncManager.requestSync("housing_update")
                 }
                 _uiState.update { it.copy(isSaved = true, errorMessage = null) }
             } catch (error: IllegalArgumentException) {
