@@ -42,9 +42,9 @@ import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.formatCurrency
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HomeWork
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
 
@@ -175,7 +175,7 @@ private fun LeaseCreateContent(
                             },
                             trailingContent = {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ChevronRight,
+                                    imageVector = Icons.Outlined.KeyboardArrowRight,
                                     contentDescription = null
                                 )
                             },
@@ -208,7 +208,7 @@ private fun LeaseCreateContent(
                             },
                             trailingContent = {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.ChevronRight,
+                                    imageVector = Icons.Outlined.KeyboardArrowRight,
                                     contentDescription = null
                                 )
                             },
