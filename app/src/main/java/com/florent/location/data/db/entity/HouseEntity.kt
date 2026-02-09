@@ -4,7 +4,6 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.florent.location.domain.model.Address
 import com.florent.location.domain.model.PebRating
 import java.util.UUID
 
@@ -19,7 +18,7 @@ import java.util.UUID
 data class HousingEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
     val remoteId: String = UUID.randomUUID().toString(),
-    @Embedded(prefix = "addr_") val address: Address,
+    @Embedded(prefix = "addr_") val address: AddressEntity,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isArchived: Boolean = false,

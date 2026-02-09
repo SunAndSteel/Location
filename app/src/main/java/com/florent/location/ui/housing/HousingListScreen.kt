@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +42,8 @@ import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.ListAlt
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.IconButton
 import org.koin.androidx.compose.koinViewModel
 
 @ExperimentalMaterial3Api
@@ -54,6 +57,7 @@ fun HousingListScreen(
     val state by viewModel.uiState.collectAsState()
     HousingListContent(
         state = state,
+        onEvent = viewModel::onEvent,
         onHousingClick = onHousingClick,
         onAddHousing = onAddHousing,
         modifier = modifier
@@ -64,6 +68,7 @@ fun HousingListScreen(
 @Composable
 private fun HousingListContent(
     state: HousingListUiState,
+    onEvent: (HousingListUiEvent) -> Unit,
     onHousingClick: (Long) -> Unit,
     onAddHousing: () -> Unit,
     modifier: Modifier = Modifier
@@ -124,13 +129,61 @@ private fun HousingListContent(
             else -> {
                 BoxWithConstraints {
                     val sizeClass = windowWidthSize(maxWidth)
+                    val searchField: @Composable () -> Unit = {
+                        SectionCard {
+                            OutlinedTextField(
+                                value = state.searchQuery,
+                                onValueChange = { onEvent(HousingListUiEvent.SearchQueryChanged(it)) },
+                                label = { Text(text = "Rechercher") },
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = {
+                                    if (state.searchQuery.isNotBlank()) {
+                                        IconButton(
+                                            onClick = { onEvent(HousingListUiEvent.SearchQueryChanged("")) }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Close,
+                                                contentDescription = "Effacer la recherche"
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
                     if (sizeClass == WindowWidthSize.Expanded) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
                         ) {
-                            LazyColumn(
+                            Column(
                                 modifier = Modifier.weight(0.4f),
+                                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                            ) {
+                                searchField()
+                                LazyColumn(
+                                    contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
+                                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                                ) {
+                                    items(state.housings, key = { it.housing.id }) { item ->
+                                        HousingCard(
+                                            housing = item.housing,
+                                            situation = item.situation,
+                                            onOpen = { onHousingClick(item.housing.id) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                            HousingContextPanel(
+                                total = state.housings.size,
+                                modifier = Modifier.weight(0.6f)
+                            )
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+                            searchField()
+                            LazyColumn(
                                 contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
@@ -142,24 +195,6 @@ private fun HousingListContent(
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-                            }
-                            HousingContextPanel(
-                                total = state.housings.size,
-                                modifier = Modifier.weight(0.6f)
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
-                            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
-                        ) {
-                            items(state.housings, key = { it.housing.id }) { item ->
-                                HousingCard(
-                                    housing = item.housing,
-                                    situation = item.situation,
-                                    onOpen = { onHousingClick(item.housing.id) },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
                             }
                         }
                     }
