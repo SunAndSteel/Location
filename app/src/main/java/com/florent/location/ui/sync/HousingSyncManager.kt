@@ -1,9 +1,14 @@
 package com.florent.location.ui.sync
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.florent.location.data.sync.HousingSyncRepository
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 sealed interface SyncState {
     data object Idle : SyncState
@@ -19,6 +24,7 @@ class HousingSyncManager(
     val state: StateFlow<SyncState> = _state
 
     private var job: Job? = null
+    private val syncMutex = Mutex()
 
     fun requestSync(reason: String, debounceMs: Long = 800) {
         job?.cancel()
@@ -30,10 +36,18 @@ class HousingSyncManager(
 
     fun syncNow(reason: String) {
         scope.launch {
-            _state.value = SyncState.Syncing
-            runCatching { repo.syncOnce() }
-                .onSuccess { _state.value = SyncState.Idle }
-                .onFailure { _state.value = SyncState.Error(it.message ?: "Sync failed") }
+            syncMutex.withLock {
+                _state.value = SyncState.Syncing
+                runCatching { repo.syncOnce() }
+                    .onSuccess { _state.value = SyncState.Idle }
+                    .onFailure { _state.value = SyncState.Error(it.message ?: "Sync failed") }
+            }
+        }
+    }
+
+    fun consumeError() {
+        if (_state.value is SyncState.Error) {
+            _state.value = SyncState.Idle
         }
     }
 }

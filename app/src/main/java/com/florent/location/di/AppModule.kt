@@ -38,6 +38,10 @@ import com.florent.location.ui.lease.LeaseCreateViewModel
 import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
 
+import com.florent.location.ui.sync.HousingSyncManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -102,6 +106,12 @@ val appModule = module {
 
     single { com.florent.location.data.auth.AuthRepository(supabase = get(), sessionDao = get()) }
     single { com.florent.location.data.sync.HousingSyncRepository(supabase = get(), housingDao = get()) }
+    single {
+        HousingSyncManager(
+            repo = get(),
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        )
+    }
 
 
     // ---------------------------------------------------------------------
@@ -119,15 +129,28 @@ val appModule = module {
     // ---------------------------------------------------------------------
 
     // Logements
-    viewModel { HousingListViewModel(useCases = get(), observeHousingSituation = get()) }
+    viewModel {
+        HousingListViewModel(
+            useCases = get(),
+            observeHousingSituation = get(),
+            syncManager = get()
+        )
+    }
     viewModel { (housingId: Long) ->
         HousingDetailViewModel(
             housingId = housingId,
             housingUseCases = get(),
-            observeHousingSituation = get()
+            observeHousingSituation = get(),
+            syncManager = get()
         )
     }
-    viewModel { (housingId: Long?) -> HousingEditViewModel(housingId = housingId, useCases = get()) }
+    viewModel { (housingId: Long?) ->
+        HousingEditViewModel(
+            housingId = housingId,
+            useCases = get(),
+            syncManager = get()
+        )
+    }
 
     // Baux
     viewModel { LeaseListViewModel(useCases = get()) }
