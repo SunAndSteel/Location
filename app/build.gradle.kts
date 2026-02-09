@@ -77,6 +77,16 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
+    // Supabase
+    implementation(libs.postgrest.kt)
+    implementation(libs.realtime.kt)
+    implementation(libs.storage.kt)
+    // Ktor (requis par Supabase)
+    //noinspection UseTomlInstead
+    implementation("io.ktor:ktor-client-android:3.4.0")
+    // WorkManager pour la sync en arrière-plan
+    implementation(libs.androidx.work.runtime.ktx)
+
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
 

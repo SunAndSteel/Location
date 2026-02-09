@@ -112,12 +112,12 @@ private val topLevelDestinations = listOf(
     ),
     TopLevelDestination(
         route = LocationRoutes.HOUSINGS,
-        label = "Housings",
+        label = "Logements",
         icon = Icons.Outlined.Home
     ),
     TopLevelDestination(
         route = LocationRoutes.TENANTS,
-        label = "Tenants",
+        label = "Solitaires",
         icon = Icons.Outlined.People
     )
 )
