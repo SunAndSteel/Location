@@ -24,8 +24,12 @@ import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ReportProblem
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,13 +46,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.CardVariant
+import com.florent.location.ui.components.AppSectionHeader
 import com.florent.location.ui.components.DateFieldWithPicker
 import com.florent.location.ui.components.DestructiveActionCard
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
-import com.florent.location.ui.components.HeroSummaryCard
 import com.florent.location.ui.components.LabeledValueRow
 import com.florent.location.ui.components.NonInteractiveBadge
 import com.florent.location.ui.components.NonInteractiveChip
@@ -56,7 +59,7 @@ import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ResultCard
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
-import com.florent.location.ui.components.SectionHeader
+import com.florent.location.ui.components.StatusBadge
 import com.florent.location.ui.components.TimelineListItem
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.WindowWidthSize
@@ -333,25 +336,19 @@ private fun LeaseSummarySection(
     modifier: Modifier = Modifier
 ) {
     val statusLabel = if (isActive) "Actif" else "Terminé"
-    val variant = if (isActive) CardVariant.Highlighted else CardVariant.Default
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        HeroSummaryCard(
-            title = "Bail #${lease.id}",
-            status = statusLabel,
-            heroValue = formatCurrency(lease.rentCents),
-            heroLabel = "/ mois",
-            facts = listOf(
-                "Charges" to formatCurrency(lease.chargesCents),
-                "Caution" to formatCurrency(lease.depositCents),
-                "Échéance" to "Jour ${lease.rentDueDayOfMonth}",
-                "Début" to formatEpochDay(lease.startDateEpochDay)
-            ),
-            variant = variant
+        LeaseHeroSection(
+            lease = lease,
+            statusLabel = statusLabel,
+            isActive = isActive
         )
-        SectionHeader(title = "Résumé")
+        AppSectionHeader(
+            title = "Résumé",
+            supportingText = "Informations principales du bail."
+        )
         SectionCard {
             LabeledValueRow(
                 label = "Fin",
@@ -405,6 +402,96 @@ private fun LeaseSummarySection(
 }
 
 @Composable
+private fun LeaseHeroSection(
+    lease: Lease,
+    statusLabel: String,
+    isActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(UiTokens.SpacingL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)
+        ) {
+            StatusBadge(
+                text = statusLabel,
+                icon = if (isActive) Icons.Outlined.CheckCircle else Icons.Outlined.Schedule,
+                color = if (isActive) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
+            )
+
+            Text(
+                text = "Bail #${lease.id}",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = "Loyer mensuel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = formatCurrency(lease.rentCents),
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "+ ${formatCurrency(lease.chargesCents)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "charges",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(UiTokens.SpacingM),
+                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
+                ) {
+                    LabeledValueRow(
+                        label = "Caution",
+                        value = formatCurrency(lease.depositCents)
+                    )
+                    LabeledValueRow(
+                        label = "Échéance",
+                        value = "Jour ${lease.rentDueDayOfMonth}"
+                    )
+                    LabeledValueRow(
+                        label = "Début",
+                        value = formatEpochDay(lease.startDateEpochDay)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun IndexationSection(
     state: LeaseDetailUiState,
     onEvent: (LeaseDetailUiEvent) -> Unit,
@@ -414,7 +501,10 @@ private fun IndexationSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        SectionHeader(title = "Indexation")
+        AppSectionHeader(
+            title = "Indexation",
+            supportingText = "Calculs et historique."
+        )
         SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
             state.indexationPolicy?.let { policy ->
                 Text(
@@ -516,7 +606,10 @@ private fun KeysSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        SectionHeader(title = "Clés")
+        AppSectionHeader(
+            title = "Clés",
+            supportingText = "Suivi des clés remises."
+        )
         if (keys.isEmpty()) {
             SectionCard {
                 Text(

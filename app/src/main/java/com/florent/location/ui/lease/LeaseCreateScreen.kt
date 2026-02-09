@@ -30,9 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.AppSectionHeader
 import com.florent.location.ui.components.DateFieldWithPicker
+import com.florent.location.ui.components.EnhancedMoneyField
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
-import com.florent.location.ui.components.MoneyField
+import com.florent.location.ui.components.HorizontalStepper
 import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
@@ -134,155 +135,164 @@ private fun LeaseCreateContent(
                     }
                 }
             } else {
+                val selectionComplete = state.selectedHousingId != null && state.selectedTenantId != null
+                val currentStep = if (selectionComplete) 1 else 0
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                 ) {
-            AppSectionHeader(
-                title = "Sélection",
-                supportingText = "Choisissez le logement et le locataire."
-            )
-            SectionCard {
-                ExposedDropdownMenuBox(
-                    expanded = state.housingDropdownExpanded,
-                    onExpandedChange = { onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(it)) }
-                ) {
-                    OutlinedTextField(
-                        value = state.housings.firstOrNull { it.id == state.selectedHousingId }
-                            ?.let { "${it.address}, ${it.city}" }
-                            ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(text = "Logement") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = state.housingDropdownExpanded
-                            )
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
+                    HorizontalStepper(
+                        currentStep = currentStep,
+                        totalSteps = 2,
+                        stepLabels = listOf("Sélection", "Conditions"),
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    ExposedDropdownMenu(
-                        expanded = state.housingDropdownExpanded,
-                        onDismissRequest = {
-                            onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(false))
-                        }
-                    ) {
-                        state.housings.forEach { housing ->
-                            DropdownMenuItem(
-                                text = { Text(text = "${housing.address}, ${housing.city}") },
-                                onClick = { onEvent(LeaseCreateUiEvent.SelectHousing(housing.id)) }
-                            )
-                        }
-                    }
-                }
 
-                ExposedDropdownMenuBox(
-                    expanded = state.tenantDropdownExpanded,
-                    onExpandedChange = { onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(it)) }
-                ) {
-                    OutlinedTextField(
-                        value = state.tenants.firstOrNull { it.id == state.selectedTenantId }
-                            ?.let { "${it.firstName} ${it.lastName}" }
-                            ?: "",
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(text = "Locataire") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = state.tenantDropdownExpanded
-                            )
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
+                    AppSectionHeader(
+                        title = "Sélection",
+                        supportingText = "Choisissez le logement et le locataire."
                     )
-                    ExposedDropdownMenu(
-                        expanded = state.tenantDropdownExpanded,
-                        onDismissRequest = {
-                            onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(false))
-                        }
-                    ) {
-                        state.tenants.forEach { tenant ->
-                            DropdownMenuItem(
-                                text = { Text(text = "${tenant.firstName} ${tenant.lastName}") },
-                                onClick = { onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id)) }
+                    SectionCard {
+                        ExposedDropdownMenuBox(
+                            expanded = state.housingDropdownExpanded,
+                            onExpandedChange = { onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(it)) }
+                        ) {
+                            OutlinedTextField(
+                                value = state.housings.firstOrNull { it.id == state.selectedHousingId }
+                                    ?.let { "${it.address}, ${it.city}" }
+                                    ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text(text = "Logement") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(
+                                        expanded = state.housingDropdownExpanded
+                                    )
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth()
                             )
+                            ExposedDropdownMenu(
+                                expanded = state.housingDropdownExpanded,
+                                onDismissRequest = {
+                                    onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(false))
+                                }
+                            ) {
+                                state.housings.forEach { housing ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = "${housing.address}, ${housing.city}") },
+                                        onClick = { onEvent(LeaseCreateUiEvent.SelectHousing(housing.id)) }
+                                    )
+                                }
+                            }
+                        }
+
+                        ExposedDropdownMenuBox(
+                            expanded = state.tenantDropdownExpanded,
+                            onExpandedChange = { onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(it)) }
+                        ) {
+                            OutlinedTextField(
+                                value = state.tenants.firstOrNull { it.id == state.selectedTenantId }
+                                    ?.let { "${it.firstName} ${it.lastName}" }
+                                    ?: "",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text(text = "Locataire") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(
+                                        expanded = state.tenantDropdownExpanded
+                                    )
+                                },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = state.tenantDropdownExpanded,
+                                onDismissRequest = {
+                                    onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(false))
+                                }
+                            ) {
+                                state.tenants.forEach { tenant ->
+                                    DropdownMenuItem(
+                                        text = { Text(text = "${tenant.firstName} ${tenant.lastName}") },
+                                        onClick = { onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id)) }
+                                    )
+                                }
+                            }
                         }
                     }
-                }
-            }
 
-            AppSectionHeader(
-                title = "Conditions",
-                supportingText = "Dates et montants du bail."
-            )
-            SectionCard {
-                DateFieldWithPicker(
-                    label = "Date de début",
-                    value = state.startDate,
-                    onValueChange = {
-                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, it))
+                    AppSectionHeader(
+                        title = "Conditions",
+                        supportingText = "Dates et montants du bail."
+                    )
+                    SectionCard {
+                        DateFieldWithPicker(
+                            label = "Date de début",
+                            value = state.startDate,
+                            onValueChange = {
+                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, it))
+                            }
+                        )
+                        EnhancedMoneyField(
+                            label = "Loyer (€)",
+                            value = state.rent,
+                            onValueChange = {
+                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, it))
+                            },
+                            supportingText = buildAmountSupportingText(
+                                selectedHousingId = state.selectedHousingId,
+                                housingDefaultCents = state.housingDefaultRentCents,
+                                overridden = state.rentOverridden,
+                                fallback = "Saisissez un montant en euros, ex: 750,00"
+                            ),
+                        )
+                        EnhancedMoneyField(
+                            label = "Charges (€)",
+                            value = state.charges,
+                            onValueChange = {
+                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, it))
+                            },
+                            supportingText = buildAmountSupportingText(
+                                selectedHousingId = state.selectedHousingId,
+                                housingDefaultCents = state.housingDefaultChargesCents,
+                                overridden = state.chargesOverridden,
+                                fallback = "Saisissez un montant en euros, ex: 120,00"
+                            ),
+                        )
+                        EnhancedMoneyField(
+                            label = "Caution (€)",
+                            value = state.deposit,
+                            onValueChange = {
+                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, it))
+                            },
+                            supportingText = buildAmountSupportingText(
+                                selectedHousingId = state.selectedHousingId,
+                                housingDefaultCents = state.housingDepositCents,
+                                overridden = state.depositOverridden,
+                                fallback = "Saisissez un montant en euros, ex: 900,00"
+                            ),
+                        )
+                        OutlinedTextField(
+                            value = state.rentDueDayOfMonth,
+                            onValueChange = {
+                                onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, it))
+                            },
+                            label = { Text(text = "Jour d'échéance (1-28)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
-                )
-                MoneyField(
-                    label = "Loyer (€)",
-                    value = state.rent,
-                    onValueChange = {
-                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, it))
-                    },
-                    supportingText = buildAmountSupportingText(
-                        selectedHousingId = state.selectedHousingId,
-                        housingDefaultCents = state.housingDefaultRentCents,
-                        overridden = state.rentOverridden,
-                        fallback = "Saisissez un montant en euros, ex: 750,00"
-                    ),
-                )
-                MoneyField(
-                    label = "Charges (€)",
-                    value = state.charges,
-                    onValueChange = {
-                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, it))
-                    },
-                    supportingText = buildAmountSupportingText(
-                        selectedHousingId = state.selectedHousingId,
-                        housingDefaultCents = state.housingDefaultChargesCents,
-                        overridden = state.chargesOverridden,
-                        fallback = "Saisissez un montant en euros, ex: 120,00"
-                    ),
-                )
-                MoneyField(
-                    label = "Caution (€)",
-                    value = state.deposit,
-                    onValueChange = {
-                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, it))
-                    },
-                    supportingText = buildAmountSupportingText(
-                        selectedHousingId = state.selectedHousingId,
-                        housingDefaultCents = state.housingDepositCents,
-                        overridden = state.depositOverridden,
-                        fallback = "Saisissez un montant en euros, ex: 900,00"
-                    ),
-                )
-                OutlinedTextField(
-                    value = state.rentDueDayOfMonth,
-                    onValueChange = {
-                        onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, it))
-                    },
-                    label = { Text(text = "Jour d'échéance (1-28)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
 
-            if (state.isSaved) {
-                Text(text = "Bail enregistré.", color = MaterialTheme.colorScheme.primary)
-            }
+                    if (state.isSaved) {
+                        Text(text = "Bail enregistré.", color = MaterialTheme.colorScheme.primary)
+                    }
 
-            PrimaryActionRow(
-                primaryLabel = if (state.isSaving) "Enregistrement..." else "Créer le bail",
-                onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
-            )
+                    PrimaryActionRow(
+                        primaryLabel = if (state.isSaving) "Enregistrement..." else "Créer le bail",
+                        onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
+                    )
                 }
             }
         }
