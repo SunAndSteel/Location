@@ -364,9 +364,9 @@ private fun LeaseSummarySection(
             )
             if (
                 housing?.mailboxLabel != null ||
-                housing?.meterGas != null ||
-                housing?.meterElectricity != null ||
-                housing?.meterWater != null
+                housing?.meterGasId != null ||
+                housing?.meterElectricityId != null ||
+                housing?.meterWaterId != null
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
                     housing?.mailboxLabel?.let {
@@ -375,7 +375,7 @@ private fun LeaseSummarySection(
                             icon = Icons.Outlined.Inbox
                         )
                     }
-                    housing?.meterGas?.let {
+                    housing?.meterGasId?.let {
                         NonInteractiveChip(
                             label = "Gaz $it",
                             icon = Icons.Outlined.Payments
@@ -383,13 +383,13 @@ private fun LeaseSummarySection(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
-                    housing?.meterElectricity?.let {
+                    housing?.meterElectricityId?.let {
                         NonInteractiveChip(
                             label = "Élec. $it",
                             icon = Icons.Outlined.Payments
                         )
                     }
-                    housing?.meterWater?.let {
+                    housing?.meterWaterId?.let {
                         NonInteractiveChip(
                             label = "Eau $it",
                             icon = Icons.Outlined.Payments

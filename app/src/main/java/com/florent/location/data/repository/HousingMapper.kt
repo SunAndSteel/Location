@@ -9,17 +9,22 @@ import com.florent.location.domain.model.Housing
 fun HousingEntity.toDomain(): Housing =
     Housing(
         id = id,
-        city = city,
+        remoteId = remoteId,
         address = address,
-        defaultRentCents = defaultRentCents,
-        defaultChargesCents = defaultChargesCents,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        isArchived = isArchived,
+        rentCents = rentCents,
+        chargesCents = chargesCents,
         depositCents = depositCents,
         mailboxLabel = mailboxLabel,
-        meterGas = meterGas,
-        meterElectricity = meterElectricity,
-        meterWater = meterWater,
-        peb = peb,
-        buildingLabel = buildingLabel
+        meterGasId = meterGasId,
+        meterElectricityId = meterElectricityId,
+        meterWaterId = meterWaterId,
+        pebRating = pebRating,
+        pebDate = pebDate,
+        buildingLabel = buildingLabel,
+        internalNote = internalNote
     )
 
 /**
@@ -28,15 +33,20 @@ fun HousingEntity.toDomain(): Housing =
 fun Housing.toEntity(): HousingEntity =
     HousingEntity(
         id = id,
-        city = city,
+        remoteId = remoteId,
         address = address,
-        defaultRentCents = defaultRentCents,
-        defaultChargesCents = defaultChargesCents,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        isArchived = isArchived,
+        rentCents = rentCents,
+        chargesCents = chargesCents,
         depositCents = depositCents,
         mailboxLabel = mailboxLabel,
-        meterGas = meterGas,
-        meterElectricity = meterElectricity,
-        meterWater = meterWater,
-        peb = peb,
-        buildingLabel = buildingLabel
+        meterGasId = meterGasId,
+        meterElectricityId = meterElectricityId,
+        meterWaterId = meterWaterId,
+        pebRating = pebRating,
+        pebDate = pebDate,
+        buildingLabel = buildingLabel,
+        internalNote = internalNote
     )

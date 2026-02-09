@@ -1,31 +1,37 @@
 package com.florent.location.data.db.entity
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.florent.location.domain.model.Address
+import com.florent.location.domain.model.PebRating
+import java.util.UUID
 
 @Entity(
-        tableName = "housings",
-        indices =
-                [
-                        Index(value = ["city"]),
-                        Index(
-                                value = ["address"],
-                                unique = true
-                        ) // optionnel : évite doublons exacts
-                ]
+    tableName = "housings",
+    indices = [
+        Index(value = ["remoteId"], unique = true),
+        Index(value = ["isArchived"]),
+        Index(value = ["addr_city", "addr_zipCode"])
+    ]
 )
 data class HousingEntity(
-        @PrimaryKey(autoGenerate = true) val id: Long = 0L,
-        val city: String,
-        val address: String,
-        val defaultRentCents: Long = 0L,
-        val defaultChargesCents: Long = 0L,
-        val depositCents: Long = 0L,
-        val mailboxLabel: String? = null,
-        val meterGas: String? = null,
-        val meterElectricity: String? = null,
-        val meterWater: String? = null,
-        val peb: String? = null, // ex: "C", ou "PEB C - 2021"
-        val buildingLabel: String? = null // ex: "Bâtiment A"
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    val remoteId: String = UUID.randomUUID().toString(),
+    @Embedded(prefix = "addr_") val address: Address,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isArchived: Boolean = false,
+    val rentCents: Long = 0L,
+    val chargesCents: Long = 0L,
+    val depositCents: Long = 0L,
+    val meterGasId: String? = null,
+    val meterElectricityId: String? = null,
+    val meterWaterId: String? = null,
+    val mailboxLabel: String? = null,
+    val pebRating: PebRating = PebRating.UNKNOWN,
+    val pebDate: String? = null,
+    val buildingLabel: String? = null,
+    val internalNote: String? = null
 )

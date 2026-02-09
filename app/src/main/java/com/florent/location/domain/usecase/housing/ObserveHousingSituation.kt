@@ -16,8 +16,8 @@ class ObserveHousingSituation(
         leaseRepository.observeActiveLeaseForHousing(housing.id).map { lease ->
             when {
                 lease != null -> HousingSituation.OCCUPE
-                housing.defaultRentCents == 0L &&
-                    housing.defaultChargesCents == 0L &&
+                housing.rentCents == 0L &&
+                    housing.chargesCents == 0L &&
                     housing.depositCents == 0L -> HousingSituation.DRAFT
                 else -> HousingSituation.LIBRE
             }
