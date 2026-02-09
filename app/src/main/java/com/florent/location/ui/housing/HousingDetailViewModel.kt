@@ -6,7 +6,7 @@ import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
-import com.florent.location.ui.sync.HousingSyncManager
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -43,7 +43,7 @@ class HousingDetailViewModel(
     private val housingId: Long,
     private val housingUseCases: HousingUseCases,
     private val observeHousingSituation: ObserveHousingSituation,
-    private val syncManager: HousingSyncManager
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HousingDetailUiState())

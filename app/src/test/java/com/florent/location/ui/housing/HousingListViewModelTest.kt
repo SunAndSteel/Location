@@ -9,6 +9,7 @@ import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.sampleHousing
 import com.florent.location.testutils.MainDispatcherRule
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -32,7 +33,7 @@ class HousingListViewModelTest {
         val repository = FakeHousingRepository()
         val useCases = HousingUseCasesImpl(repository)
         val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
-        val viewModel = HousingListViewModel(useCases, observeHousingSituation)
+        val viewModel = HousingListViewModel(useCases, observeHousingSituation, NoOpSyncRequester)
 
         advanceUntilIdle()
 
@@ -51,7 +52,8 @@ class HousingListViewModelTest {
                     throw IllegalStateException("boom")
                 }
             ),
-            observeHousingSituation
+            observeHousingSituation,
+            NoOpSyncRequester
         )
 
         advanceUntilIdle()
@@ -74,7 +76,7 @@ class HousingListViewModelTest {
         repository.setActiveLease(housing.id, true)
         val useCases = HousingUseCasesImpl(repository)
         val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
-        val viewModel = HousingListViewModel(useCases, observeHousingSituation)
+        val viewModel = HousingListViewModel(useCases, observeHousingSituation, NoOpSyncRequester)
 
         advanceUntilIdle()
         viewModel.onEvent(HousingListUiEvent.DeleteHousing(housing.id))
@@ -104,5 +106,11 @@ class HousingListViewModelTest {
         override suspend fun addKey(housingId: Long, key: Key): Long = 0L
 
         override suspend fun deleteKey(keyId: Long) = Unit
+    }
+
+    private companion object {
+        val NoOpSyncRequester = object : HousingSyncRequester {
+            override fun requestSync(reason: String, debounceMs: Long) = Unit
+        }
     }
 }
