@@ -1,6 +1,8 @@
 package com.florent.location.ui.lease
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -40,7 +42,10 @@ import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.formatCurrency
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HomeWork
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PersonAdd
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +88,7 @@ private fun LeaseCreateContent(
     ScreenScaffold(
         title = "Créer un bail",
         contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
-        modifier = modifier
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest)
     ) {
         if (state.isLoading) {
             Box(
@@ -152,83 +157,79 @@ private fun LeaseCreateContent(
                         title = "Sélection",
                         supportingText = "Choisissez le logement et le locataire."
                     )
-                    SectionCard {
-                        ExposedDropdownMenuBox(
-                            expanded = state.housingDropdownExpanded,
-                            onExpandedChange = { onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(it)) }
-                        ) {
-                            OutlinedTextField(
-                                value = state.housings.firstOrNull { it.id == state.selectedHousingId }
-                                    ?.let { "${it.address}, ${it.city}" }
-                                    ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(text = "Logement") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(
-                                        expanded = state.housingDropdownExpanded
-                                    )
-                                },
-                                modifier = Modifier
-                                    .menuAnchor()
-                                    .fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = state.housingDropdownExpanded,
-                                onDismissRequest = {
-                                    onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(false))
+                    SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainer) {
+                        ListItem(
+                            headlineContent = { Text(text = "Logement") },
+                            supportingContent = {
+                                Text(
+                                    text = state.housings.firstOrNull { it.id == state.selectedHousingId }
+                                        ?.let { "${it.address}, ${it.city}" }
+                                        ?: "Choisir un logement"
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Home,
+                                    contentDescription = null
+                                )
+                            },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.ChevronRight,
+                                    contentDescription = null
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = if (state.selectedHousingId != null) {
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                                 }
-                            ) {
-                                state.housings.forEach { housing ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = "${housing.address}, ${housing.city}") },
-                                        onClick = { onEvent(LeaseCreateUiEvent.SelectHousing(housing.id)) }
-                                    )
-                                }
+                            ),
+                            modifier = Modifier.clickable {
+                                onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(true))
                             }
-                        }
-
-                        ExposedDropdownMenuBox(
-                            expanded = state.tenantDropdownExpanded,
-                            onExpandedChange = { onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(it)) }
-                        ) {
-                            OutlinedTextField(
-                                value = state.tenants.firstOrNull { it.id == state.selectedTenantId }
-                                    ?.let { "${it.firstName} ${it.lastName}" }
-                                    ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text(text = "Locataire") },
-                                trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(
-                                        expanded = state.tenantDropdownExpanded
-                                    )
-                                },
-                                modifier = Modifier
-                                    .menuAnchor()
-                                    .fillMaxWidth()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = state.tenantDropdownExpanded,
-                                onDismissRequest = {
-                                    onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(false))
+                        )
+                        Divider()
+                        ListItem(
+                            headlineContent = { Text(text = "Locataire") },
+                            supportingContent = {
+                                Text(
+                                    text = state.tenants.firstOrNull { it.id == state.selectedTenantId }
+                                        ?.let { "${it.firstName} ${it.lastName}" }
+                                        ?: "Choisir un locataire"
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null
+                                )
+                            },
+                            trailingContent = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Outlined.ChevronRight,
+                                    contentDescription = null
+                                )
+                            },
+                            colors = ListItemDefaults.colors(
+                                containerColor = if (state.selectedTenantId != null) {
+                                    MaterialTheme.colorScheme.surfaceContainerHighest
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                                 }
-                            ) {
-                                state.tenants.forEach { tenant ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = "${tenant.firstName} ${tenant.lastName}") },
-                                        onClick = { onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id)) }
-                                    )
-                                }
+                            ),
+                            modifier = Modifier.clickable {
+                                onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(true))
                             }
-                        }
+                        )
                     }
 
                     AppSectionHeader(
                         title = "Conditions",
                         supportingText = "Dates et montants du bail."
                     )
-                    SectionCard {
+                    SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainer) {
                         DateFieldWithPicker(
                             label = "Date de début",
                             value = state.startDate,

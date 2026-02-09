@@ -3,6 +3,7 @@
 package com.florent.location.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.ColumnScope
@@ -28,6 +29,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -46,6 +48,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -54,8 +59,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -606,14 +609,15 @@ fun DateFieldWithPicker(
 ) {
     var isDialogOpen by remember { mutableStateOf(false) }
     val initialDate = remember(value) { parseIsoDate(value) }
+    val initialMillis = remember(initialDate) { initialDate?.let { toEpochMillis(it) } }
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate?.let { toEpochMillis(it) }
+        initialSelectedDateMillis = initialMillis ?: System.currentTimeMillis()
     )
-    val focusManager = LocalFocusManager.current
+    val interactionSource = remember { MutableInteractionSource() }
 
-    LaunchedEffect(isDialogOpen, initialDate) {
+    LaunchedEffect(isDialogOpen, initialMillis) {
         if (isDialogOpen) {
-            datePickerState.selectedDateMillis = initialDate?.let { toEpochMillis(it) }
+            datePickerState.selectedDateMillis = initialMillis ?: System.currentTimeMillis()
         }
     }
 
@@ -622,20 +626,30 @@ fun DateFieldWithPicker(
         onValueChange = {},
         modifier = modifier
             .fillMaxWidth()
-            .onFocusChanged { focusState ->
-                if (focusState.isFocused) {
-                    focusManager.clearFocus()
-                    isDialogOpen = true
-                }
-            }
-            .clickable {
-                focusManager.clearFocus()
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
                 isDialogOpen = true
+            }
+            .onPreviewKeyEvent { event ->
+                val isOpenKey = event.key == Key.Enter ||
+                    event.key == Key.NumPadEnter ||
+                    event.key == Key.Spacebar ||
+                    event.key == Key.DirectionCenter
+                if (isOpenKey && event.type == KeyEventType.KeyUp) {
+                    isDialogOpen = true
+                    true
+                } else {
+                    false
+                }
             },
         label = { Text(text = label) },
         readOnly = true,
         trailingIcon = {
-            Icon(imageVector = Icons.Outlined.CalendarMonth, contentDescription = null)
+            IconButton(onClick = { isDialogOpen = true }) {
+                Icon(imageVector = Icons.Outlined.CalendarMonth, contentDescription = null)
+            }
         },
         supportingText = supportingText?.let { { Text(text = it) } }
     )
