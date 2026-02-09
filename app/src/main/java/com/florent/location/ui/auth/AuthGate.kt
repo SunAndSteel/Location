@@ -18,14 +18,14 @@ import androidx.compose.ui.Modifier
 import com.florent.location.ui.navigation.LocationNavHost
 import com.florent.location.ui.sync.HousingSyncManager
 import com.florent.location.ui.sync.SyncState
-import org.koin.androidx.compose.get
+import org.koin.androidx.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AuthGate() {
     val vm: AuthGateViewModel = koinViewModel()
     val state by vm.state.collectAsState()
-    val syncManager: HousingSyncManager = get()
+    val syncManager: HousingSyncManager = koinInject()
     val syncState by syncManager.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
