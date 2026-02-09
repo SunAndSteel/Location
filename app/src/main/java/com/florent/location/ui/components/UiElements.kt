@@ -630,10 +630,9 @@ fun DateFieldWithPicker(
                     onClick = {
                         val millis = datePickerState.selectedDateMillis
                         if (millis != null) {
-                            val newDate = LocalDate.ofInstant(
-                                java.time.Instant.ofEpochMilli(millis),
-                                ZoneId.systemDefault()
-                            )
+                            val newDate = java.time.Instant.ofEpochMilli(millis)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
                             onValueChange(newDate.format(DateTimeFormatter.ISO_LOCAL_DATE))
                         }
                         isDialogOpen = false
