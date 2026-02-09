@@ -1,7 +1,7 @@
 package com.florent.location.domain.usecase.housing
 
-import com.florent.location.domain.model.Housing
 import com.florent.location.fake.FakeHousingRepository
+import com.florent.location.sampleHousing
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -16,11 +16,10 @@ class HousingUseCasesTest {
         val useCases = HousingUseCasesImpl(repository)
 
         val id = useCases.createHousing(
-            Housing(
+            sampleHousing(
                 city = "Bruxelles",
-                address = "1 Rue de la Paix",
-                defaultRentCents = 90000,
-                defaultChargesCents = 15000,
+                rentCents = 90000,
+                chargesCents = 15000,
                 depositCents = 180000
             )
         )
@@ -32,12 +31,11 @@ class HousingUseCasesTest {
 
     @Test
     fun `deleteHousing removes housing when no active lease exists`() = runTest {
-        val housing = Housing(
+        val housing = sampleHousing(
             id = 1L,
             city = "Bruxelles",
-            address = "1 Rue de la Paix",
-            defaultRentCents = 90000,
-            defaultChargesCents = 15000,
+            rentCents = 90000,
+            chargesCents = 15000,
             depositCents = 180000
         )
         val repository = FakeHousingRepository(listOf(housing))
@@ -51,12 +49,11 @@ class HousingUseCasesTest {
 
     @Test
     fun `deleteHousing fails when active lease exists`() = runTest {
-        val housing = Housing(
+        val housing = sampleHousing(
             id = 1L,
             city = "Bruxelles",
-            address = "1 Rue de la Paix",
-            defaultRentCents = 90000,
-            defaultChargesCents = 15000,
+            rentCents = 90000,
+            chargesCents = 15000,
             depositCents = 180000
         )
         val repository = FakeHousingRepository(listOf(housing))

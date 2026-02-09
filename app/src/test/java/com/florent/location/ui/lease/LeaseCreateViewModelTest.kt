@@ -1,6 +1,5 @@
 package com.florent.location.ui.lease
 
-import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.lease.LeaseCreateRequest
@@ -9,6 +8,7 @@ import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
+import com.florent.location.sampleHousing
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -55,7 +55,7 @@ class LeaseCreateViewModelTest {
     @Test
     fun `selecting housing and tenant updates UiState`() = runTest {
         val housingRepository = FakeHousingRepository(
-            listOf(Housing(id = 1L, city = "Paris", address = "1 rue A"))
+            listOf(sampleHousing(id = 1L, city = "Paris"))
         )
         val tenantRepository = FakeTenantRepository(
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
@@ -79,7 +79,7 @@ class LeaseCreateViewModelTest {
     @Test
     fun `save success triggers success flag and resets saving state`() = runTest {
         val housingRepository = FakeHousingRepository(
-            listOf(Housing(id = 1L, city = "Paris", address = "1 rue A"))
+            listOf(sampleHousing(id = 1L, city = "Paris"))
         )
         val tenantRepository = FakeTenantRepository(
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
@@ -112,7 +112,7 @@ class LeaseCreateViewModelTest {
     @Test
     fun `save failure when active lease exists sets error state`() = runTest {
         val housingRepository = FakeHousingRepository(
-            listOf(Housing(id = 1L, city = "Paris", address = "1 rue A"))
+            listOf(sampleHousing(id = 1L, city = "Paris"))
         )
         val tenantRepository = FakeTenantRepository(
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))

@@ -7,6 +7,7 @@ import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
+import com.florent.location.sampleHousing
 import com.florent.location.testutils.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -62,12 +63,11 @@ class HousingListViewModelTest {
 
     @Test
     fun `delete housing shows error when active lease exists`() = runTest {
-        val housing = Housing(
+        val housing = sampleHousing(
             id = 1L,
             city = "Bruxelles",
-            address = "1 Rue de la Paix",
-            defaultRentCents = 90000,
-            defaultChargesCents = 15000,
+            rentCents = 90000,
+            chargesCents = 15000,
             depositCents = 180000
         )
         val repository = FakeHousingRepository(listOf(housing))
