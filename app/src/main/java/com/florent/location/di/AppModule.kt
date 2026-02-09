@@ -39,6 +39,7 @@ import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
 
 import com.florent.location.ui.sync.HousingSyncManager
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -112,6 +113,7 @@ val appModule = module {
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         )
     }
+    single<HousingSyncRequester> { get<HousingSyncManager>() }
 
 
     // ---------------------------------------------------------------------

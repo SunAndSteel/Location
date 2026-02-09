@@ -16,17 +16,21 @@ sealed interface SyncState {
     data class Error(val message: String) : SyncState
 }
 
+interface HousingSyncRequester {
+    fun requestSync(reason: String, debounceMs: Long = 800)
+}
+
 class HousingSyncManager(
     private val repo: HousingSyncRepository,
     private val scope: CoroutineScope
-) {
+) : HousingSyncRequester {
     private val _state = MutableStateFlow<SyncState>(SyncState.Idle)
     val state: StateFlow<SyncState> = _state
 
     private var job: Job? = null
     private val syncMutex = Mutex()
 
-    fun requestSync(reason: String, debounceMs: Long = 800) {
+    override fun requestSync(reason: String, debounceMs: Long) {
         job?.cancel()
         job = scope.launch {
             delay(debounceMs)

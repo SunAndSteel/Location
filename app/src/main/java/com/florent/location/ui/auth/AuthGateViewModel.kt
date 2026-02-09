@@ -3,7 +3,7 @@ package com.florent.location.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.data.auth.AuthRepository
-import com.florent.location.ui.sync.HousingSyncManager
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,7 +16,7 @@ sealed interface AuthGateState {
 
 class AuthGateViewModel(
     private val authRepository: AuthRepository,
-    private val syncManager: HousingSyncManager
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AuthGateState>(AuthGateState.Loading)

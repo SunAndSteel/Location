@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import com.florent.location.ui.navigation.LocationNavHost
 import com.florent.location.ui.sync.HousingSyncManager
 import com.florent.location.ui.sync.SyncState
-import org.koin.androidx.compose.koinInject
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun AuthGate() {

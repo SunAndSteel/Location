@@ -8,7 +8,7 @@ import com.florent.location.domain.model.PebRating
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.ui.components.formatEuroInput
 import com.florent.location.ui.components.parseEuroInputToCents
-import com.florent.location.ui.sync.HousingSyncManager
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -69,7 +69,7 @@ sealed interface HousingEditUiEvent {
 class HousingEditViewModel(
     private val housingId: Long?,
     private val useCases: HousingUseCases,
-    private val syncManager: HousingSyncManager
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState =
