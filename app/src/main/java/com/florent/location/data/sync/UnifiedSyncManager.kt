@@ -5,7 +5,9 @@ import com.florent.location.data.sync.*
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -29,6 +31,7 @@ class UnifiedSyncManager(
 ) : HousingSyncRequester {
 
     private val _syncChannel = Channel<String>(Channel.CONFLATED)
+    private var pendingSyncJob: Job? = null
 
     init {
         scope.launch {
@@ -133,7 +136,14 @@ class UnifiedSyncManager(
     }
 
     override fun requestSync(reason: String, debounceMs: Long) {
-        _syncChannel.trySend(reason)
+        pendingSyncJob?.cancel()
+        pendingSyncJob = scope.launch {
+            val effectiveDebounceMs = debounceMs.coerceAtLeast(0)
+            if (effectiveDebounceMs > 0) {
+                delay(effectiveDebounceMs)
+            }
+            _syncChannel.trySend(reason)
+        }
     }
 }
 

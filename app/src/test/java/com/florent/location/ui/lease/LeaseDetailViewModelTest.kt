@@ -16,6 +16,7 @@ import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_HOUSING_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
 import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
 import com.florent.location.sampleHousing
+import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.testutils.MainDispatcherRule
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,7 +47,7 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -68,7 +69,8 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
+        val syncRequester = RecordingSyncRequester()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, syncRequester)
 
         advanceUntilIdle()
 
@@ -93,6 +95,7 @@ class LeaseDetailViewModelTest {
 
             val updated = awaitItem()
             assertEquals(3, updated.keys.size)
+            assertEquals(listOf("key_add"), syncRequester.reasons)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -103,7 +106,7 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
 
         advanceUntilIdle()
 
@@ -132,7 +135,8 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases)
+        val syncRequester = RecordingSyncRequester()
+        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, syncRequester)
 
         advanceUntilIdle()
 
@@ -152,6 +156,7 @@ class LeaseDetailViewModelTest {
             val updated = awaitItem()
             assertFalse(updated.isActive)
             assertEquals(CLOSE_EPOCH_DAY, updated.lease?.endDateEpochDay)
+            assertEquals(listOf("lease_close"), syncRequester.reasons)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -162,7 +167,7 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases, housingUseCases)
+        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -188,7 +193,8 @@ class LeaseDetailViewModelTest {
                 }
             ),
             FakeLeaseUseCases(),
-            FakeHousingUseCases()
+            FakeHousingUseCases(),
+            RecordingSyncRequester()
         )
 
         advanceUntilIdle()

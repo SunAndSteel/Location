@@ -15,6 +15,7 @@ interface HousingDao {
         SELECT 
             h.*,
             l.id AS lease_id,
+            l.remoteId AS lease_remoteId,
             l.housingId AS lease_housingId,
             l.tenantId AS lease_tenantId,
             l.startDateEpochDay AS lease_startDateEpochDay,
@@ -29,7 +30,11 @@ interface HousingDao {
             l.depositOverridden AS lease_depositOverridden,
             l.housingRentCentsSnapshot AS lease_housingRentCentsSnapshot,
             l.housingChargesCentsSnapshot AS lease_housingChargesCentsSnapshot,
-            l.housingDepositCentsSnapshot AS lease_housingDepositCentsSnapshot
+            l.housingDepositCentsSnapshot AS lease_housingDepositCentsSnapshot,
+            l.createdAt AS lease_createdAt,
+            l.updatedAt AS lease_updatedAt,
+            l.dirty AS lease_dirty,
+            l.serverUpdatedAtEpochSeconds AS lease_serverUpdatedAtEpochSeconds
         FROM housings h
         LEFT JOIN leases l 
             ON l.housingId = h.id AND l.endDateEpochDay IS NULL

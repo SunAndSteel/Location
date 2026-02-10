@@ -21,6 +21,9 @@ interface TenantDao {
     @Query("SELECT * FROM tenants WHERE id = :id")
     fun observe(id: Long): Flow<TenantEntity?>
 
+    @Query("SELECT * FROM tenants WHERE id = :id")
+    fun observeById(id: Long): Flow<TenantEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(tenant: TenantEntity): Long
 
@@ -32,6 +35,15 @@ interface TenantDao {
 
     @Query("SELECT * FROM tenants WHERE id = :id")
     suspend fun getById(id: Long): TenantEntity?
+
+    @Query("SELECT COUNT(*) > 0 FROM tenants WHERE id = :id")
+    suspend fun exists(id: Long): Boolean
+
+    @Query("SELECT COUNT(*) > 0 FROM leases WHERE tenantId = :id AND endDateEpochDay IS NULL")
+    suspend fun hasActiveLease(id: Long): Boolean
+
+    @Query("DELETE FROM tenants WHERE id = :id")
+    suspend fun deleteById(id: Long): Int
 
     // NOUVELLES MÉTHODES pour la synchronisation
     @Query("SELECT * FROM tenants WHERE dirty = 1")

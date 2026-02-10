@@ -3,6 +3,7 @@ package com.florent.location.ui.tenant
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.TenantUseCasesImpl
 import com.florent.location.fake.FakeTenantRepository
+import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -23,9 +24,11 @@ class TenantEditViewModelTest {
     fun `create new tenant updates fields and saves`() = runTest {
         val repository = FakeTenantRepository()
         val useCases = TenantUseCasesImpl(repository)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantEditViewModel(
             tenantId = null,
-            useCases = useCases
+            useCases = useCases,
+            syncManager = syncRequester
         )
 
         viewModel.onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, "Alice"))
@@ -40,6 +43,7 @@ class TenantEditViewModelTest {
         assertTrue(state.isSaved)
         val tenants = repository.observeTenants().first()
         assertEquals(1, tenants.size)
+        assertEquals(listOf("tenant_create"), syncRequester.reasons)
     }
 
     @Test
@@ -48,9 +52,11 @@ class TenantEditViewModelTest {
             listOf(Tenant(1L, "Alice", "Durand", "123", null))
         )
         val useCases = TenantUseCasesImpl(repository)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantEditViewModel(
             tenantId = 1L,
-            useCases = useCases
+            useCases = useCases,
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -63,15 +69,18 @@ class TenantEditViewModelTest {
         val updated = repository.observeTenant(1L).first()
         assertEquals("Alicia", updated?.firstName)
         assertTrue(viewModel.uiState.value.isSaved)
+        assertEquals(listOf("tenant_update"), syncRequester.reasons)
     }
 
     @Test
     fun `validation errors surface in ui state`() = runTest {
         val repository = FakeTenantRepository()
         val useCases = TenantUseCasesImpl(repository)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantEditViewModel(
             tenantId = null,
-            useCases = useCases
+            useCases = useCases,
+            syncManager = syncRequester
         )
 
         viewModel.onEvent(TenantEditUiEvent.FieldChanged(TenantField.FirstName, ""))

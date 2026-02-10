@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantSituation
-import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
+import com.florent.location.domain.usecase.tenant.TenantUseCases
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -34,7 +35,8 @@ sealed interface TenantDetailUiEvent {
 class TenantDetailViewModel(
     private val tenantId: Long,
     private val tenantUseCases: TenantUseCases,
-    private val observeTenantSituation: ObserveTenantSituation
+    private val observeTenantSituation: ObserveTenantSituation,
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TenantDetailUiState())
@@ -89,6 +91,7 @@ class TenantDetailViewModel(
         viewModelScope.launch {
             try {
                 tenantUseCases.deleteTenant(tenantId)
+                syncManager.requestSync("tenant_delete")
                 _uiState.update { it.copy(isDeleted = true, errorMessage = null) }
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
