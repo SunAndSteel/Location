@@ -11,6 +11,7 @@ import com.florent.location.domain.model.Lease
 import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
+import com.florent.location.ui.sync.HousingSyncRequester
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -94,7 +95,8 @@ class LeaseDetailViewModel(
     private val leaseId: Long,
     private val bailUseCases: BailUseCases,
     private val leaseUseCases: LeaseUseCases,
-    private val housingUseCases: HousingUseCases
+    private val housingUseCases: HousingUseCases,
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeaseDetailUiState())
@@ -219,6 +221,7 @@ class LeaseDetailViewModel(
                         handedOverEpochDay = handedOverEpochDay
                     )
                 )
+                syncManager.requestSync("key_add")
                 _uiState.update {
                     it.copy(
                         addKeyDialog = AddKeyDialogState(isOpen = false),
@@ -235,6 +238,7 @@ class LeaseDetailViewModel(
         viewModelScope.launch {
             try {
                 housingUseCases.deleteKey(keyId)
+                syncManager.requestSync("key_delete")
             } catch (error: IllegalArgumentException) {
                 _uiState.update { it.copy(errorMessage = error.message) }
             }
@@ -269,6 +273,7 @@ class LeaseDetailViewModel(
 
             try {
                 leaseUseCases.closeLease(leaseId, parsed)
+                syncManager.requestSync("lease_close")
                 _uiState.update {
                     it.copy(
                         closeLeaseDialog = CloseLeaseDialogState(isOpen = false),
@@ -353,6 +358,7 @@ class LeaseDetailViewModel(
                     indexPercent = percent,
                     effectiveEpochDay = effectiveEpochDay
                 )
+                syncManager.requestSync("indexation_apply")
                 _uiState.update {
                     it.copy(
                         indexationForm = IndexationFormState(),

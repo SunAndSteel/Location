@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantStatus
 import com.florent.location.domain.usecase.tenant.TenantUseCases
+import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -41,7 +42,8 @@ sealed interface TenantEditUiEvent {
 
 class TenantEditViewModel(
     private val tenantId: Long?,
-    private val useCases: TenantUseCases
+    private val useCases: TenantUseCases,
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TenantEditUiState(isLoading = tenantId != null, tenantId = tenantId))
@@ -116,8 +118,10 @@ class TenantEditViewModel(
             try {
                 if (current.tenantId == null) {
                     useCases.createTenant(tenant)
+                    syncManager.requestSync("tenant_create")
                 } else {
                     useCases.updateTenant(tenant)
+                    syncManager.requestSync("tenant_update")
                 }
                 _uiState.update { it.copy(isSaved = true, errorMessage = null) }
             } catch (error: IllegalArgumentException) {

@@ -10,6 +10,9 @@ interface KeyDao {
     @Query("SELECT * FROM keys WHERE housingId = :housingId ORDER BY handedOverEpochDay DESC")
     fun observeAllByHousing(housingId: Long): Flow<List<KeyEntity>>
 
+    @Query("SELECT * FROM keys WHERE housingId = :housingId ORDER BY handedOverEpochDay DESC")
+    fun observeKeysForHousing(housingId: Long): Flow<List<KeyEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(key: KeyEntity): Long
 
@@ -24,6 +27,9 @@ interface KeyDao {
 
     @Query("DELETE FROM keys WHERE housingId = :housingId")
     suspend fun deleteAllByHousing(housingId: Long)
+
+    @Query("DELETE FROM keys WHERE id = :id")
+    suspend fun deleteById(id: Long): Int
 
     // NOUVELLES MÉTHODES pour la synchronisation
     @Query("SELECT * FROM keys WHERE dirty = 1")

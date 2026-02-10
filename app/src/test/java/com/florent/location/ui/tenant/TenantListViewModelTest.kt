@@ -6,6 +6,7 @@ import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
+import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -29,9 +30,11 @@ class TenantListViewModelTest {
     fun `initial state transitions to empty`() = runTest {
         val repository = FakeTenantRepository()
         val useCases = TenantUseCasesImpl(repository)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
-            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -52,9 +55,11 @@ class TenantListViewModelTest {
             Tenant(3L, "Claire", "Dupont", null, "claire@example.com")
         )
         repository.setTenants(tenants)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
-            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -84,9 +89,11 @@ class TenantListViewModelTest {
             )
         )
         val useCases = TenantUseCasesImpl(repository)
+        val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
-            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -96,6 +103,7 @@ class TenantListViewModelTest {
             listOf(Tenant(2L, "Bob", "Martin", null, null)),
             viewModel.uiState.value.tenants.map { it.tenant }
         )
+        assertEquals(listOf("tenant_delete"), syncRequester.reasons)
 
         repository.setActiveLease(2L, true)
         viewModel.onEvent(TenantListUiEvent.DeleteTenantClicked(2L))
@@ -114,7 +122,8 @@ class TenantListViewModelTest {
                     throw IllegalStateException("boom")
                 }
             ),
-            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository())
+            observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
+            syncManager = RecordingSyncRequester()
         )
 
         advanceUntilIdle()

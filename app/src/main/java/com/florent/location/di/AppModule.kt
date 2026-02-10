@@ -161,17 +161,18 @@ val appModule = module {
     single { ObserveHousingSituation(leaseRepository = get()) }
     single { ObserveTenantSituation(leaseRepository = get()) }
     single<LeaseUseCases> { LeaseUseCasesImpl(repository = get(), housingRepository = get()) }
-    single<BailUseCases> { BailUseCasesImpl(repository = get(), housingRepository = get()) }
+    single<BailUseCases> { BailUseCasesImpl(repository = get()) }
 
     // =========================================================================
     // ViewModels - Housing
     // =========================================================================
-    viewModel { HousingListViewModel(useCases = get(), observeSituation = get()) }
+    viewModel { HousingListViewModel(useCases = get(), observeHousingSituation = get(), syncManager = get()) }
     viewModel { params ->
         HousingDetailViewModel(
             housingId = params.get(),
-            useCases = get(),
-            observeSituation = get()
+            housingUseCases = get(),
+            observeHousingSituation = get(),
+            syncManager = get()
         )
     }
     viewModel { params ->
@@ -185,12 +186,13 @@ val appModule = module {
     // =========================================================================
     // ViewModels - Tenant
     // =========================================================================
-    viewModel { TenantListViewModel(useCases = get(), observeTenantSituation = get()) }
+    viewModel { TenantListViewModel(useCases = get(), observeTenantSituation = get(), syncManager = get()) }
     viewModel { params ->
         TenantDetailViewModel(
             tenantId = params.get(),
-            useCases = get(),
-            observeTenantSituation = get()
+            tenantUseCases = get(),
+            observeTenantSituation = get(),
+            syncManager = get()
         )
     }
     viewModel { params ->
@@ -205,17 +207,20 @@ val appModule = module {
     // ViewModels - Lease
     // =========================================================================
     viewModel { LeaseListViewModel(useCases = get()) }
-    viewModel { params ->
+    viewModel {
         LeaseCreateViewModel(
-            housingId = params.getOrNull(),
-            useCases = get(),
+            housingUseCases = get(),
+            tenantUseCases = get(),
+            leaseUseCases = get(),
             syncManager = get()
         )
     }
     viewModel { params ->
         LeaseDetailViewModel(
             leaseId = params.get(),
-            useCases = get(),
+            bailUseCases = get(),
+            leaseUseCases = get(),
+            housingUseCases = get(),
             syncManager = get()
         )
     }

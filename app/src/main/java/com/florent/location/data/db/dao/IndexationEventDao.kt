@@ -15,6 +15,9 @@ interface IndexationEventDao {
     @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId ORDER BY appliedEpochDay DESC")
     fun observeAllByLease(leaseId: Long): Flow<List<IndexationEventEntity>>
 
+    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId ORDER BY appliedEpochDay DESC")
+    fun observeEventsForLease(leaseId: Long): Flow<List<IndexationEventEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(event: IndexationEventEntity): Long
 

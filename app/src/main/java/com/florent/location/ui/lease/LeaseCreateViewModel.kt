@@ -10,6 +10,7 @@ import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.ui.components.formatEuroInput
 import com.florent.location.ui.components.parseEuroInputToCents
+import com.florent.location.ui.sync.HousingSyncRequester
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +65,8 @@ sealed interface LeaseCreateUiEvent {
 class LeaseCreateViewModel(
     private val housingUseCases: HousingUseCases,
     private val tenantUseCases: TenantUseCases,
-    private val leaseUseCases: LeaseUseCases
+    private val leaseUseCases: LeaseUseCases,
+    private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LeaseCreateUiState())
@@ -200,6 +202,7 @@ class LeaseCreateViewModel(
 
             try {
                 val leaseId = leaseUseCases.createLease(request)
+                syncManager.requestSync("lease_create")
                 _uiState.update {
                     it.copy(
                         isSaving = false,

@@ -9,6 +9,7 @@ import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.sampleHousing
+import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -36,7 +37,8 @@ class LeaseCreateViewModelTest {
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository),
+            syncManager = RecordingSyncRequester()
         )
 
         advanceUntilIdle()
@@ -61,10 +63,12 @@ class LeaseCreateViewModelTest {
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
         )
         val leaseRepository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+        val syncRequester = RecordingSyncRequester()
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository),
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -85,10 +89,12 @@ class LeaseCreateViewModelTest {
             listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
         )
         val leaseRepository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+        val syncRequester = RecordingSyncRequester()
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository),
+            syncManager = syncRequester
         )
 
         advanceUntilIdle()
@@ -107,6 +113,7 @@ class LeaseCreateViewModelTest {
         assertTrue(state.isSaved)
         assertFalse(state.isSaving)
         assertNull(state.errorMessage)
+        assertEquals(listOf("lease_create"), syncRequester.reasons)
     }
 
     @Test
@@ -134,7 +141,8 @@ class LeaseCreateViewModelTest {
         val viewModel = LeaseCreateViewModel(
             housingUseCases = HousingUseCasesImpl(housingRepository),
             tenantUseCases = TenantUseCasesImpl(tenantRepository),
-            leaseUseCases = leaseUseCases
+            leaseUseCases = leaseUseCases,
+            syncManager = RecordingSyncRequester()
         )
 
         advanceUntilIdle()
