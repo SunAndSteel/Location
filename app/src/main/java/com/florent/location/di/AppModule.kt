@@ -2,18 +2,12 @@ package com.florent.location.di
 
 import androidx.room.Room
 import com.florent.location.data.db.AppDatabase
-
-// --- Data: repositories (impl) ---
 import com.florent.location.data.repository.HousingRepositoryImpl
 import com.florent.location.data.repository.LeaseRepositoryImpl
 import com.florent.location.data.repository.TenantRepositoryImpl
-
-// --- Domain: repositories (interfaces) ---
 import com.florent.location.domain.repository.HousingRepository
 import com.florent.location.domain.repository.LeaseRepository
 import com.florent.location.domain.repository.TenantRepository
-
-// --- Domain: usecases (bundles) ---
 import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.housing.HousingUseCases
@@ -24,21 +18,16 @@ import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
-
-// --- UI: viewmodels ---
 import com.florent.location.ui.housing.HousingListViewModel
 import com.florent.location.ui.housing.HousingDetailViewModel
 import com.florent.location.ui.housing.HousingEditViewModel
-
 import com.florent.location.ui.tenant.TenantListViewModel
 import com.florent.location.ui.tenant.TenantDetailViewModel
 import com.florent.location.ui.tenant.TenantEditViewModel
-
 import com.florent.location.ui.lease.LeaseCreateViewModel
 import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
-
-import com.florent.location.ui.sync.HousingSyncManager
+import com.florent.location.ui.sync.UnifiedSyncManager
 import com.florent.location.ui.sync.HousingSyncRequester
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,34 +36,29 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-/**
- * AppModule complet (MVP) pour l'app de gestion:
- * - Logements
- * - Locataires
- * - Baux (incluant compteurs + clés)
- *
- * Référence de périmètre: :contentReference[oaicite:0]{index=0}
- */
 val appModule = module {
 
-    // ---------------------------------------------------------------------
-    // Room DB
-    // ---------------------------------------------------------------------
+    // =========================================================================
+    // Room Database
+    // =========================================================================
     single<AppDatabase> {
         Room.databaseBuilder(
             androidContext(),
             AppDatabase::class.java,
             "location.db"
         )
-            // OK pour MVP. Quand tu passes en prod: remplace par de vraies migrations.
             .fallbackToDestructiveMigration()
+            // TODO: Remplacer par de vraies migrations en production
+            // .addMigrations(MIGRATION_1_2, MIGRATION_2_3, etc.)
             .build()
     }
+
+    // Supabase client
     single { com.florent.location.data.supabase.provideSupabaseClient() }
 
-    // ---------------------------------------------------------------------
+    // =========================================================================
     // DAOs
-    // ---------------------------------------------------------------------
+    // =========================================================================
     single { get<AppDatabase>().tenantDao() }
     single { get<AppDatabase>().housingDao() }
     single { get<AppDatabase>().leaseDao() }
@@ -82,21 +66,19 @@ val appModule = module {
     single { get<AppDatabase>().indexationEventDao() }
     single { get<AppDatabase>().authSessionDao() }
 
-    // ---------------------------------------------------------------------
-    // Repositories (Domain interfaces -> Data impl)
-    // ---------------------------------------------------------------------
+    // =========================================================================
+    // Repositories (Domain)
+    // =========================================================================
     single<TenantRepository> { TenantRepositoryImpl(dao = get()) }
 
     single<HousingRepository> {
         HousingRepositoryImpl(
             housingDao = get(),
             keyDao = get(),
-            leaseDao = get() // utile si tu exposes "logements + bail actif" côté repo
+            leaseDao = get()
         )
     }
 
-    // LeaseRepositoryImpl recommandé avec transaction via db.withTransaction
-    // (createLease, closeLease, etc.)
     single<LeaseRepository> {
         LeaseRepositoryImpl(
             db = get(),
@@ -105,86 +87,136 @@ val appModule = module {
         )
     }
 
-    single { com.florent.location.data.auth.AuthRepository(supabase = get(), sessionDao = get()) }
-    single { com.florent.location.data.sync.HousingSyncRepository(supabase = get(), housingDao = get()) }
+    // =========================================================================
+    // Auth & Sync Repositories
+    // =========================================================================
     single {
-        HousingSyncManager(
-            repo = get(),
+        com.florent.location.data.auth.AuthRepository(
+            supabase = get(),
+            sessionDao = get()
+        )
+    }
+
+    // Sync repositories - un pour chaque entité
+    single {
+        com.florent.location.data.sync.HousingSyncRepository(
+            supabase = get(),
+            housingDao = get()
+        )
+    }
+
+    single {
+        com.florent.location.data.sync.TenantSyncRepository(
+            supabase = get(),
+            tenantDao = get()
+        )
+    }
+
+    single {
+        com.florent.location.data.sync.LeaseSyncRepository(
+            supabase = get(),
+            leaseDao = get(),
+            housingDao = get(),
+            tenantDao = get()
+        )
+    }
+
+    single {
+        com.florent.location.data.sync.KeySyncRepository(
+            supabase = get(),
+            keyDao = get(),
+            housingDao = get()
+        )
+    }
+
+    single {
+        com.florent.location.data.sync.IndexationEventSyncRepository(
+            supabase = get(),
+            indexationEventDao = get(),
+            leaseDao = get()
+        )
+    }
+
+    // Unified sync manager - gère la synchronisation de toutes les entités
+    single {
+        UnifiedSyncManager(
+            housingRepo = get(),
+            tenantRepo = get(),
+            leaseRepo = get(),
+            keyRepo = get(),
+            indexationEventRepo = get(),
+            supabase = get(),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         )
     }
-    single<HousingSyncRequester> { get<HousingSyncManager>() }
 
+    // Interface pour injecter dans les ViewModels
+    single<HousingSyncRequester> { get<UnifiedSyncManager>() }
 
-    // ---------------------------------------------------------------------
-    // UseCases (bundles)
-    // ---------------------------------------------------------------------
+    // =========================================================================
+    // UseCases
+    // =========================================================================
     single<TenantUseCases> { TenantUseCasesImpl(repository = get()) }
     single<HousingUseCases> { HousingUseCasesImpl(repository = get()) }
     single { ObserveHousingSituation(leaseRepository = get()) }
     single { ObserveTenantSituation(leaseRepository = get()) }
     single<LeaseUseCases> { LeaseUseCasesImpl(repository = get(), housingRepository = get()) }
-    single<BailUseCases> { BailUseCasesImpl(repository = get()) }
+    single<BailUseCases> { BailUseCasesImpl(repository = get(), housingRepository = get()) }
 
-    // ---------------------------------------------------------------------
-    // ViewModels (1 par écran MVP)
-    // ---------------------------------------------------------------------
-
-    // Logements
-    viewModel {
-        HousingListViewModel(
-            useCases = get(),
-            observeHousingSituation = get(),
-            syncManager = get()
-        )
-    }
-    viewModel { (housingId: Long) ->
+    // =========================================================================
+    // ViewModels - Housing
+    // =========================================================================
+    viewModel { HousingListViewModel(useCases = get(), observeSituation = get()) }
+    viewModel { params ->
         HousingDetailViewModel(
-            housingId = housingId,
-            housingUseCases = get(),
-            observeHousingSituation = get(),
-            syncManager = get()
+            housingId = params.get(),
+            useCases = get(),
+            observeSituation = get()
         )
     }
-    viewModel { (housingId: Long?) ->
+    viewModel { params ->
         HousingEditViewModel(
-            housingId = housingId,
+            housingId = params.getOrNull(),
             useCases = get(),
             syncManager = get()
         )
     }
 
-    // Baux
-    viewModel { LeaseListViewModel(useCases = get()) }
-
-    // Locataires
+    // =========================================================================
+    // ViewModels - Tenant
+    // =========================================================================
     viewModel { TenantListViewModel(useCases = get(), observeTenantSituation = get()) }
-    viewModel { (tenantId: Long) ->
+    viewModel { params ->
         TenantDetailViewModel(
-            tenantId = tenantId,
-            tenantUseCases = get(),
+            tenantId = params.get(),
+            useCases = get(),
             observeTenantSituation = get()
         )
     }
-    viewModel { (tenantId: Long?) -> TenantEditViewModel(tenantId = tenantId, useCases = get()) }
+    viewModel { params ->
+        TenantEditViewModel(
+            tenantId = params.getOrNull(),
+            useCases = get(),
+            syncManager = get() // Utilise le même HousingSyncRequester
+        )
+    }
 
-    // Création de baux
-    viewModel {
-        // workflow: choisir logement + locataire, puis save bail
+    // =========================================================================
+    // ViewModels - Lease
+    // =========================================================================
+    viewModel { LeaseListViewModel(useCases = get()) }
+    viewModel { params ->
         LeaseCreateViewModel(
-            housingUseCases = get(),
-            tenantUseCases = get(),
-            leaseUseCases = get()
+            housingId = params.getOrNull(),
+            useCases = get(),
+            syncManager = get()
         )
     }
-    viewModel { (leaseId: Long) ->
+    viewModel { params ->
         LeaseDetailViewModel(
-            leaseId = leaseId,
-            bailUseCases = get(),
-            leaseUseCases = get(),
-            housingUseCases = get()
+            leaseId = params.get(),
+            useCases = get(),
+            syncManager = get()
         )
     }
-    viewModel { com.florent.location.ui.auth.AuthGateViewModel(authRepository = get(), syncManager = get()) }
-    viewModel { com.florent.location.ui.auth.LoginViewModel(authRepository = get(), syncManager = get())}
 }

@@ -6,72 +6,54 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LeaseDao {
+    // Méthodes existantes
+    @Query("SELECT * FROM leases WHERE id = :id")
+    fun observe(id: Long): Flow<LeaseEntity?>
 
-    // --- Bail actif par logement ---
-    @Query(
-            """
-        SELECT * FROM leases
-        WHERE housingId = :housingId
-          AND endDateEpochDay IS NULL
-        LIMIT 1
-    """
-    )
-    fun observeActiveLeaseForHousing(housingId: Long): Flow<LeaseEntity?>
+    @Query("SELECT * FROM leases WHERE housingId = :housingId AND endDateEpochDay IS NULL")
+    fun observeActiveByHousing(housingId: Long): Flow<LeaseEntity?>
 
-    @Query(
-            """
-        SELECT * FROM leases
-        WHERE housingId = :housingId
-          AND endDateEpochDay IS NULL
-        LIMIT 1
-    """
-    )
-    suspend fun getActiveLeaseForHousing(housingId: Long): LeaseEntity?
+    @Query("SELECT * FROM leases WHERE tenantId = :tenantId AND endDateEpochDay IS NULL")
+    fun observeActiveByTenant(tenantId: Long): Flow<LeaseEntity?>
 
-    // --- Bail actif par locataire ---
-    @Query(
-            """
-        SELECT * FROM leases
-        WHERE tenantId = :tenantId
-          AND endDateEpochDay IS NULL
-        LIMIT 1
-    """
-    )
-    fun observeActiveLeaseForTenant(tenantId: Long): Flow<LeaseEntity?>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(lease: LeaseEntity): Long
 
-    @Query(
-            """
-        SELECT * FROM leases
-        WHERE tenantId = :tenantId
-          AND endDateEpochDay IS NULL
-        LIMIT 1
-    """
-    )
-    suspend fun getActiveLeaseForTenant(tenantId: Long): LeaseEntity?
+    @Update
+    suspend fun update(lease: LeaseEntity)
 
-    @Query(
-            """
-        SELECT * FROM leases
-        WHERE endDateEpochDay IS NULL
-    """
-    )
-    fun observeActiveLeases(): Flow<List<LeaseEntity>>
+    @Delete
+    suspend fun delete(lease: LeaseEntity)
 
-    // --- CRUD ---
-    @Insert(onConflict = OnConflictStrategy.ABORT) suspend fun insert(lease: LeaseEntity): Long
+    @Query("SELECT * FROM leases WHERE id = :id")
+    suspend fun getById(id: Long): LeaseEntity?
 
-    @Update suspend fun update(lease: LeaseEntity)
+    @Query("SELECT * FROM leases WHERE housingId = :housingId AND endDateEpochDay IS NULL")
+    suspend fun getActiveByHousing(housingId: Long): LeaseEntity?
 
-    @Delete suspend fun delete(lease: LeaseEntity)
+    @Query("SELECT * FROM leases WHERE tenantId = :tenantId AND endDateEpochDay IS NULL")
+    suspend fun getActiveByTenant(tenantId: Long): LeaseEntity?
 
-    @Query("SELECT * FROM leases WHERE id = :id") fun observeLease(id: Long): Flow<LeaseEntity?>
+    @Query("SELECT * FROM leases WHERE housingId = :housingId ORDER BY startDateEpochDay DESC")
+    fun observeAllByHousing(housingId: Long): Flow<List<LeaseEntity>>
 
-    @Query("SELECT * FROM leases WHERE id = :id") suspend fun getById(id: Long): LeaseEntity?
+    @Query("SELECT * FROM leases WHERE tenantId = :tenantId ORDER BY startDateEpochDay DESC")
+    fun observeAllByTenant(tenantId: Long): Flow<List<LeaseEntity>>
 
-    // clôture simple
-    @Query("UPDATE leases SET endDateEpochDay = :endEpochDay WHERE id = :leaseId")
-    suspend fun closeLease(leaseId: Long, endEpochDay: Long): Int
+    // NOUVELLES MÉTHODES pour la synchronisation
+    @Query("SELECT * FROM leases WHERE dirty = 1")
+    suspend fun getDirty(): List<LeaseEntity>
 
-    @Query("UPDATE leases SET rentCents = :rentCents WHERE id = :leaseId")
-    suspend fun updateRent(leaseId: Long, rentCents: Long): Int
+    @Query("SELECT * FROM leases WHERE remoteId = :remoteId")
+    suspend fun getByRemoteId(remoteId: String): LeaseEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(leases: List<LeaseEntity>)
+
+    @Query("UPDATE leases SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdated WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdated: Long)
+
+    @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM leases")
+    suspend fun getMaxServerUpdatedAtOrNull(): Long?
 }
+

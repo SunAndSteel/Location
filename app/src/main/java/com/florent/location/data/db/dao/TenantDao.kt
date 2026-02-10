@@ -1,6 +1,7 @@
 package com.florent.location.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,49 +14,38 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface TenantDao {
-
-    /**
-     * Retourne le flux de tous les locataires triés par nom.
-     */
-    @Query("SELECT * FROM tenants ORDER BY lastName ASC, firstName ASC")
+    // Méthodes existantes
+    @Query("SELECT * FROM tenants ORDER BY lastName, firstName")
     fun observeAll(): Flow<List<TenantEntity>>
 
-    /**
-     * Retourne le flux d'un locataire par identifiant.
-     */
-    @Query("SELECT * FROM tenants WHERE id = :id LIMIT 1")
-    fun observeById(id: Long): Flow<TenantEntity?>
+    @Query("SELECT * FROM tenants WHERE id = :id")
+    fun observe(id: Long): Flow<TenantEntity?>
 
-    @Query("SELECT COUNT(*) > 0 FROM tenants WHERE id = :id")
-    suspend fun exists(id: Long): Boolean
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(tenant: TenantEntity): Long
 
-    /**
-     * Insère une entité et renvoie l'identifiant généré.
-     */
-    @Insert(onConflict = OnConflictStrategy.Companion.ABORT)
-    suspend fun insert(entity: TenantEntity): Long
-
-    /**
-     * Met à jour une entité existante.
-     */
     @Update
-    suspend fun update(entity: TenantEntity)
+    suspend fun update(tenant: TenantEntity)
 
-    /**
-     * Supprime un locataire par identifiant.
-     */
-    @Query("DELETE FROM tenants WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    @Delete
+    suspend fun delete(tenant: TenantEntity)
 
-    /**
-     * Vérifie si un locataire possède un bail actif.
-     */
-    @Query(
-        """
-        SELECT COUNT(*) > 0 FROM leases
-        WHERE tenantId = :tenantId
-          AND endDateEpochDay IS NULL
-        """
-    )
-    suspend fun hasActiveLease(tenantId: Long): Boolean
+    @Query("SELECT * FROM tenants WHERE id = :id")
+    suspend fun getById(id: Long): TenantEntity?
+
+    // NOUVELLES MÉTHODES pour la synchronisation
+    @Query("SELECT * FROM tenants WHERE dirty = 1")
+    suspend fun getDirty(): List<TenantEntity>
+
+    @Query("SELECT * FROM tenants WHERE remoteId = :remoteId")
+    suspend fun getByRemoteId(remoteId: String): TenantEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(tenants: List<TenantEntity>)
+
+    @Query("UPDATE tenants SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdated WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdated: Long)
+
+    @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM tenants")
+    suspend fun getMaxServerUpdatedAtOrNull(): Long?
 }

@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 @Entity(
     tableName = "indexation_events",
@@ -19,9 +20,19 @@ import androidx.room.PrimaryKey
 )
 data class IndexationEventEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+
+    // NOUVEAU : Pour la synchronisation Supabase
+    val remoteId: String = UUID.randomUUID().toString(),
+
     val leaseId: Long,
     val appliedEpochDay: Long,
     val baseRentCents: Long,
     val indexPercent: Double,
-    val newRentCents: Long
+    val newRentCents: Long,
+
+    // NOUVEAU : Timestamps et sync
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val dirty: Boolean = true,
+    val serverUpdatedAtEpochSeconds: Long? = null
 )
