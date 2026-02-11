@@ -24,10 +24,42 @@ fun formatEuroInput(cents: Long): String {
 fun parseEuroInputToCents(value: String): Long? {
     val trimmed = value.trim()
     if (trimmed.isBlank()) return null
-    val normalized = trimmed
+
+    val compact = trimmed
+        .replace("€", "")
         .replace("\u00A0", "")
+        .replace("\u202F", "")
         .replace(" ", "")
-        .replace(",", ".")
+
+    if (compact.isBlank()) return null
+
+    val sign = compact.takeIf { it.startsWith("-") || it.startsWith("+") }?.firstOrNull()
+    val unsigned = if (sign != null) compact.drop(1) else compact
+    if (unsigned.isBlank()) return null
+
+    val lastComma = unsigned.lastIndexOf(',')
+    val lastDot = unsigned.lastIndexOf('.')
+    val decimalSeparator = when {
+        lastComma >= 0 && lastDot >= 0 -> if (lastComma > lastDot) ',' else '.'
+        lastComma >= 0 -> ','
+        lastDot >= 0 -> '.'
+        else -> null
+    }
+
+    val normalizedNumber = buildString {
+        unsigned.forEachIndexed { index, char ->
+            when {
+                char.isDigit() -> append(char)
+                decimalSeparator != null && char == decimalSeparator && index == unsigned.lastIndexOf(decimalSeparator) -> append('.')
+                char == ',' || char == '.' || char == '\'' || char == '’' -> Unit
+                else -> return null
+            }
+        }
+    }
+
+    if (normalizedNumber.isBlank() || normalizedNumber == ".") return null
+    val normalized = if (sign != null) "$sign$normalizedNumber" else normalizedNumber
+
     return runCatching {
         normalized
             .toBigDecimal()
