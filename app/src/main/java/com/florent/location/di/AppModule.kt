@@ -21,6 +21,8 @@ import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.ui.housing.HousingListViewModel
 import com.florent.location.ui.housing.HousingDetailViewModel
 import com.florent.location.ui.housing.HousingEditViewModel
+import com.florent.location.ui.auth.AuthGateViewModel
+import com.florent.location.ui.auth.LoginViewModel
 import com.florent.location.ui.tenant.TenantListViewModel
 import com.florent.location.ui.tenant.TenantDetailViewModel
 import com.florent.location.ui.tenant.TenantEditViewModel
@@ -225,6 +227,22 @@ val appModule = module {
             bailUseCases = get(),
             leaseUseCases = get(),
             housingUseCases = get(),
+            syncManager = get()
+        )
+    }
+
+    // =========================================================================
+    // ViewModels - Auth
+    // =========================================================================
+    viewModel {
+        AuthGateViewModel(
+            authRepository = get(),
+            syncManager = get()
+        )
+    }
+    viewModel {
+        LoginViewModel(
+            authRepository = get(),
             syncManager = get()
         )
     }
