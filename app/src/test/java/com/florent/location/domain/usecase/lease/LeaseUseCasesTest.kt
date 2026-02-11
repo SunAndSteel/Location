@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,5 +57,21 @@ class LeaseUseCasesTest {
             assertEquals(CLOSE_EPOCH_DAY, updated?.endDateEpochDay)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun closeLeaseBeforeStartDateFailsValidation() = runTest {
+        val repository = FakeLeaseRepository.seeded()
+        val useCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
+
+        val error = runCatching {
+            useCases.closeLease(ACTIVE_LEASE_ID, FakeLeaseRepository.START_EPOCH_DAY - 1)
+        }.exceptionOrNull()
+
+        assertTrue(error is IllegalArgumentException)
+        assertEquals(
+            "La date de clôture ne peut pas être antérieure à la date de début du bail.",
+            error?.message
+        )
     }
 }
