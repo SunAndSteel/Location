@@ -29,6 +29,7 @@ import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
 import com.florent.location.ui.sync.UnifiedSyncManager
 import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.ui.sync.HousingSyncStateObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -152,6 +153,9 @@ val appModule = module {
 
     // Interface pour injecter dans les ViewModels
     single<HousingSyncRequester> { get<UnifiedSyncManager>() }
+
+    // Interface pour observer l'état global de sync dans l'UI
+    single<HousingSyncStateObserver> { get<UnifiedSyncManager>() }
 
     // =========================================================================
     // UseCases

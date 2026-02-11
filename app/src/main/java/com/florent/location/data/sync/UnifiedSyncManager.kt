@@ -8,6 +8,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -28,19 +30,31 @@ class UnifiedSyncManager(
     private val indexationEventRepo: IndexationEventSyncRepository,
     private val supabase: SupabaseClient,
     private val scope: CoroutineScope
-) : HousingSyncRequester {
+) : HousingSyncRequester, HousingSyncStateObserver {
 
     private val _syncChannel = Channel<String>(Channel.CONFLATED)
     private var pendingSyncJob: Job? = null
+
+    private val _state = MutableStateFlow<SyncState>(SyncState.Idle)
+    override val state: StateFlow<SyncState> = _state
 
     init {
         scope.launch {
             for (reason in _syncChannel) {
                 Log.d("UnifiedSyncManager", "Sync triggered: $reason")
+                _state.value = SyncState.Syncing
                 try {
-                    syncAll()
-                    Log.d("UnifiedSyncManager", "Sync completed successfully")
+                    val errors = syncAll()
+                    if (errors.isEmpty()) {
+                        _state.value = SyncState.Idle
+                        Log.d("UnifiedSyncManager", "Sync completed successfully")
+                    } else {
+                        val message = errors.joinToString(separator = "\n")
+                        _state.value = SyncState.Error(message)
+                        Log.e("UnifiedSyncManager", "Sync completed with errors: $message")
+                    }
                 } catch (e: Exception) {
+                    _state.value = SyncState.Error(e.message ?: "Sync failed")
                     Log.e("UnifiedSyncManager", "Sync failed: ${e.message}", e)
                 }
             }
@@ -55,8 +69,9 @@ class UnifiedSyncManager(
     /**
      * Synchronise toutes les entités dans le bon ordre
      */
-    private suspend fun syncAll() {
+    private suspend fun syncAll(): List<String> {
         Log.d("UnifiedSyncManager", "Starting full sync...")
+        val errors = mutableListOf<String>()
 
         // Étape 1 : Synchroniser les entités sans dépendances
         try {
@@ -65,7 +80,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Tenants synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Tenant sync failed: ${e.message}", e)
-            // Continue quand même avec les autres
+            errors += "Tenant sync failed: ${e.message ?: "Unknown error"}"
         }
 
         try {
@@ -74,6 +89,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Housings synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Housing sync failed: ${e.message}", e)
+            errors += "Housing sync failed: ${e.message ?: "Unknown error"}"
         }
 
         // Étape 2 : Synchroniser les leases (dépend de tenants + housings)
@@ -83,6 +99,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Leases synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Lease sync failed: ${e.message}", e)
+            errors += "Lease sync failed: ${e.message ?: "Unknown error"}"
         }
 
         // Étape 3 : Synchroniser les keys (dépend de housings)
@@ -92,6 +109,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Keys synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Key sync failed: ${e.message}", e)
+            errors += "Key sync failed: ${e.message ?: "Unknown error"}"
         }
 
         // Étape 4 : Synchroniser les indexation events (dépend de leases)
@@ -101,9 +119,11 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Indexation events synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Indexation event sync failed: ${e.message}", e)
+            errors += "Indexation event sync failed: ${e.message ?: "Unknown error"}"
         }
 
         Log.d("UnifiedSyncManager", "Full sync completed")
+        return errors
     }
 
     /**
@@ -143,6 +163,12 @@ class UnifiedSyncManager(
                 delay(effectiveDebounceMs)
             }
             _syncChannel.trySend(reason)
+        }
+    }
+
+    override fun consumeError() {
+        if (_state.value is SyncState.Error) {
+            _state.value = SyncState.Idle
         }
     }
 }

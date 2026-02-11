@@ -1,6 +1,6 @@
 # Synchronisation (offline-first)
 
-Ce document décrit la synchronisation de l'application et le rôle des ViewModels, repositories de sync et du `UnifiedSyncManager`.
+Ce document décrit la synchronisation de l'application et le rôle des ViewModels, repositories de sync et du `UnifiedSyncManager` (source unique pour déclenchement + état global de sync).
 
 ## Objectif
 
@@ -52,14 +52,30 @@ Ordre appliqué par `UnifiedSyncManager` :
 
 Cet ordre respecte les dépendances de clés étrangères (ex. lease dépend de tenant/housing).
 
+## État de synchronisation exposé à l'UI
+
+Le contrat `HousingSyncStateObserver` expose :
+
+- `state: StateFlow<SyncState>` avec `Idle`, `Syncing`, `Error(message)`
+- `consumeError()` pour remettre l'état à `Idle` après affichage UI
+
+`AuthGate` observe cet état pour :
+
+- afficher une barre de progression pendant `Syncing`
+- afficher un message en cas de `Error`
+
 ## Gestion d'erreur
 
-- Une erreur sur une entité est loggée.
+- Les erreurs sont collectées par étape (tenant, housing, lease, key, indexation).
 - La sync continue sur les étapes suivantes autant que possible.
+- En fin de cycle :
+  - pas d'erreur => `SyncState.Idle`
+  - une ou plusieurs erreurs => `SyncState.Error(message consolidé)`
 - Une demande ultérieure peut rattraper l'état.
 
 ## Notes d'architecture
 
-- Les ViewModels ne connaissent pas les détails réseau : ils demandent une sync via l'interface.
-- Le manager unifié centralise la stratégie (debounce, ordonnancement, robustesse).
+- Les ViewModels ne connaissent pas les détails réseau : ils demandent une sync via `HousingSyncRequester`.
+- L'UI globale ne dépend pas d'une implémentation concrète : elle observe l'état via `HousingSyncStateObserver`.
+- `UnifiedSyncManager` implémente ces deux interfaces et centralise la stratégie (debounce, ordonnancement, robustesse, état UI).
 - Les repositories de sync restent responsables de la sérialisation et des mappings.
