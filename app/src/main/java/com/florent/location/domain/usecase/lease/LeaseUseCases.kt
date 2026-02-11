@@ -91,6 +91,12 @@ class LeaseUseCasesImpl(
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) {
         require(leaseId > 0) { "Le bail est obligatoire." }
         require(endEpochDay >= 0) { "La date de clôture est obligatoire." }
+        val lease = requireNotNull(repository.getLease(leaseId)) {
+            "Bail introuvable."
+        }
+        require(endEpochDay >= lease.startDateEpochDay) {
+            "La date de clôture ne peut pas être antérieure à la date de début du bail."
+        }
         repository.closeLease(leaseId, endEpochDay)
     }
 }
