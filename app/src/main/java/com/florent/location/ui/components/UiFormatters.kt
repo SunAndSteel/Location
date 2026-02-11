@@ -41,8 +41,8 @@ fun parseEuroInputToCents(value: String): Long? {
     val lastDot = unsigned.lastIndexOf('.')
     val decimalSeparator = when {
         lastComma >= 0 && lastDot >= 0 -> if (lastComma > lastDot) ',' else '.'
-        lastComma >= 0 -> ','
-        lastDot >= 0 -> '.'
+        lastComma >= 0 -> if (unsigned.length - lastComma - 1 in 1..2) ',' else null
+        lastDot >= 0 -> if (unsigned.length - lastDot - 1 in 1..2) '.' else null
         else -> null
     }
 

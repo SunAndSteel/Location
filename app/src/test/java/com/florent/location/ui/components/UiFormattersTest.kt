@@ -22,6 +22,16 @@ class UiFormattersTest {
     }
 
     @Test
+    fun parseEuroInputToCents_treatsSingleDotWithThreeTrailingDigitsAsThousandsSeparator() {
+        assertEquals(123_400L, parseEuroInputToCents("1.234"))
+    }
+
+    @Test
+    fun parseEuroInputToCents_treatsSingleCommaWithThreeTrailingDigitsAsThousandsSeparator() {
+        assertEquals(123_400L, parseEuroInputToCents("1,234"))
+    }
+
+    @Test
     fun parseEuroInputToCents_returnsNullForInvalidInput() {
         assertNull(parseEuroInputToCents("abc"))
     }
