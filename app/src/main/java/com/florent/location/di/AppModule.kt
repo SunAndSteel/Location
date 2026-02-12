@@ -227,6 +227,7 @@ val appModule = module {
             bailUseCases = get(),
             leaseUseCases = get(),
             housingUseCases = get(),
+            tenantUseCases = get(),
             syncManager = get()
         )
     }
