@@ -27,7 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AppSectionHeader
+import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
@@ -290,7 +290,7 @@ private fun TenantContactSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Contact",
             supportingText = "Coordonnées principales."
         )
@@ -316,7 +316,7 @@ private fun TenantSituationSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Situation",
             supportingText = "Statut et bail en cours."
         )
@@ -348,7 +348,7 @@ private fun TenantActionsPanel(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
     ) {
-        AppSectionHeader(title = "Actions rapides")
+        SectionHeader(title = "Actions rapides")
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -373,7 +373,7 @@ private fun TenantActionsPanel(
             }
         }
 
-        AppSectionHeader(
+        SectionHeader(
             title = "Zone dangereuse",
             supportingText = "Actions irréversibles"
         )

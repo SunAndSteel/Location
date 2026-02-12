@@ -46,14 +46,14 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AppSectionHeader
+import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.DateFieldWithPicker
 import com.florent.location.ui.components.DestructiveActionCard
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
 import com.florent.location.ui.components.LabeledValueRow
-import com.florent.location.ui.components.NonInteractiveBadge
+import com.florent.location.ui.components.StatusBadge
 import com.florent.location.ui.components.NonInteractiveChip
 import com.florent.location.ui.components.PrimaryActionRow
 import com.florent.location.ui.components.ResultCard
@@ -345,7 +345,7 @@ private fun LeaseSummarySection(
             statusLabel = statusLabel,
             isActive = isActive
         )
-        AppSectionHeader(
+        SectionHeader(
             title = "Résumé",
             supportingText = "Informations principales du bail."
         )
@@ -501,7 +501,7 @@ private fun IndexationSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Indexation",
             supportingText = "Calculs et historique."
         )
@@ -523,7 +523,7 @@ private fun IndexationSection(
                     )
                     Text(text = "Prochaine échéance", style = MaterialTheme.typography.titleMedium)
                 }
-                NonInteractiveBadge(label = formatEpochDay(policy.nextIndexationEpochDay))
+                StatusBadge(text = formatEpochDay(policy.nextIndexationEpochDay))
                 LabeledValueRow(
                     label = "Anniversaire",
                     value = formatEpochDay(policy.anniversaryEpochDay)
@@ -606,7 +606,7 @@ private fun KeysSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Clés",
             supportingText = "Suivi des clés remises."
         )
@@ -636,7 +636,7 @@ private fun KeysSection(
                                 style = MaterialTheme.typography.titleMedium
                             )
                             key.deviceLabel?.let {
-                                NonInteractiveBadge(label = it)
+                                StatusBadge(text = it)
                             }
                             LabeledValueRow(
                                 label = "Remise",

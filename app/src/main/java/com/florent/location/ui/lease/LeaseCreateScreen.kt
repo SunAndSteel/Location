@@ -32,7 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.florent.location.ui.components.AppSectionHeader
+import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.DateFieldWithPicker
 import com.florent.location.ui.components.EnhancedMoneyField
 import com.florent.location.ui.components.ExpressiveErrorState
@@ -155,7 +155,7 @@ private fun LeaseCreateContent(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    AppSectionHeader(
+                    SectionHeader(
                         title = "Sélection",
                         supportingText = "Choisissez le logement et le locataire."
                     )
@@ -265,7 +265,7 @@ private fun LeaseCreateContent(
                         }
                     }
 
-                    AppSectionHeader(
+                    SectionHeader(
                         title = "Conditions",
                         supportingText = "Dates et montants du bail."
                     )
