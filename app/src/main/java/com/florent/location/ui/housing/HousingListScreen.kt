@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +41,7 @@ import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.ListAlt
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.IconButton
+import com.florent.location.ui.components.AppSearchBar
 import org.koin.androidx.compose.koinViewModel
 
 @ExperimentalMaterial3Api
@@ -147,23 +145,10 @@ private fun HousingListContent(
                     val sizeClass = windowWidthSize(maxWidth)
                     val searchField: @Composable () -> Unit = {
                         SectionCard {
-                            OutlinedTextField(
-                                value = state.searchQuery,
-                                onValueChange = { onEvent(HousingListUiEvent.SearchQueryChanged(it)) },
-                                label = { Text(text = "Rechercher") },
-                                modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = {
-                                    if (state.searchQuery.isNotBlank()) {
-                                        IconButton(
-                                            onClick = { onEvent(HousingListUiEvent.SearchQueryChanged("")) }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Close,
-                                                contentDescription = "Effacer la recherche"
-                                            )
-                                        }
-                                    }
-                                }
+                            AppSearchBar(
+                                query = state.searchQuery,
+                                onQueryChange = { onEvent(HousingListUiEvent.SearchQueryChanged(it)) },
+                                placeholder = "Rechercher un logement"
                             )
                         }
                     }
