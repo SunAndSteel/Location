@@ -126,6 +126,22 @@ private fun HousingListContent(
                 }
             }
 
+            state.isSearchResultEmpty -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveEmptyState(
+                        title = "Aucun résultat",
+                        message = "Aucun logement ne correspond à \"${state.searchQuery}\".",
+                        icon = Icons.Outlined.ListAlt,
+                        actionLabel = "Effacer la recherche",
+                        onAction = { onEvent(HousingListUiEvent.SearchQueryChanged("")) }
+                    )
+                }
+            }
+
             else -> {
                 BoxWithConstraints {
                     val sizeClass = windowWidthSize(maxWidth)

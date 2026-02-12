@@ -26,6 +26,7 @@ data class HousingListUiState(
     val searchQuery: String = "",
     val housings: List<HousingListItem> = emptyList(),
     val isEmpty: Boolean = false,
+    val isSearchResultEmpty: Boolean = false,
     val errorMessage: String? = null
 )
 
@@ -72,17 +73,17 @@ class HousingListViewModel(
         viewModelScope.launch {
             combine(useCases.observeHousings(), searchQuery) { housings, query ->
                 val filtered = filterHousings(housings, query)
-                query to filtered
-            }.flatMapLatest { (query, housings) ->
+                Triple(query, housings.isNotEmpty(), filtered)
+            }.flatMapLatest { (query, hasAnyHousing, housings) ->
                 if (housings.isEmpty()) {
-                    flowOf(query to emptyList())
+                    flowOf(Triple(query, hasAnyHousing, emptyList()))
                 } else {
                     combine(
                         housings.map { housing ->
                             observeHousingSituation(housing)
                                 .map { situation -> HousingListItem(housing, situation) }
                         }
-                    ) { items -> query to items.toList() }
+                    ) { items -> Triple(query, hasAnyHousing, items.toList()) }
                 }
             }
                 .onStart {
@@ -96,13 +97,15 @@ class HousingListViewModel(
                         )
                     }
                 }
-                .collect { (query, housings) ->
+                .collect { (query, hasAnyHousing, housings) ->
                     _uiState.update {
+                        val searchResultEmpty = query.isNotBlank() && hasAnyHousing && housings.isEmpty()
                         it.copy(
                             isLoading = false,
                             searchQuery = query,
                             housings = housings,
-                            isEmpty = housings.isEmpty(),
+                            isEmpty = !hasAnyHousing,
+                            isSearchResultEmpty = searchResultEmpty,
                             errorMessage = null
                         )
                     }
