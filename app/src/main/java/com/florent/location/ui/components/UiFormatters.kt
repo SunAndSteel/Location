@@ -51,6 +51,7 @@ fun parseEuroInputToCents(value: String): Long? {
             when {
                 char.isDigit() -> append(char)
                 decimalSeparator != null && char == decimalSeparator && index == unsigned.lastIndexOf(decimalSeparator) -> append('.')
+                decimalSeparator != null && char == decimalSeparator -> return null
                 char == ',' || char == '.' || char == '\'' || char == '’' -> Unit
                 else -> return null
             }
