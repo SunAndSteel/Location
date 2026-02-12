@@ -117,7 +117,7 @@ private val topLevelDestinations = listOf(
     ),
     TopLevelDestination(
         route = LocationRoutes.TENANTS,
-        label = "Solitaires",
+        label = "Locataires",
         icon = Icons.Outlined.People
     )
 )
