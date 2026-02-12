@@ -43,6 +43,26 @@ class HousingListViewModelTest {
         assertEquals(0, state.housings.size)
     }
 
+
+    @Test
+    fun `search with no match is not treated as global empty state`() = runTest {
+        val repository = FakeHousingRepository(
+            listOf(sampleHousing(id = 1L, city = "Bruxelles"))
+        )
+        val useCases = HousingUseCasesImpl(repository)
+        val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
+        val viewModel = HousingListViewModel(useCases, observeHousingSituation, NoOpSyncRequester)
+
+        advanceUntilIdle()
+        viewModel.onEvent(HousingListUiEvent.SearchQueryChanged("Paris"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isEmpty)
+        assertTrue(state.isSearchResultEmpty)
+        assertTrue(state.housings.isEmpty())
+    }
+
     @Test
     fun `observe housings failure sets error state`() = runTest {
         val observeHousingSituation = ObserveHousingSituation(FakeLeaseRepository())
