@@ -35,4 +35,10 @@ class UiFormattersTest {
     fun parseEuroInputToCents_returnsNullForInvalidInput() {
         assertNull(parseEuroInputToCents("abc"))
     }
+
+    @Test
+    fun parseEuroInputToCents_rejectsMultipleDecimalSeparators() {
+        assertNull(parseEuroInputToCents("1,2,3"))
+        assertNull(parseEuroInputToCents("12..34"))
+    }
 }
