@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.History
@@ -24,20 +25,29 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key as KeyboardKey
 import androidx.compose.ui.input.key.KeyEventType
@@ -75,6 +85,7 @@ import com.florent.location.ui.lease.LeaseDetailUiState
 internal fun LeaseDetailContent(
     state: LeaseDetailUiState,
     onEvent: (LeaseDetailUiEvent) -> Unit,
+    onShowActions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenScaffold(
@@ -159,15 +170,20 @@ internal fun LeaseDetailContent(
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
                             LeaseSummarySection(lease = lease, housing = state.housing, isActive = state.isActive)
+                            Button(
+                                onClick = onShowActions,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Icon(imageVector = Icons.Outlined.MoreHoriz, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Actions")
+                            }
                             IndexationSection(state = state, onEvent = onEvent)
                             KeysSection(
                                 keys = state.keys,
                                 onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
                                 onDeleteKey = { keyId -> onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId)) }
-                            )
-                            DestructiveActionsSection(
-                                isActive = state.isActive,
-                                onCloseLease = { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) }
                             )
                         }
                     }
@@ -178,6 +194,68 @@ internal fun LeaseDetailContent(
 
     AddKeyDialog(state = state, onEvent = onEvent)
     CloseLeaseDialog(state = state, onEvent = onEvent)
+}
+
+@Composable
+internal fun LeaseActionsBottomSheet(
+    isActive: Boolean,
+    onAddKey: () -> Unit,
+    onCloseLease: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(UiTokens.SpacingL)
+                .padding(bottom = UiTokens.SpacingXL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)
+        ) {
+            Text(text = "Actions", style = MaterialTheme.typography.titleLarge)
+            Divider()
+            BottomSheetAction(text = "Ajouter une clé", icon = Icons.Outlined.Add, onClick = onAddKey)
+            if (isActive) {
+                Divider()
+                BottomSheetAction(
+                    text = "Clôturer le bail",
+                    icon = Icons.Outlined.ReportProblem,
+                    onClick = onCloseLease,
+                    isDestructive = true
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomSheetAction(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else Color.Transparent
+    ) {
+        Row(modifier = Modifier.padding(UiTokens.SpacingM), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
 }
 
 @Composable
