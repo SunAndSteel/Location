@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
+import com.florent.location.ui.components.AppSearchBar
 import com.florent.location.ui.components.LeaseCard
 import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
@@ -53,6 +54,7 @@ fun LeaseListScreen(
     val state by viewModel.uiState.collectAsState()
     LeaseListContent(
         state = state,
+        onEvent = viewModel::onEvent,
         onBailClick = onBailClick,
         onAddBail = onAddBail,
         modifier = modifier
@@ -63,6 +65,7 @@ fun LeaseListScreen(
 @Composable
 private fun LeaseListContent(
     state: LeaseListUiState,
+    onEvent: (LeaseListUiEvent) -> Unit,
     onBailClick: (Long) -> Unit,
     onAddBail: () -> Unit,
     modifier: Modifier = Modifier
@@ -120,16 +123,68 @@ private fun LeaseListContent(
                 }
             }
 
+
+            state.isSearchResultEmpty -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ExpressiveEmptyState(
+                        title = "Aucun résultat",
+                        message = "Aucun bail ne correspond à \"${state.searchQuery}\".",
+                        icon = Icons.Outlined.ListAlt,
+                        actionLabel = "Effacer la recherche",
+                        onAction = { onEvent(LeaseListUiEvent.SearchQueryChanged("")) }
+                    )
+                }
+            }
+
             else -> {
                 BoxWithConstraints {
                     val sizeClass = windowWidthSize(maxWidth)
+                    val searchField: @Composable () -> Unit = {
+                        SectionCard {
+                            AppSearchBar(
+                                query = state.searchQuery,
+                                onQueryChange = { onEvent(LeaseListUiEvent.SearchQueryChanged(it)) },
+                                placeholder = "Rechercher un bail"
+                            )
+                        }
+                    }
                     if (sizeClass == WindowWidthSize.Expanded) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingXL)
                         ) {
-                            LazyColumn(
+                            Column(
                                 modifier = Modifier.weight(0.4f),
+                                verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                            ) {
+                                searchField()
+                                LazyColumn(
+                                    contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
+                                    verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+                                ) {
+                                    items(state.bails, key = { it.id }) { bail ->
+                                        LeaseCard(
+                                            bail = bail,
+                                            onOpen = { onBailClick(bail.id) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                }
+                            }
+                            LeaseContextPanel(
+                                total = state.bails.size,
+                                active = state.bails.count { it.endDateEpochDay == null },
+                                modifier = Modifier.weight(0.6f)
+                            )
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
+                            searchField()
+                            LazyColumn(
                                 contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
@@ -140,24 +195,6 @@ private fun LeaseListContent(
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
-                            }
-                            LeaseContextPanel(
-                                total = state.bails.size,
-                                active = state.bails.count { it.endDateEpochDay == null },
-                                modifier = Modifier.weight(0.6f)
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
-                            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
-                        ) {
-                            items(state.bails, key = { it.id }) { bail ->
-                                LeaseCard(
-                                    bail = bail,
-                                    onOpen = { onBailClick(bail.id) },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
                             }
                         }
                     }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +32,7 @@ import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.florent.location.ui.components.AppSearchBar
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
 import com.florent.location.ui.components.ExpressiveLoadingState
@@ -46,8 +46,6 @@ import com.florent.location.ui.components.WindowWidthSize
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.ListAlt
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.IconButton
 
 @Composable
 fun TenantListScreen(
@@ -91,23 +89,10 @@ private fun TenantListContent(
             val sizeClass = windowWidthSize(maxWidth)
             val searchField: @Composable () -> Unit = {
                 SectionCard {
-                    OutlinedTextField(
-                        value = state.searchQuery,
-                        onValueChange = { onEvent(TenantListUiEvent.SearchQueryChanged(it)) },
-                        label = { Text(text = "Rechercher") },
-                        modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            if (state.searchQuery.isNotBlank()) {
-                                IconButton(
-                                    onClick = { onEvent(TenantListUiEvent.SearchQueryChanged("")) }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Close,
-                                        contentDescription = "Effacer la recherche"
-                                    )
-                                }
-                            }
-                        }
+                    AppSearchBar(
+                        query = state.searchQuery,
+                        onQueryChange = { onEvent(TenantListUiEvent.SearchQueryChanged(it)) },
+                        placeholder = "Rechercher un locataire"
                     )
                 }
             }
