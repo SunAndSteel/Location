@@ -31,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.DateFieldWithPicker
@@ -160,109 +161,41 @@ private fun LeaseCreateContent(
                         supportingText = "Choisissez le logement et le locataire."
                     )
                     SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainer) {
-                        Box {
-                            ListItem(
-                                headlineContent = { Text(text = "Logement") },
-                                supportingContent = {
-                                    Text(
-                                        text = state.housings.firstOrNull { it.id == state.selectedHousingId }
-                                            ?.let { it.address.fullString() }
-                                            ?: "Choisir un logement"
-                                    )
-                                },
-                                leadingContent = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Home,
-                                        contentDescription = null
-                                    )
-                                },
-                                trailingContent = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.KeyboardArrowRight,
-                                        contentDescription = null
-                                    )
-                                },
-                                colors = ListItemDefaults.colors(
-                                    containerColor = if (state.selectedHousingId != null) {
-                                        MaterialTheme.colorScheme.surfaceContainerHighest
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainerHigh
-                                    }
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(true))
-                                    }
-                            )
-                            DropdownMenu(
-                                expanded = state.housingDropdownExpanded,
-                                onDismissRequest = {
-                                    onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(false))
-                                }
-                            ) {
-                                state.housings.forEach { housing ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = housing.address.fullString()) },
-                                        onClick = {
-                                            onEvent(LeaseCreateUiEvent.SelectHousing(housing.id))
-                                        }
-                                    )
-                                }
+                        EntityDropdownSelector(
+                            title = "Logement",
+                            displayedValue = state.housings.firstOrNull { it.id == state.selectedHousingId }
+                                ?.let { it.address.fullString() }
+                                ?: "Choisir un logement",
+                            icon = Icons.Outlined.Home,
+                            expanded = state.housingDropdownExpanded,
+                            isSelected = state.selectedHousingId != null,
+                            options = state.housings,
+                            onExpandChange = {
+                                onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(it))
+                            },
+                            optionLabel = { housing -> housing.address.fullString() },
+                            onOptionSelected = { housing ->
+                                onEvent(LeaseCreateUiEvent.SelectHousing(housing.id))
                             }
-                        }
+                        )
                         Divider()
-                        Box {
-                            ListItem(
-                                headlineContent = { Text(text = "Locataire") },
-                                supportingContent = {
-                                    Text(
-                                        text = state.tenants.firstOrNull { it.id == state.selectedTenantId }
-                                            ?.let { "${it.firstName} ${it.lastName}" }
-                                            ?: "Choisir un locataire"
-                                    )
-                                },
-                                leadingContent = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Person,
-                                        contentDescription = null
-                                    )
-                                },
-                                trailingContent = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.KeyboardArrowRight,
-                                        contentDescription = null
-                                    )
-                                },
-                                colors = ListItemDefaults.colors(
-                                    containerColor = if (state.selectedTenantId != null) {
-                                        MaterialTheme.colorScheme.surfaceContainerHighest
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainerHigh
-                                    }
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(true))
-                                    }
-                            )
-                            DropdownMenu(
-                                expanded = state.tenantDropdownExpanded,
-                                onDismissRequest = {
-                                    onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(false))
-                                }
-                            ) {
-                                state.tenants.forEach { tenant ->
-                                    DropdownMenuItem(
-                                        text = { Text(text = "${tenant.firstName} ${tenant.lastName}") },
-                                        onClick = {
-                                            onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id))
-                                        }
-                                    )
-                                }
+                        EntityDropdownSelector(
+                            title = "Locataire",
+                            displayedValue = state.tenants.firstOrNull { it.id == state.selectedTenantId }
+                                ?.let { "${it.firstName} ${it.lastName}" }
+                                ?: "Choisir un locataire",
+                            icon = Icons.Outlined.Person,
+                            expanded = state.tenantDropdownExpanded,
+                            isSelected = state.selectedTenantId != null,
+                            options = state.tenants,
+                            onExpandChange = {
+                                onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(it))
+                            },
+                            optionLabel = { tenant -> "${tenant.firstName} ${tenant.lastName}" },
+                            onOptionSelected = { tenant ->
+                                onEvent(LeaseCreateUiEvent.SelectTenant(tenant.id))
                             }
-                        }
+                        )
                     }
 
                     SectionHeader(
@@ -336,6 +269,59 @@ private fun LeaseCreateContent(
                         onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun <T> EntityDropdownSelector(
+    title: String,
+    displayedValue: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    isSelected: Boolean,
+    options: List<T>,
+    onExpandChange: (Boolean) -> Unit,
+    optionLabel: (T) -> String,
+    onOptionSelected: (T) -> Unit,
+) {
+    Box {
+        ListItem(
+            headlineContent = { Text(text = title) },
+            supportingContent = { Text(text = displayedValue) },
+            leadingContent = {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null
+                )
+            },
+            trailingContent = {
+                Icon(
+                    imageVector = Icons.Outlined.KeyboardArrowRight,
+                    contentDescription = null
+                )
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = if (isSelected) {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                }
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onExpandChange(true) }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandChange(false) }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = optionLabel(option)) },
+                    onClick = { onOptionSelected(option) }
+                )
             }
         }
     }
