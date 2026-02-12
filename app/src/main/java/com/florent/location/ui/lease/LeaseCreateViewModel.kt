@@ -39,6 +39,7 @@ data class LeaseCreateUiState(
     val rentDueDayOfMonth: String = "1",
     val housingDropdownExpanded: Boolean = false,
     val tenantDropdownExpanded: Boolean = false,
+    val canSave: Boolean = false,
     val isSaving: Boolean = false,
     val isSaved: Boolean = false,
     val savedLeaseId: Long? = null,
@@ -82,9 +83,9 @@ class LeaseCreateViewModel(
             is LeaseCreateUiEvent.SelectTenant -> selectTenant(event.tenantId)
             is LeaseCreateUiEvent.FieldChanged -> updateField(event.field, event.value)
             is LeaseCreateUiEvent.HousingDropdownExpanded ->
-                _uiState.update { it.copy(housingDropdownExpanded = event.expanded) }
+                updateUiState { it.copy(housingDropdownExpanded = event.expanded) }
             is LeaseCreateUiEvent.TenantDropdownExpanded ->
-                _uiState.update { it.copy(tenantDropdownExpanded = event.expanded) }
+                updateUiState { it.copy(tenantDropdownExpanded = event.expanded) }
             LeaseCreateUiEvent.SaveClicked -> saveLease()
         }
     }
@@ -98,7 +99,7 @@ class LeaseCreateViewModel(
                 housings to tenants
             }
                 .catch { error ->
-                    _uiState.update {
+                    updateUiState {
                         it.copy(
                             isLoading = false,
                             errorMessage = error.message ?: "Erreur lors du chargement des données."
@@ -106,7 +107,7 @@ class LeaseCreateViewModel(
                     }
                 }
                 .collect { (housings, tenants) ->
-                    _uiState.update {
+                    updateUiState {
                         it.copy(
                             isLoading = false,
                             housings = housings,
@@ -120,7 +121,7 @@ class LeaseCreateViewModel(
 
     private fun selectHousing(housingId: Long) {
         val housing = _uiState.value.housings.firstOrNull { it.id == housingId }
-        _uiState.update { current ->
+        updateUiState { current ->
             val defaultRent = housing?.rentCents ?: current.housingDefaultRentCents
             val defaultCharges = housing?.chargesCents ?: current.housingDefaultChargesCents
             val defaultDeposit = housing?.depositCents ?: current.housingDepositCents
@@ -142,7 +143,7 @@ class LeaseCreateViewModel(
     }
 
     private fun selectTenant(tenantId: Long) {
-        _uiState.update {
+        updateUiState {
             it.copy(
                 selectedTenantId = tenantId,
                 tenantDropdownExpanded = false,
@@ -152,7 +153,7 @@ class LeaseCreateViewModel(
     }
 
     private fun updateField(field: LeaseField, value: String) {
-        _uiState.update {
+        updateUiState {
             when (field) {
                 LeaseField.StartDate -> it.copy(startDate = value, errorMessage = null)
                 LeaseField.Rent -> {
@@ -174,8 +175,14 @@ class LeaseCreateViewModel(
 
     private fun saveLease() {
         val current = _uiState.value
+        if (!current.canSave) {
+            updateUiState {
+                it.copy(errorMessage = "Complétez tous les champs requis avant d'enregistrer.")
+            }
+            return
+        }
         var shouldStartSave = false
-        _uiState.update { state ->
+        updateUiState { state ->
             if (state.isSaving) {
                 state
             } else {
@@ -210,7 +217,7 @@ class LeaseCreateViewModel(
             try {
                 val leaseId = leaseUseCases.createLease(request)
                 syncManager.requestSync("lease_create")
-                _uiState.update {
+                updateUiState {
                     it.copy(
                         isSaving = false,
                         isSaved = true,
@@ -219,7 +226,7 @@ class LeaseCreateViewModel(
                     )
                 }
             } catch (error: IllegalArgumentException) {
-                _uiState.update {
+                updateUiState {
                     it.copy(
                         isSaving = false,
                         errorMessage = error.message,
@@ -241,5 +248,28 @@ class LeaseCreateViewModel(
     private fun isOverridden(value: String, housingDefaultCents: Long): Boolean {
         val parsed = parseEuroInputToCents(value) ?: return false
         return parsed != housingDefaultCents
+    }
+
+    private fun updateUiState(transform: (LeaseCreateUiState) -> LeaseCreateUiState) {
+        _uiState.update { current ->
+            transform(current).withValidation()
+        }
+    }
+
+    private fun LeaseCreateUiState.withValidation(): LeaseCreateUiState {
+        val rentCents = parseEuroInputToCents(rent)
+        val chargesCents = parseEuroInputToCents(charges)
+        val depositCents = parseEuroInputToCents(deposit)
+        val rentDueDay = rentDueDayOfMonth.toIntOrNull()
+
+        val isValid = selectedHousingId != null &&
+            selectedTenantId != null &&
+            parseEpochDay(startDate) != null &&
+            rentCents != null && rentCents > 0 &&
+            chargesCents != null && chargesCents >= 0 &&
+            depositCents != null && depositCents >= 0 &&
+            rentDueDay != null && rentDueDay in 1..28
+
+        return copy(canSave = isValid)
     }
 }

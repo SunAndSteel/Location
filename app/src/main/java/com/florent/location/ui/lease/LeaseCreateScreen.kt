@@ -332,7 +332,7 @@ private fun LeaseCreateContent(
 
                     PrimaryActionRow(
                         primaryLabel = if (state.isSaving) "Enregistrement..." else "Créer le bail",
-                        primaryEnabled = !state.isSaving,
+                        primaryEnabled = state.canSave && !state.isSaving,
                         onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
                     )
                 }

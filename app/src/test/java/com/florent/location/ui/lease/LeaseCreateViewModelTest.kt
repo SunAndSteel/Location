@@ -47,6 +47,7 @@ class LeaseCreateViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isSaving)
         assertFalse(state.isSaved)
+        assertFalse(state.canSave)
         assertEquals("", state.startDate)
         assertEquals("", state.rent)
         assertEquals("", state.charges)
@@ -113,8 +114,41 @@ class LeaseCreateViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.isSaved)
         assertFalse(state.isSaving)
+        assertTrue(state.canSave)
         assertNull(state.errorMessage)
         assertEquals(listOf("lease_create"), syncRequester.reasons)
+    }
+
+    @Test
+    fun `save click with incomplete form does not start saving`() = runTest {
+        val housingRepository = FakeHousingRepository(
+            listOf(sampleHousing(id = 1L, city = "Paris"))
+        )
+        val tenantRepository = FakeTenantRepository(
+            listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
+        )
+        val leaseRepository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+        val syncRequester = RecordingSyncRequester()
+        val viewModel = LeaseCreateViewModel(
+            housingUseCases = HousingUseCasesImpl(housingRepository),
+            tenantUseCases = TenantUseCasesImpl(tenantRepository),
+            leaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository),
+            syncManager = syncRequester
+        )
+
+        advanceUntilIdle()
+        viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
+        viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
+
+        viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isSaving)
+        assertFalse(state.isSaved)
+        assertFalse(state.canSave)
+        assertEquals("Complétez tous les champs requis avant d'enregistrer.", state.errorMessage)
+        assertTrue(syncRequester.reasons.isEmpty())
     }
 
     @Test
