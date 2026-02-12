@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HomeWork
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
@@ -30,11 +31,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +72,7 @@ internal fun TenantDetailContent(
     onEvent: (TenantDetailUiEvent) -> Unit,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
+    onShowActions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenScaffold(
@@ -150,20 +156,53 @@ internal fun TenantDetailContent(
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
                             TenantHeroSection(tenant = tenant, situation = state.situation)
+                            Button(
+                                onClick = onShowActions,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                            ) {
+                                Icon(imageVector = Icons.Outlined.MoreHoriz, contentDescription = null, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Actions")
+                            }
                             TenantContactSection(tenant = tenant)
                             TenantSituationSection(situation = state.situation)
-                            TenantActionsPanel(
-                                onEdit = {
-                                    onEvent(TenantDetailUiEvent.Edit)
-                                    onEdit()
-                                },
-                                onCreateLease = onCreateLease,
-                                onDelete = { onEvent(TenantDetailUiEvent.Delete) }
-                            )
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun TenantActionsBottomSheet(
+    onEdit: () -> Unit,
+    onCreateLease: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState()
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(UiTokens.SpacingL)
+                .padding(bottom = UiTokens.SpacingXL),
+            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)
+        ) {
+            Text(text = "Actions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Divider()
+            BottomSheetAction(text = "Modifier le locataire", icon = Icons.Outlined.Edit, onClick = onEdit)
+            BottomSheetAction(text = "Créer un bail", icon = Icons.Outlined.Add, onClick = onCreateLease)
+            Divider()
+            BottomSheetAction(
+                text = "Supprimer le locataire",
+                icon = Icons.Outlined.Delete,
+                onClick = onDelete,
+                isDestructive = true
+            )
         }
     }
 }
@@ -364,6 +403,36 @@ private fun ActionButton(text: String, icon: ImageVector, onClick: () -> Unit, i
         Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(8.dp))
         Text(text)
+    }
+}
+
+@Composable
+private fun BottomSheetAction(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    isDestructive: Boolean = false
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isDestructive) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f) else Color.Transparent
+    ) {
+        Row(modifier = Modifier.padding(UiTokens.SpacingM), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isDestructive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 
