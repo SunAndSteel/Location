@@ -16,8 +16,9 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Timelapse
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,15 +44,19 @@ fun TenantCard(
 ) {
     val hasContact = tenant.phone != null || tenant.email != null
     val cardColors = if (isSelected) {
-        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     } else {
-        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+        CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     }
-    Card(
+    FilledCard(
         modifier = modifier.keyboardClickable(onOpen),
         colors = cardColors,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
+        elevation = CardDefaults.filledCardElevation(
+            defaultElevation = 0.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -96,11 +101,15 @@ fun HousingCard(
     modifier: Modifier = Modifier
 ) {
     val situationLabel = housingSituationLabel(situation)
-    Card(
+    FilledCard(
         modifier = modifier.keyboardClickable(onOpen),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
+        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.filledCardElevation(
+            defaultElevation = 0.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -163,62 +172,132 @@ fun LeaseCard(
         isActive -> CardVariant.Highlighted
         else -> CardVariant.Default
     }
-    Card(
-        modifier = modifier.keyboardClickable(onOpen),
-        colors = variantCardColors(variant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Bail #${bail.id}",
-                    style = MaterialTheme.typography.titleLarge
+    if (variant == CardVariant.Highlighted) {
+        FilledCard(
+            modifier = modifier.keyboardClickable(onOpen),
+            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            elevation = CardDefaults.filledCardElevation(
+                defaultElevation = 0.dp,
+                focusedElevation = 1.dp,
+                hoveredElevation = 1.dp
+            ),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bail #${bail.id}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    StatusBadge(
+                        text = statusLabel,
+                        containerColor = if (isActive) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                HeroMetric(
+                    value = formatCurrency(bail.rentCents),
+                    label = "/ mois"
                 )
-                StatusBadge(
-                    text = statusLabel,
-                    containerColor = if (isActive) {
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            HeroMetric(
-                value = formatCurrency(bail.rentCents),
-                label = "/ mois"
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            DetailChipRow {
-                NonInteractiveChip(
-                    label = "Logement #${bail.housingId}",
-                    icon = Icons.Outlined.Home
-                )
-                NonInteractiveChip(
-                    label = "Locataire #${bail.tenantId}",
-                    icon = Icons.Outlined.Person
-                )
-                NonInteractiveChip(
-                    label = "Échéance le ${bail.rentDueDayOfMonth}",
-                    icon = Icons.Outlined.Timelapse
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            LabeledValueRow(
-                label = "Début",
-                value = formatEpochDay(bail.startDateEpochDay)
-            )
-            if (!isActive && bail.endDateEpochDay != null) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                DetailChipRow {
+                    NonInteractiveChip(
+                        label = "Logement #${bail.housingId}",
+                        icon = Icons.Outlined.Home
+                    )
+                    NonInteractiveChip(
+                        label = "Locataire #${bail.tenantId}",
+                        icon = Icons.Outlined.Person
+                    )
+                    NonInteractiveChip(
+                        label = "Échéance le ${bail.rentDueDayOfMonth}",
+                        icon = Icons.Outlined.Timelapse
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
                 LabeledValueRow(
-                    label = "Fin",
-                    value = formatEpochDay(bail.endDateEpochDay)
+                    label = "Début",
+                    value = formatEpochDay(bail.startDateEpochDay)
                 )
+                if (!isActive && bail.endDateEpochDay != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LabeledValueRow(
+                        label = "Fin",
+                        value = formatEpochDay(bail.endDateEpochDay)
+                    )
+                }
+            }
+        }
+    } else {
+        ElevatedCard(
+            modifier = modifier.keyboardClickable(onOpen),
+            colors = CardDefaults.elevatedCardColors(),
+            elevation = CardDefaults.elevatedCardElevation(
+                defaultElevation = 1.dp,
+                focusedElevation = 2.dp,
+                hoveredElevation = 2.dp
+            ),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bail #${bail.id}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    StatusBadge(
+                        text = statusLabel,
+                        containerColor = if (isActive) {
+                            MaterialTheme.colorScheme.tertiaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                HeroMetric(
+                    value = formatCurrency(bail.rentCents),
+                    label = "/ mois"
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                DetailChipRow {
+                    NonInteractiveChip(
+                        label = "Logement #${bail.housingId}",
+                        icon = Icons.Outlined.Home
+                    )
+                    NonInteractiveChip(
+                        label = "Locataire #${bail.tenantId}",
+                        icon = Icons.Outlined.Person
+                    )
+                    NonInteractiveChip(
+                        label = "Échéance le ${bail.rentDueDayOfMonth}",
+                        icon = Icons.Outlined.Timelapse
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                LabeledValueRow(
+                    label = "Début",
+                    value = formatEpochDay(bail.startDateEpochDay)
+                )
+                if (!isActive && bail.endDateEpochDay != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LabeledValueRow(
+                        label = "Fin",
+                        value = formatEpochDay(bail.endDateEpochDay)
+                    )
+                }
             }
         }
     }

@@ -30,10 +30,11 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledCard
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -393,10 +394,15 @@ private fun LeaseSummarySection(lease: Lease, housing: Housing?, tenantName: Str
 
 @Composable
 private fun LeaseHeroSection(lease: Lease, statusLabel: String, isActive: Boolean, modifier: Modifier = Modifier) {
-    Card(
+    FilledCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.filledCardElevation(
+            defaultElevation = 0.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(UiTokens.SpacingL), verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)) {
             StatusBadge(
@@ -443,9 +449,14 @@ private fun LeaseHeroSection(lease: Lease, statusLabel: String, isActive: Boolea
                 }
             }
 
-            Card(
+            OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                border = CardDefaults.outlinedCardBorder(enabled = true),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column(modifier = Modifier.padding(UiTokens.SpacingM), verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
                     LabeledValueRow(label = "Caution", value = formatCurrency(lease.depositCents))

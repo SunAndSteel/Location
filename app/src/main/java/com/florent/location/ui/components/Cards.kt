@@ -11,8 +11,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,11 +32,14 @@ enum class CardVariant {
 
 @Composable
 fun variantCardColors(variant: CardVariant) = when (variant) {
-    CardVariant.Default -> CardDefaults.cardColors()
-    CardVariant.Highlighted -> CardDefaults.cardColors(
+    CardVariant.Default -> CardDefaults.elevatedCardColors(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    )
+    CardVariant.Highlighted -> CardDefaults.filledCardColors(
         containerColor = MaterialTheme.colorScheme.secondaryContainer
     )
-    CardVariant.Warning -> CardDefaults.cardColors(
+    CardVariant.Warning -> CardDefaults.filledCardColors(
         containerColor = MaterialTheme.colorScheme.errorContainer
     )
 }
@@ -45,11 +49,15 @@ fun DefaultCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
+    ElevatedCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Default),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 1.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 2.dp
+        ),
+        shape = MaterialTheme.shapes.medium,
         content = content
     )
 }
@@ -59,11 +67,15 @@ fun HighlightCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
+    FilledCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Highlighted),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.filledCardElevation(
+            defaultElevation = 0.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp
+        ),
+        shape = MaterialTheme.shapes.medium,
         content = content
     )
 }
@@ -73,11 +85,15 @@ fun WarningCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Card(
+    FilledCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Warning),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.filledCardElevation(
+            defaultElevation = 0.dp,
+            focusedElevation = 1.dp,
+            hoveredElevation = 1.dp
+        ),
+        shape = MaterialTheme.shapes.medium,
         content = content
     )
 }
@@ -106,11 +122,15 @@ fun HeroCard(
     variant: CardVariant = CardVariant.Default,
     facts: List<Pair<String, String>> = emptyList()
 ) {
-    Card(
+    ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         colors = variantCardColors(variant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = MaterialTheme.shapes.large
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 1.dp,
+            focusedElevation = 2.dp,
+            hoveredElevation = 2.dp
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
