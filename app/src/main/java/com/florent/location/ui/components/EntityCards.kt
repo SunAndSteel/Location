@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
@@ -52,7 +51,7 @@ fun TenantCard(
         modifier = modifier.keyboardClickable(onOpen),
         colors = cardColors,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius)
+        shape = MaterialTheme.shapes.large
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -101,7 +100,7 @@ fun HousingCard(
         modifier = modifier.keyboardClickable(onOpen),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius)
+        shape = MaterialTheme.shapes.large
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -168,7 +167,7 @@ fun LeaseCard(
         modifier = modifier.keyboardClickable(onOpen),
         colors = variantCardColors(variant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius)
+        shape = MaterialTheme.shapes.large
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
