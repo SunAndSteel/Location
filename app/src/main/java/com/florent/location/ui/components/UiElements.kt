@@ -57,12 +57,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -93,15 +90,6 @@ fun SectionHeader(
             )
         }
     }
-}
-
-@Composable
-fun AppSectionHeader(
-    title: String,
-    supportingText: String? = null,
-    modifier: Modifier = Modifier
-) {
-    SectionHeader(title = title, supportingText = supportingText, modifier = modifier)
 }
 
 @Composable
@@ -208,38 +196,6 @@ fun NonInteractiveChip(
             Text(text = label, style = MaterialTheme.typography.labelMedium)
         }
     }
-}
-
-@Composable
-fun NonInteractiveBadge(
-    label: String,
-    modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    StatusBadge(
-        text = label,
-        modifier = modifier,
-        containerColor = containerColor,
-        contentColor = contentColor
-    )
-}
-
-@Composable
-fun MetricChip(
-    label: String,
-    icon: ImageVector? = null,
-    modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    NonInteractiveChip(
-        label = label,
-        icon = icon,
-        modifier = modifier,
-        containerColor = containerColor,
-        contentColor = contentColor
-    )
 }
 
 @Composable
@@ -414,12 +370,12 @@ fun ExpressiveErrorState(
 @Composable
 fun HeroCard(
     title: String,
-    statusBadge: String?,
     heroValue: String,
     heroLabel: String,
     modifier: Modifier = Modifier,
+    status: String? = null,
     variant: CardVariant = CardVariant.Default,
-    secondaryMetrics: List<Pair<String, String>> = emptyList()
+    facts: List<Pair<String, String>> = emptyList()
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -437,14 +393,12 @@ fun HeroCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = title, style = MaterialTheme.typography.titleLarge)
-                if (statusBadge != null) {
-                    StatusBadge(text = statusBadge)
-                }
+                status?.let { StatusBadge(text = it) }
             }
             HeroMetric(value = heroValue, label = heroLabel)
-            if (secondaryMetrics.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    secondaryMetrics.forEach { (label, value) ->
+            if (facts.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingXs)) {
+                    facts.forEach { (label, value) ->
                         LabeledValueRow(label = label, value = value)
                     }
                 }
@@ -501,51 +455,6 @@ fun SectionCard(
             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS),
             content = content
         )
-    }
-}
-
-@Composable
-fun HeroSummaryCard(
-    title: String,
-    heroValue: String,
-    heroLabel: String,
-    modifier: Modifier = Modifier,
-    status: String? = null,
-    facts: List<Pair<String, String>> = emptyList(),
-    variant: CardVariant = CardVariant.Default
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = variantCardColors(variant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius)
-    ) {
-        Column(
-            modifier = Modifier.padding(UiTokens.SpacingL),
-            verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                status?.let { StatusBadge(text = it) }
-            }
-            HeroMetric(value = heroValue, label = heroLabel)
-            if (facts.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingXs)) {
-                    facts.forEach { (label, value) ->
-                        LabeledValueRow(label = label, value = value)
-                    }
-                }
-            }
-        }
     }
 }
 

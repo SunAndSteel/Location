@@ -450,7 +450,7 @@ private fun ActionsPanel(
     onDeleteClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
-        AppSectionHeader(title = "Actions rapides")
+        SectionHeader(title = "Actions rapides")
 
         // Actions principales
         Card(
@@ -478,7 +478,7 @@ private fun ActionsPanel(
             }
         }
 
-        AppSectionHeader(
+        SectionHeader(
             title = "Zone dangereuse",
             supportingText = "Actions irréversibles"
         )
@@ -579,7 +579,7 @@ private fun HousingInfoSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Informations",
             supportingText = "Détails complémentaires sur le bien."
         )
@@ -607,7 +607,7 @@ private fun HousingFinancialSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Conditions financières",
             supportingText = "Montants enregistrés pour ce logement."
         )
@@ -628,7 +628,7 @@ private fun HousingAccessSection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)
     ) {
-        AppSectionHeader(
+        SectionHeader(
             title = "Accès et compteurs",
             supportingText = "Informations liées à la boîte aux lettres et aux compteurs."
         )
