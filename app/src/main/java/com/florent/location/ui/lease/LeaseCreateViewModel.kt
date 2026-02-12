@@ -173,17 +173,24 @@ class LeaseCreateViewModel(
     }
 
     private fun saveLease() {
-        viewModelScope.launch {
-            val current = _uiState.value
-            _uiState.update {
-                it.copy(
+        val current = _uiState.value
+        var shouldStartSave = false
+        _uiState.update { state ->
+            if (state.isSaving) {
+                state
+            } else {
+                shouldStartSave = true
+                state.copy(
                     isSaving = true,
                     errorMessage = null,
                     isSaved = false,
                     savedLeaseId = null
                 )
             }
+        }
+        if (!shouldStartSave) return
 
+        viewModelScope.launch {
             val startDateEpochDay = parseEpochDay(current.startDate)
             val rentCents = parseEuroInputToCents(current.rent)
             val chargesCents = parseEuroInputToCents(current.charges)

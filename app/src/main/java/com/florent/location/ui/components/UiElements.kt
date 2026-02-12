@@ -710,13 +710,18 @@ fun PrimaryActionRow(
     primaryLabel: String,
     onPrimary: () -> Unit,
     modifier: Modifier = Modifier,
+    primaryEnabled: Boolean = true,
     secondaryLabel: String? = null,
     onSecondary: (() -> Unit)? = null
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (maxWidth < 520.dp) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onPrimary, modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = onPrimary,
+                    enabled = primaryEnabled,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(text = primaryLabel)
                 }
                 if (secondaryLabel != null && onSecondary != null) {
@@ -729,6 +734,7 @@ fun PrimaryActionRow(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick = onPrimary,
+                    enabled = primaryEnabled,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(text = primaryLabel)

@@ -11,6 +11,7 @@ import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.sampleHousing
 import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.util.MainDispatcherRule
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -112,6 +113,50 @@ class LeaseCreateViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.isSaved)
         assertFalse(state.isSaving)
+        assertNull(state.errorMessage)
+        assertEquals(listOf("lease_create"), syncRequester.reasons)
+    }
+
+    @Test
+    fun `save ignores repeated click while request is already in progress`() = runTest {
+        val housingRepository = FakeHousingRepository(
+            listOf(sampleHousing(id = 1L, city = "Paris"))
+        )
+        val tenantRepository = FakeTenantRepository(
+            listOf(Tenant(id = 2L, firstName = "Ada", lastName = "Lovelace", phone = null, email = null))
+        )
+        val leaseRepository = FakeLeaseRepository(existingHousingIds = setOf(1L), existingTenantIds = setOf(2L))
+        val gatedSave = CompletableDeferred<Unit>()
+        val realLeaseUseCases = LeaseUseCasesImpl(leaseRepository, housingRepository)
+        val syncRequester = RecordingSyncRequester()
+        val viewModel = LeaseCreateViewModel(
+            housingUseCases = HousingUseCasesImpl(housingRepository),
+            tenantUseCases = TenantUseCasesImpl(tenantRepository),
+            leaseUseCases = object : com.florent.location.domain.usecase.lease.LeaseUseCases by realLeaseUseCases {
+                override suspend fun createLease(request: LeaseCreateRequest): Long {
+                    gatedSave.await()
+                    return realLeaseUseCases.createLease(request)
+                }
+            },
+            syncManager = syncRequester
+        )
+
+        advanceUntilIdle()
+        viewModel.onEvent(LeaseCreateUiEvent.SelectHousing(1L))
+        viewModel.onEvent(LeaseCreateUiEvent.SelectTenant(2L))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.StartDate, epochDayToDate(1000)))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Rent, "1000,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Charges, "100,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.Deposit, "500,00"))
+        viewModel.onEvent(LeaseCreateUiEvent.FieldChanged(LeaseField.RentDueDay, "5"))
+
+        viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
+        viewModel.onEvent(LeaseCreateUiEvent.SaveClicked)
+        gatedSave.complete(Unit)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isSaved)
         assertNull(state.errorMessage)
         assertEquals(listOf("lease_create"), syncRequester.reasons)
     }
