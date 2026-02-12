@@ -83,6 +83,26 @@ class LeaseCreateViewModelTest {
     }
 
     @Test
+    fun `opening one dropdown closes the other`() = runTest {
+        val viewModel = LeaseCreateViewModel(
+            housingUseCases = HousingUseCasesImpl(FakeHousingRepository()),
+            tenantUseCases = TenantUseCasesImpl(FakeTenantRepository()),
+            leaseUseCases = LeaseUseCasesImpl(FakeLeaseRepository(), FakeHousingRepository()),
+            syncManager = RecordingSyncRequester()
+        )
+
+        advanceUntilIdle()
+
+        viewModel.onEvent(LeaseCreateUiEvent.HousingDropdownExpanded(true))
+        assertTrue(viewModel.uiState.value.housingDropdownExpanded)
+        assertFalse(viewModel.uiState.value.tenantDropdownExpanded)
+
+        viewModel.onEvent(LeaseCreateUiEvent.TenantDropdownExpanded(true))
+        assertFalse(viewModel.uiState.value.housingDropdownExpanded)
+        assertTrue(viewModel.uiState.value.tenantDropdownExpanded)
+    }
+
+    @Test
     fun `save success triggers success flag and resets saving state`() = runTest {
         val housingRepository = FakeHousingRepository(
             listOf(sampleHousing(id = 1L, city = "Paris"))

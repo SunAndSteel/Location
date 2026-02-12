@@ -83,9 +83,19 @@ class LeaseCreateViewModel(
             is LeaseCreateUiEvent.SelectTenant -> selectTenant(event.tenantId)
             is LeaseCreateUiEvent.FieldChanged -> updateField(event.field, event.value)
             is LeaseCreateUiEvent.HousingDropdownExpanded ->
-                updateUiState { it.copy(housingDropdownExpanded = event.expanded) }
+                updateUiState {
+                    it.copy(
+                        housingDropdownExpanded = event.expanded,
+                        tenantDropdownExpanded = if (event.expanded) false else it.tenantDropdownExpanded
+                    )
+                }
             is LeaseCreateUiEvent.TenantDropdownExpanded ->
-                updateUiState { it.copy(tenantDropdownExpanded = event.expanded) }
+                updateUiState {
+                    it.copy(
+                        tenantDropdownExpanded = event.expanded,
+                        housingDropdownExpanded = if (event.expanded) false else it.housingDropdownExpanded
+                    )
+                }
             LeaseCreateUiEvent.SaveClicked -> saveLease()
         }
     }
@@ -128,6 +138,7 @@ class LeaseCreateViewModel(
             current.copy(
                 selectedHousingId = housingId,
                 housingDropdownExpanded = false,
+                tenantDropdownExpanded = false,
                 rent = housing?.let { formatEuroInput(defaultRent) } ?: current.rent,
                 charges = housing?.let { formatEuroInput(defaultCharges) } ?: current.charges,
                 deposit = housing?.let { formatEuroInput(defaultDeposit) } ?: current.deposit,
@@ -147,6 +158,7 @@ class LeaseCreateViewModel(
             it.copy(
                 selectedTenantId = tenantId,
                 tenantDropdownExpanded = false,
+                housingDropdownExpanded = false,
                 errorMessage = null
             )
         }
