@@ -21,7 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.Dp
 
 enum class CardVariant {
     Default,
@@ -49,7 +49,7 @@ fun DefaultCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Default),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius),
+        shape = MaterialTheme.shapes.large,
         content = content
     )
 }
@@ -63,7 +63,7 @@ fun HighlightCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Highlighted),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius),
+        shape = MaterialTheme.shapes.large,
         content = content
     )
 }
@@ -77,7 +77,7 @@ fun WarningCard(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Warning),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius),
+        shape = MaterialTheme.shapes.large,
         content = content
     )
 }
@@ -110,7 +110,7 @@ fun HeroCard(
         modifier = modifier.fillMaxWidth(),
         colors = variantCardColors(variant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(UiTokens.CardRadius)
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -141,12 +141,14 @@ fun SectionCard(
     modifier: Modifier = Modifier,
     tonalColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentPadding: PaddingValues = PaddingValues(UiTokens.SpacingL),
+    tonalElevation: Dp = 1.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(UiTokens.CardRadius),
-        color = tonalColor
+        shape = MaterialTheme.shapes.large,
+        color = tonalColor,
+        tonalElevation = tonalElevation
     ) {
         Column(
             modifier = Modifier.padding(contentPadding),
@@ -182,8 +184,9 @@ fun TimelineListItem(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(UiTokens.CardRadius),
-        color = MaterialTheme.colorScheme.surfaceContainer
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(UiTokens.SpacingM),

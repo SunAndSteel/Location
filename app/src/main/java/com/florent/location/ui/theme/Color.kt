@@ -2,28 +2,72 @@ package com.florent.location.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Couleur principale pour le thème sombre.
- */
-val Purple80 = Color(0xFFD0BCFF)
-/**
- * Couleur secondaire pour le thème sombre.
- */
-val PurpleGrey80 = Color(0xFFCCC2DC)
-/**
- * Couleur tertiaire pour le thème sombre.
- */
-val Pink80 = Color(0xFFEFB8C8)
+val md_theme_light_primary = Color(0xFF355CA8)
+val md_theme_light_onPrimary = Color(0xFFFFFFFF)
+val md_theme_light_primaryContainer = Color(0xFFD8E2FF)
+val md_theme_light_onPrimaryContainer = Color(0xFF001A43)
+val md_theme_light_secondary = Color(0xFF555F71)
+val md_theme_light_onSecondary = Color(0xFFFFFFFF)
+val md_theme_light_secondaryContainer = Color(0xFFD9E3F8)
+val md_theme_light_onSecondaryContainer = Color(0xFF121C2B)
+val md_theme_light_tertiary = Color(0xFF705574)
+val md_theme_light_onTertiary = Color(0xFFFFFFFF)
+val md_theme_light_tertiaryContainer = Color(0xFFFAD8FC)
+val md_theme_light_onTertiaryContainer = Color(0xFF29132E)
+val md_theme_light_error = Color(0xFFBA1A1A)
+val md_theme_light_onError = Color(0xFFFFFFFF)
+val md_theme_light_errorContainer = Color(0xFFFFDAD6)
+val md_theme_light_onErrorContainer = Color(0xFF410002)
+val md_theme_light_background = Color(0xFFF9F9FF)
+val md_theme_light_onBackground = Color(0xFF191C20)
+val md_theme_light_surface = Color(0xFFF9F9FF)
+val md_theme_light_onSurface = Color(0xFF191C20)
+val md_theme_light_surfaceVariant = Color(0xFFE0E2EC)
+val md_theme_light_onSurfaceVariant = Color(0xFF43474E)
+val md_theme_light_outline = Color(0xFF73777F)
+val md_theme_light_outlineVariant = Color(0xFFC3C6D0)
+val md_theme_light_inverseSurface = Color(0xFF2E3035)
+val md_theme_light_inverseOnSurface = Color(0xFFF0F0F7)
+val md_theme_light_inversePrimary = Color(0xFFAEC6FF)
+val md_theme_light_surfaceDim = Color(0xFFD9DAE0)
+val md_theme_light_surfaceBright = Color(0xFFF9F9FF)
+val md_theme_light_surfaceContainerLowest = Color(0xFFFFFFFF)
+val md_theme_light_surfaceContainerLow = Color(0xFFF3F3FA)
+val md_theme_light_surfaceContainer = Color(0xFFEDEDF4)
+val md_theme_light_surfaceContainerHigh = Color(0xFFE7E8EE)
+val md_theme_light_surfaceContainerHighest = Color(0xFFE2E2E9)
 
-/**
- * Couleur principale pour le thème clair.
- */
-val Purple40 = Color(0xFF6650a4)
-/**
- * Couleur secondaire pour le thème clair.
- */
-val PurpleGrey40 = Color(0xFF625b71)
-/**
- * Couleur tertiaire pour le thème clair.
- */
-val Pink40 = Color(0xFF7D5260)
+val md_theme_dark_primary = Color(0xFFAEC6FF)
+val md_theme_dark_onPrimary = Color(0xFF002E6D)
+val md_theme_dark_primaryContainer = Color(0xFF17448F)
+val md_theme_dark_onPrimaryContainer = Color(0xFFD8E2FF)
+val md_theme_dark_secondary = Color(0xFFBDC7DC)
+val md_theme_dark_onSecondary = Color(0xFF273141)
+val md_theme_dark_secondaryContainer = Color(0xFF3E4758)
+val md_theme_dark_onSecondaryContainer = Color(0xFFD9E3F8)
+val md_theme_dark_tertiary = Color(0xFFDDBCE0)
+val md_theme_dark_onTertiary = Color(0xFF3F2844)
+val md_theme_dark_tertiaryContainer = Color(0xFF573E5B)
+val md_theme_dark_onTertiaryContainer = Color(0xFFFAD8FC)
+val md_theme_dark_error = Color(0xFFFFB4AB)
+val md_theme_dark_onError = Color(0xFF690005)
+val md_theme_dark_errorContainer = Color(0xFF93000A)
+val md_theme_dark_onErrorContainer = Color(0xFFFFDAD6)
+val md_theme_dark_background = Color(0xFF111318)
+val md_theme_dark_onBackground = Color(0xFFE2E2E9)
+val md_theme_dark_surface = Color(0xFF111318)
+val md_theme_dark_onSurface = Color(0xFFE2E2E9)
+val md_theme_dark_surfaceVariant = Color(0xFF43474E)
+val md_theme_dark_onSurfaceVariant = Color(0xFFC3C6D0)
+val md_theme_dark_outline = Color(0xFF8D9199)
+val md_theme_dark_outlineVariant = Color(0xFF43474E)
+val md_theme_dark_inverseSurface = Color(0xFFE2E2E9)
+val md_theme_dark_inverseOnSurface = Color(0xFF2E3035)
+val md_theme_dark_inversePrimary = Color(0xFF355CA8)
+val md_theme_dark_surfaceDim = Color(0xFF111318)
+val md_theme_dark_surfaceBright = Color(0xFF37393E)
+val md_theme_dark_surfaceContainerLowest = Color(0xFF0C0E13)
+val md_theme_dark_surfaceContainerLow = Color(0xFF191C20)
+val md_theme_dark_surfaceContainer = Color(0xFF1D2024)
+val md_theme_dark_surfaceContainerHigh = Color(0xFF282A2F)
+val md_theme_dark_surfaceContainerHighest = Color(0xFF32353A)
