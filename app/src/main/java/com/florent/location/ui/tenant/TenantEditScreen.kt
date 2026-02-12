@@ -42,7 +42,7 @@ import com.florent.location.ui.components.ScreenScaffold
 import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.tenantStatusLabel
 import com.florent.location.ui.components.UiTokens
-import com.florent.location.ui.lease.ExposedDropdownMenu
+import com.florent.location.ui.components.experimental.ExposedDropdownMenu
 import com.florent.location.domain.model.TenantStatus
 
 @Composable
