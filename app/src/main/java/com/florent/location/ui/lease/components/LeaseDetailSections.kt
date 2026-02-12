@@ -146,7 +146,7 @@ internal fun LeaseDetailContent(
                                 modifier = Modifier.weight(0.55f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                LeaseSummarySection(lease = lease, housing = state.housing, isActive = state.isActive)
+                                LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isActive)
                                 KeysSection(
                                     keys = state.keys,
                                     onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
@@ -169,7 +169,7 @@ internal fun LeaseDetailContent(
                             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
-                            LeaseSummarySection(lease = lease, housing = state.housing, isActive = state.isActive)
+                            LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isActive)
                             Button(
                                 onClick = onShowActions,
                                 modifier = Modifier.fillMaxWidth(),
@@ -363,15 +363,15 @@ private fun CloseLeaseDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiE
 }
 
 @Composable
-private fun LeaseSummarySection(lease: Lease, housing: Housing?, isActive: Boolean, modifier: Modifier = Modifier) {
+private fun LeaseSummarySection(lease: Lease, housing: Housing?, tenantName: String?, isActive: Boolean, modifier: Modifier = Modifier) {
     val statusLabel = if (isActive) "Actif" else "Terminé"
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
         LeaseHeroSection(lease = lease, statusLabel = statusLabel, isActive = isActive)
         SectionHeader(title = "Résumé", supportingText = "Informations principales du bail.")
         SectionCard {
             LabeledValueRow(label = "Fin", value = lease.endDateEpochDay?.let { formatEpochDay(it) } ?: "Actif")
-            NonInteractiveChip(label = "Logement #${lease.housingId}", icon = Icons.Outlined.Home)
-            NonInteractiveChip(label = "Locataire #${lease.tenantId}", icon = Icons.Outlined.Person)
+            NonInteractiveChip(label = housing?.address?.fullString() ?: "Logement indisponible", icon = Icons.Outlined.Home)
+            NonInteractiveChip(label = tenantName ?: "Locataire indisponible", icon = Icons.Outlined.Person)
             if (
                 housing?.mailboxLabel != null ||
                 housing?.meterGasId != null ||

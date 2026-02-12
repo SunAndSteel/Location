@@ -8,9 +8,11 @@ import com.florent.location.domain.model.IndexationPolicy
 import com.florent.location.domain.model.IndexationSimulation
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
+import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.ui.sync.HousingSyncRequester
 import java.time.LocalDate
 import java.time.ZoneId
@@ -47,6 +49,7 @@ data class LeaseDetailUiState(
     val isLoading: Boolean = true,
     val lease: Lease? = null,
     val housing: Housing? = null,
+    val tenant: Tenant? = null,
     val keys: List<Key> = emptyList(),
     val isActive: Boolean = false,
     val indexationPolicy: IndexationPolicy? = null,
@@ -60,6 +63,7 @@ data class LeaseDetailUiState(
 private data class LeaseDetailSnapshot(
     val lease: Lease?,
     val housing: Housing?,
+    val tenant: Tenant?,
     val keys: List<Key>,
     val events: List<IndexationEvent>
 )
@@ -96,6 +100,7 @@ class LeaseDetailViewModel(
     private val bailUseCases: BailUseCases,
     private val leaseUseCases: LeaseUseCases,
     private val housingUseCases: HousingUseCases,
+    private val tenantUseCases: TenantUseCases,
     private val syncManager: HousingSyncRequester
 ) : ViewModel() {
 
@@ -136,15 +141,20 @@ class LeaseDetailViewModel(
             val keysFlow = leaseFlow.flatMapLatest { lease ->
                 lease?.let { housingUseCases.observeKeysForHousing(it.housingId) } ?: flowOf(emptyList())
             }
+            val tenantFlow = leaseFlow.flatMapLatest { lease ->
+                lease?.let { tenantUseCases.observeTenant(it.tenantId) } ?: flowOf(null)
+            }
             combine(
                 leaseFlow,
                 housingFlow,
+                tenantFlow,
                 keysFlow,
                 bailUseCases.observeIndexationEvents(leaseId)
-            ) { lease, housing, keys, events ->
+            ) { lease, housing, tenant, keys, events ->
                 LeaseDetailSnapshot(
                     lease = lease,
                     housing = housing,
+                    tenant = tenant,
                     keys = keys,
                     events = events
                 )
@@ -169,6 +179,7 @@ class LeaseDetailViewModel(
                             isLoading = false,
                             lease = snapshot.lease,
                             housing = snapshot.housing,
+                            tenant = snapshot.tenant,
                             keys = snapshot.keys,
                             isActive = snapshot.lease?.endDateEpochDay == null,
                             indexationPolicy = policy,
