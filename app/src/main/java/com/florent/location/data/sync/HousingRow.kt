@@ -34,5 +34,8 @@ data class HousingRow(
     @SerialName("internal_note") val internalNote: String? = null,
 
     // timestamptz ISO
+    @SerialName("created_at") val createdAt: String? = null,
+
+    // timestamptz ISO
     @SerialName("updated_at") val updatedAt: String? = null
 )

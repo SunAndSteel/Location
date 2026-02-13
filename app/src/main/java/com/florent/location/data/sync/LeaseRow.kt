@@ -29,5 +29,6 @@ data class LeaseRow(
     @SerialName("housing_charges_cents_snapshot") val housingChargesCentsSnapshot: Long = 0,
     @SerialName("housing_deposit_cents_snapshot") val housingDepositCentsSnapshot: Long = 0,
 
+    @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )

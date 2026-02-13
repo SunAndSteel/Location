@@ -14,5 +14,6 @@ data class TenantRow(
     @SerialName("email") val email: String? = null,
     @SerialName("status") val status: String = "ACTIVE",
 
+    @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )

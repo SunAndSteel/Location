@@ -14,6 +14,7 @@ data class KeyRow(
     @SerialName("device_label") val deviceLabel: String? = null,
     @SerialName("handed_over_epoch_day") val handedOverEpochDay: Long,
 
+    @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )
 
@@ -29,5 +30,6 @@ data class IndexationEventRow(
     @SerialName("index_percent") val indexPercent: Double,
     @SerialName("new_rent_cents") val newRentCents: Long,
 
+    @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )
