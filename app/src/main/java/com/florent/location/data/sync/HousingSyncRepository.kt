@@ -78,7 +78,7 @@ class HousingSyncRepository(
         }
         if (entities.isNotEmpty()) {
             housingDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { housingDao.markClean(e.remoteId, it) } }
+            entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = fetchAllPaged(tag = "HousingSyncRepository", pageLabel = "pullRemoteIds") { from, to ->

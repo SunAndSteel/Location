@@ -25,7 +25,7 @@ fun LeaseEntity.toDomain() : Lease =
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
 
@@ -50,7 +50,7 @@ fun Lease.toEntity() : LeaseEntity {
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
     return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)

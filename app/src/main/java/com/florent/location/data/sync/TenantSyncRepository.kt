@@ -79,7 +79,7 @@ class TenantSyncRepository(
         }
         if (entities.isNotEmpty()) {
             tenantDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { tenantDao.markClean(e.remoteId, it) } }
+            entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { tenantDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = fetchAllPaged(tag = "TenantSyncRepository", pageLabel = "pullRemoteIds") { from, to ->

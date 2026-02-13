@@ -137,4 +137,66 @@ class DatabaseMigrationTest {
 
         db.close()
     }
+
+    @Test
+    fun migrate2To3_renamesCursorColumnAndConvertsLegacySeconds() {
+        helper.createDatabase(testDbName, 2).apply {
+            insert("tenants", 0, ContentValues().apply {
+                put("id", 1L)
+                put("remoteId", "tenant-legacy")
+                put("firstName", "Alice")
+                put("lastName", "Legacy")
+                put("status", "ACTIVE")
+                put("createdAt", 1000L)
+                put("updatedAt", 2000L)
+                put("isDeleted", 0)
+                put("dirty", 0)
+                put("serverUpdatedAtEpochSeconds", 1_704_195_000L)
+            })
+            insert("housings", 0, ContentValues().apply {
+                put("id", 2L)
+                put("remoteId", "housing-millis")
+                put("addr_street", "Rue")
+                put("addr_number", "1")
+                put("addr_zipCode", "1000")
+                put("addr_city", "Bruxelles")
+                put("addr_country", "BE")
+                put("createdAt", 1000L)
+                put("updatedAt", 2000L)
+                put("isArchived", 0)
+                put("rentCents", 100000L)
+                put("chargesCents", 10000L)
+                put("depositCents", 200000L)
+                put("pebRating", "UNKNOWN")
+                put("isDeleted", 0)
+                put("dirty", 0)
+                put("serverUpdatedAtEpochSeconds", 1_704_195_000_123L)
+            })
+            close()
+        }
+
+        helper.runMigrationsAndValidate(testDbName, 3, true, DatabaseMigrations.MIGRATION_2_3)
+
+        val db = Room.databaseBuilder(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            AppDatabase::class.java,
+            testDbName
+        )
+            .addMigrations(DatabaseMigrations.MIGRATION_2_3)
+            .build()
+
+        db.openHelper.readableDatabase
+
+        db.query("SELECT serverUpdatedAtEpochMillis FROM tenants WHERE id = 1", null).use {
+            assertEquals(true, it.moveToFirst())
+            assertEquals(1_704_195_000_000L, it.getLong(0))
+        }
+
+        db.query("SELECT serverUpdatedAtEpochMillis FROM housings WHERE id = 2", null).use {
+            assertEquals(true, it.moveToFirst())
+            assertEquals(1_704_195_000_123L, it.getLong(0))
+        }
+
+        db.close()
+    }
 }

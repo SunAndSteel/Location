@@ -32,7 +32,7 @@ interface HousingDao {
             l.updatedAt AS lease_updatedAt,
             l.isDeleted AS lease_isDeleted,
             l.dirty AS lease_dirty,
-            l.serverUpdatedAtEpochSeconds AS lease_serverUpdatedAtEpochSeconds
+            l.serverUpdatedAtEpochMillis AS lease_serverUpdatedAtEpochMillis
         FROM housings h
         LEFT JOIN leases l 
             ON l.housingId = h.id AND l.endDateEpochDay IS NULL AND l.isDeleted = 0
@@ -80,10 +80,10 @@ interface HousingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<HousingEntity>)
 
-    @Query("UPDATE housings SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdatedAt, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdatedAt: Long?)
+    @Query("UPDATE housings SET dirty = 0, serverUpdatedAtEpochMillis = COALESCE(:serverUpdatedAtEpochMillis, serverUpdatedAtEpochMillis) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdatedAtEpochMillis: Long?)
 
-    @Query("SELECT serverUpdatedAtEpochSeconds FROM housings ORDER BY serverUpdatedAtEpochSeconds DESC LIMIT 1")
+    @Query("SELECT serverUpdatedAtEpochMillis FROM housings ORDER BY serverUpdatedAtEpochMillis DESC LIMIT 1")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?
 
     @Query("UPDATE housings SET dirty = 1 WHERE id = :id")

@@ -10,7 +10,34 @@ object DatabaseMigrations {
         }
     }
 
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            migrateServerUpdatedCursorToMillis(db, "tenants")
+            migrateServerUpdatedCursorToMillis(db, "housings")
+            migrateServerUpdatedCursorToMillis(db, "leases")
+            migrateServerUpdatedCursorToMillis(db, "keys")
+            migrateServerUpdatedCursorToMillis(db, "indexation_events")
+        }
+
+        private fun migrateServerUpdatedCursorToMillis(db: SupportSQLiteDatabase, table: String) {
+            db.execSQL(
+                "ALTER TABLE $table RENAME COLUMN serverUpdatedAtEpochSeconds TO serverUpdatedAtEpochMillis"
+            )
+            db.execSQL(
+                """
+                UPDATE $table
+                SET serverUpdatedAtEpochMillis = CASE
+                    WHEN serverUpdatedAtEpochMillis IS NULL THEN NULL
+                    WHEN serverUpdatedAtEpochMillis < 100000000000 THEN serverUpdatedAtEpochMillis * 1000
+                    ELSE serverUpdatedAtEpochMillis
+                END
+                """.trimIndent()
+            )
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
+        MIGRATION_2_3,
     )
 }

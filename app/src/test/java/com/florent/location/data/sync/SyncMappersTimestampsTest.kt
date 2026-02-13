@@ -24,15 +24,15 @@ class SyncMappersTimestampsTest {
 
         assertEquals(expectedCreatedAt, housingEntity.createdAt)
         assertEquals(expectedUpdatedAt, housingEntity.updatedAt)
-        assertEquals(expectedUpdatedMillis, housingEntity.serverUpdatedAtEpochSeconds)
+        assertEquals(expectedUpdatedMillis, housingEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(expectedCreatedAt, tenantEntity.createdAt)
         assertEquals(expectedUpdatedAt, tenantEntity.updatedAt)
-        assertEquals(expectedUpdatedMillis, tenantEntity.serverUpdatedAtEpochSeconds)
+        assertEquals(expectedUpdatedMillis, tenantEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(expectedCreatedAt, leaseEntity.createdAt)
         assertEquals(expectedUpdatedAt, leaseEntity.updatedAt)
-        assertEquals(expectedUpdatedMillis, leaseEntity.serverUpdatedAtEpochSeconds)
+        assertEquals(expectedUpdatedMillis, leaseEntity.serverUpdatedAtEpochMillis)
     }
 
     @Test
@@ -55,15 +55,15 @@ class SyncMappersTimestampsTest {
 
         assertEquals(existingCreatedAt, housingEntity.createdAt)
         assertEquals(nowMillis, housingEntity.updatedAt)
-        assertNull(housingEntity.serverUpdatedAtEpochSeconds)
+        assertNull(housingEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(existingCreatedAt, tenantEntity.createdAt)
         assertEquals(nowMillis, tenantEntity.updatedAt)
-        assertNull(tenantEntity.serverUpdatedAtEpochSeconds)
+        assertNull(tenantEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(existingCreatedAt, leaseEntity.createdAt)
         assertEquals(nowMillis, leaseEntity.updatedAt)
-        assertNull(leaseEntity.serverUpdatedAtEpochSeconds)
+        assertNull(leaseEntity.serverUpdatedAtEpochMillis)
     }
 
     @Test
@@ -86,15 +86,15 @@ class SyncMappersTimestampsTest {
 
         assertEquals(111L, housingEntity.createdAt)
         assertEquals(nowMillis, housingEntity.updatedAt)
-        assertNull(housingEntity.serverUpdatedAtEpochSeconds)
+        assertNull(housingEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(222L, tenantEntity.createdAt)
         assertEquals(nowMillis, tenantEntity.updatedAt)
-        assertNull(tenantEntity.serverUpdatedAtEpochSeconds)
+        assertNull(tenantEntity.serverUpdatedAtEpochMillis)
 
         assertEquals(333L, leaseEntity.createdAt)
         assertEquals(nowMillis, leaseEntity.updatedAt)
-        assertNull(leaseEntity.serverUpdatedAtEpochSeconds)
+        assertNull(leaseEntity.serverUpdatedAtEpochMillis)
     }
 
 
@@ -108,21 +108,29 @@ class SyncMappersTimestampsTest {
         val secondEntity = housingRow(createdAt = secondUpdateIso, updatedAt = secondUpdateIso)
             .toEntityPreservingLocalId(localId = 2L, nowMillis = 123L)
 
-        val firstCursor = toServerCursorIso(firstEntity.serverUpdatedAtEpochSeconds)
-        val secondCursor = toServerCursorIso(secondEntity.serverUpdatedAtEpochSeconds)
+        val firstCursor = toServerCursorIso(firstEntity.serverUpdatedAtEpochMillis)
+        val secondCursor = toServerCursorIso(secondEntity.serverUpdatedAtEpochMillis)
 
-        assertEquals(parseServerEpochMillis(firstUpdateIso), firstEntity.serverUpdatedAtEpochSeconds)
-        assertEquals(parseServerEpochMillis(secondUpdateIso), secondEntity.serverUpdatedAtEpochSeconds)
+        assertEquals(parseServerEpochMillis(firstUpdateIso), firstEntity.serverUpdatedAtEpochMillis)
+        assertEquals(parseServerEpochMillis(secondUpdateIso), secondEntity.serverUpdatedAtEpochMillis)
         assertEquals(firstUpdateIso, firstCursor)
         assertEquals(secondUpdateIso, secondCursor)
     }
 
     @Test
-    fun `keeps backward compatibility for second-based cursor values`() {
-        val legacySecondsCursor = 1704195000L
+    fun `formats cursor from epoch millis only`() {
+        val cursorEpochMillis = 1704195000000L
 
-        assertEquals("2024-01-02T11:30:00Z", toServerCursorIso(legacySecondsCursor))
+        assertEquals("2024-01-02T11:30:00Z", toServerCursorIso(cursorEpochMillis))
     }
+
+    @Test
+    fun `does not auto-convert second-based cursor`() {
+        val secondBasedCursor = 1_704_195_000L
+
+        assertEquals("1970-01-20T17:23:15Z", toServerCursorIso(secondBasedCursor))
+    }
+
     private fun housingRow(createdAt: String?, updatedAt: String?) = HousingRow(
         remoteId = "h-1",
         userId = "u-1",

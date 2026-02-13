@@ -19,7 +19,7 @@ fun TenantEntity.toDomain() : Tenant =
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
 
@@ -37,7 +37,7 @@ fun Tenant.toEntity(): TenantEntity {
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
     return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)
