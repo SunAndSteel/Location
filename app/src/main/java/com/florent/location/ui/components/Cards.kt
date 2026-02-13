@@ -159,7 +159,7 @@ fun HeroCard(
 @Composable
 fun SectionCard(
     modifier: Modifier = Modifier,
-    tonalColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    tonalColor: Color = MaterialTheme.colorScheme.surface,
     contentPadding: PaddingValues = PaddingValues(UiTokens.SpacingL),
     tonalElevation: Dp = 1.dp,
     content: @Composable ColumnScope.() -> Unit
