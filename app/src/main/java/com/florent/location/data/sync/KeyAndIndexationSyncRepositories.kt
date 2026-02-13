@@ -22,8 +22,10 @@ class KeySyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
+        val startedAt = System.currentTimeMillis()
         pushDirty()
         pullUpdates()
+        Log.i("KeySyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
     private suspend fun pushDirty() {
@@ -69,7 +71,7 @@ class KeySyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(keyDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = fetchAllPaged(tag = "KeySyncRepository", pageLabel = "pullUpdates") { from, to ->
+        val updatesResult = fetchAllPagedWithMetrics(tag = "KeySyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("keys").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
@@ -77,7 +79,8 @@ class KeySyncRepository(
                 }
                 range(from.toLong(), to.toLong())
             }.decodeList<KeyRow>()
-        }.sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        }
+        val rows = updatesResult.rows.sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -100,13 +103,28 @@ class KeySyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { keyDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = fetchAllPaged(tag = "KeySyncRepository", pageLabel = "pullRemoteIds") { from, to ->
-            supabase.from("keys").select {
-                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-                range(from.toLong(), to.toLong())
-            }.decodeList<KeyRow>()
-        }.map { it.remoteId }.toSet()
-        keyDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { keyDao.hardDeleteByRemoteId(it) }
+        var hardDeleted = 0
+        val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("KeySyncRepository")
+        if (shouldRunFullReconciliation) {
+            val remoteIdsResult = fetchAllPagedWithMetrics(tag = "KeySyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+                supabase.from("keys").select {
+                    filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                    range(from.toLong(), to.toLong())
+                }.decodeList<KeyRow>()
+            }
+            val remoteIds = remoteIdsResult.rows.map { it.remoteId }.toSet()
+            keyDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach {
+                keyDao.hardDeleteByRemoteId(it)
+                hardDeleted++
+            }
+        } else {
+            Log.d("KeySyncRepository", "Skipping full reconciliation for this sync cycle")
+        }
+
+        Log.i(
+            "KeySyncRepository",
+            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+        )
     }
 }
 
@@ -118,8 +136,10 @@ class IndexationEventSyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
+        val startedAt = System.currentTimeMillis()
         pushDirty()
         pullUpdates()
+        Log.i("IndexationEventSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
     private suspend fun pushDirty() {
@@ -168,7 +188,7 @@ class IndexationEventSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(indexationEventDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = fetchAllPaged(tag = "IndexationEventSyncRepository", pageLabel = "pullUpdates") { from, to ->
+        val updatesResult = fetchAllPagedWithMetrics(tag = "IndexationEventSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("indexation_events").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
@@ -176,7 +196,8 @@ class IndexationEventSyncRepository(
                 }
                 range(from.toLong(), to.toLong())
             }.decodeList<IndexationEventRow>()
-        }.sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        }
+        val rows = updatesResult.rows.sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -199,12 +220,27 @@ class IndexationEventSyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { indexationEventDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = fetchAllPaged(tag = "IndexationEventSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
-            supabase.from("indexation_events").select {
-                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-                range(from.toLong(), to.toLong())
-            }.decodeList<IndexationEventRow>()
-        }.map { it.remoteId }.toSet()
-        indexationEventDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { indexationEventDao.hardDeleteByRemoteId(it) }
+        var hardDeleted = 0
+        val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("IndexationEventSyncRepository")
+        if (shouldRunFullReconciliation) {
+            val remoteIdsResult = fetchAllPagedWithMetrics(tag = "IndexationEventSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+                supabase.from("indexation_events").select {
+                    filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                    range(from.toLong(), to.toLong())
+                }.decodeList<IndexationEventRow>()
+            }
+            val remoteIds = remoteIdsResult.rows.map { it.remoteId }.toSet()
+            indexationEventDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach {
+                indexationEventDao.hardDeleteByRemoteId(it)
+                hardDeleted++
+            }
+        } else {
+            Log.d("IndexationEventSyncRepository", "Skipping full reconciliation for this sync cycle")
+        }
+
+        Log.i(
+            "IndexationEventSyncRepository",
+            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+        )
     }
 }

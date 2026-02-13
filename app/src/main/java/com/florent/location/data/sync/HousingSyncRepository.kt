@@ -17,8 +17,10 @@ class HousingSyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
+        val startedAt = System.currentTimeMillis()
         pushDirty()
         pullUpdates()
+        Log.i("HousingSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
     private suspend fun pushDirty() {
@@ -61,7 +63,7 @@ class HousingSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(housingDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = fetchAllPaged(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
+        val updatesResult = fetchAllPagedWithMetrics(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("housings").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
@@ -71,6 +73,7 @@ class HousingSyncRepository(
             }
                 .decodeList<HousingRow>()
         }
+        val rows = updatesResult.rows
 
         val entities = rows.map { row ->
             val existing = housingDao.getByRemoteId(row.remoteId)
@@ -81,13 +84,27 @@ class HousingSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = fetchAllPaged(tag = "HousingSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
-            supabase.from("housings").select {
-                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-                range(from.toLong(), to.toLong())
-            }.decodeList<HousingRow>()
-        }.map { it.remoteId }.toSet()
+        var hardDeleted = 0
+        val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("HousingSyncRepository")
+        if (shouldRunFullReconciliation) {
+            val remoteIdsResult = fetchAllPagedWithMetrics(tag = "HousingSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+                supabase.from("housings").select {
+                    filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                    range(from.toLong(), to.toLong())
+                }.decodeList<HousingRow>()
+            }
+            val remoteIds = remoteIdsResult.rows.map { it.remoteId }.toSet()
+            housingDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach {
+                housingDao.hardDeleteByRemoteId(it)
+                hardDeleted++
+            }
+        } else {
+            Log.d("HousingSyncRepository", "Skipping full reconciliation for this sync cycle")
+        }
 
-        housingDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { housingDao.hardDeleteByRemoteId(it) }
+        Log.i(
+            "HousingSyncRepository",
+            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+        )
     }
 }

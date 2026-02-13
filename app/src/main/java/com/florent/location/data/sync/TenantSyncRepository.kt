@@ -17,8 +17,10 @@ class TenantSyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
+        val startedAt = System.currentTimeMillis()
         pushDirty()
         pullUpdates()
+        Log.i("TenantSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
     private suspend fun pushDirty() {
@@ -62,7 +64,7 @@ class TenantSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(tenantDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = fetchAllPaged(tag = "TenantSyncRepository", pageLabel = "pullUpdates") { from, to ->
+        val updatesResult = fetchAllPagedWithMetrics(tag = "TenantSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("tenants").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
@@ -72,6 +74,7 @@ class TenantSyncRepository(
             }
                 .decodeList<TenantRow>()
         }
+        val rows = updatesResult.rows
 
         val entities = rows.map { row ->
             val existing = tenantDao.getByRemoteId(row.remoteId)
@@ -82,13 +85,27 @@ class TenantSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { tenantDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = fetchAllPaged(tag = "TenantSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
-            supabase.from("tenants").select {
-                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-                range(from.toLong(), to.toLong())
-            }.decodeList<TenantRow>()
-        }.map { it.remoteId }.toSet()
+        var hardDeleted = 0
+        val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("TenantSyncRepository")
+        if (shouldRunFullReconciliation) {
+            val remoteIdsResult = fetchAllPagedWithMetrics(tag = "TenantSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+                supabase.from("tenants").select {
+                    filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                    range(from.toLong(), to.toLong())
+                }.decodeList<TenantRow>()
+            }
+            val remoteIds = remoteIdsResult.rows.map { it.remoteId }.toSet()
+            tenantDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach {
+                tenantDao.hardDeleteByRemoteId(it)
+                hardDeleted++
+            }
+        } else {
+            Log.d("TenantSyncRepository", "Skipping full reconciliation for this sync cycle")
+        }
 
-        tenantDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { tenantDao.hardDeleteByRemoteId(it) }
+        Log.i(
+            "TenantSyncRepository",
+            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+        )
     }
 }

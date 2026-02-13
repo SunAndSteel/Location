@@ -21,8 +21,10 @@ class LeaseSyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
+        val startedAt = System.currentTimeMillis()
         pushDirty()
         pullUpdates()
+        Log.i("LeaseSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
     private suspend fun pushDirty() {
@@ -73,7 +75,7 @@ class LeaseSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(leaseDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = fetchAllPaged(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
+        val updatesResult = fetchAllPagedWithMetrics(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("leases").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
@@ -81,7 +83,8 @@ class LeaseSyncRepository(
                 }
                 range(from.toLong(), to.toLong())
             }.decodeList<LeaseRow>()
-        }.sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        }
+        val rows = updatesResult.rows.sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -105,13 +108,27 @@ class LeaseSyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = fetchAllPaged(tag = "LeaseSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
-            supabase.from("leases").select {
-                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-                range(from.toLong(), to.toLong())
-            }.decodeList<LeaseRow>()
-        }.map { it.remoteId }.toSet()
+        var hardDeleted = 0
+        val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("LeaseSyncRepository")
+        if (shouldRunFullReconciliation) {
+            val remoteIdsResult = fetchAllPagedWithMetrics(tag = "LeaseSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+                supabase.from("leases").select {
+                    filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                    range(from.toLong(), to.toLong())
+                }.decodeList<LeaseRow>()
+            }
+            val remoteIds = remoteIdsResult.rows.map { it.remoteId }.toSet()
+            leaseDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach {
+                leaseDao.hardDeleteByRemoteId(it)
+                hardDeleted++
+            }
+        } else {
+            Log.d("LeaseSyncRepository", "Skipping full reconciliation for this sync cycle")
+        }
 
-        leaseDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { leaseDao.hardDeleteByRemoteId(it) }
+        Log.i(
+            "LeaseSyncRepository",
+            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+        )
     }
 }
