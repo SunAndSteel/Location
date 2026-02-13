@@ -1,10 +1,14 @@
 package com.florent.location.data.sync
 
 import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.IndexationEventDao
+import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.data.db.dao.TenantDao
 import com.florent.location.data.db.entity.AddressEntity
 import com.florent.location.data.db.entity.HousingEntity
+import com.florent.location.data.db.entity.IndexationEventEntity
+import com.florent.location.data.db.entity.KeyEntity
 import com.florent.location.data.db.entity.LeaseEntity
 import com.florent.location.data.db.entity.TenantEntity
 import com.florent.location.domain.model.PebRating
@@ -82,5 +86,53 @@ class SyncRepositoryDeleteFailureTest {
         }
 
         coVerify(exactly = 0) { leaseDao.hardDeleteByRemoteId(any()) }
+    }
+
+    @Test
+    fun keyDelete_keepsLocalEntity_whenRemoteDeleteFails() = runTest {
+        val supabase = mockk<SupabaseClient>(relaxed = true)
+        val keyDao = mockk<KeyDao>(relaxed = true)
+        val housingDao = mockk<HousingDao>(relaxed = true)
+        val repository = KeySyncRepository(supabase, keyDao, housingDao)
+        val entity = KeyEntity(
+            id = 34L,
+            remoteId = "remote-key",
+            housingId = 1L,
+            type = "Maison",
+            handedOverEpochDay = 20000,
+            isDeleted = true,
+            dirty = true
+        )
+
+        repository.deleteDeletedKey(entity, "user-1") {
+            throw RuntimeException("Supabase delete failed")
+        }
+
+        coVerify(exactly = 0) { keyDao.deleteById(any()) }
+    }
+
+    @Test
+    fun indexationEventDelete_keepsLocalEntity_whenRemoteDeleteFails() = runTest {
+        val supabase = mockk<SupabaseClient>(relaxed = true)
+        val indexationEventDao = mockk<IndexationEventDao>(relaxed = true)
+        val leaseDao = mockk<LeaseDao>(relaxed = true)
+        val repository = IndexationEventSyncRepository(supabase, indexationEventDao, leaseDao)
+        val entity = IndexationEventEntity(
+            id = 56L,
+            remoteId = "remote-event",
+            leaseId = 1L,
+            appliedEpochDay = 20000,
+            baseRentCents = 100000,
+            indexPercent = 2.3,
+            newRentCents = 102300,
+            isDeleted = true,
+            dirty = true
+        )
+
+        repository.deleteDeletedIndexationEvent(entity, "user-1") {
+            throw RuntimeException("Supabase delete failed")
+        }
+
+        coVerify(exactly = 0) { indexationEventDao.hardDeleteByRemoteId(any()) }
     }
 }

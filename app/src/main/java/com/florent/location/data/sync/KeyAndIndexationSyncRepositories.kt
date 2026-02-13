@@ -5,6 +5,8 @@ import com.florent.location.data.db.dao.HousingDao
 import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
+import com.florent.location.data.db.entity.IndexationEventEntity
+import com.florent.location.data.db.entity.KeyEntity
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
@@ -30,16 +32,7 @@ class KeySyncRepository(
         if (dirty.isEmpty()) return
 
         dirty.filter { it.isDeleted }.forEach { entity ->
-            try {
-                supabase.from("keys").delete {
-                    filter {
-                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
-                    }
-                }
-            } finally {
-                keyDao.deleteById(entity.id)
-            }
+            deleteDeletedKey(entity, user.id)
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -53,6 +46,22 @@ class KeySyncRepository(
                 ignoreDuplicates = false
             }
             payload.forEach { keyDao.markClean(it.first.remoteId, null) }
+        }
+    }
+
+    internal suspend fun deleteDeletedKey(entity: KeyEntity, userId: String, remoteDelete: suspend () -> Unit = {
+        supabase.from("keys").delete {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = userId)
+                filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+            }
+        }
+    }) {
+        try {
+            remoteDelete()
+            keyDao.deleteById(entity.id)
+        } catch (e: Exception) {
+            Log.e("KeySyncRepository", "Failed to delete remote key ${entity.remoteId}", e)
         }
     }
 
@@ -119,16 +128,7 @@ class IndexationEventSyncRepository(
         if (dirty.isEmpty()) return
 
         dirty.filter { it.isDeleted }.forEach { entity ->
-            try {
-                supabase.from("indexation_events").delete {
-                    filter {
-                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
-                    }
-                }
-            } finally {
-                indexationEventDao.hardDeleteByRemoteId(entity.remoteId)
-            }
+            deleteDeletedIndexationEvent(entity, user.id)
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -145,6 +145,22 @@ class IndexationEventSyncRepository(
                 ignoreDuplicates = false
             }
             payload.forEach { indexationEventDao.markClean(it.first.remoteId, null) }
+        }
+    }
+
+    internal suspend fun deleteDeletedIndexationEvent(entity: IndexationEventEntity, userId: String, remoteDelete: suspend () -> Unit = {
+        supabase.from("indexation_events").delete {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = userId)
+                filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+            }
+        }
+    }) {
+        try {
+            remoteDelete()
+            indexationEventDao.hardDeleteByRemoteId(entity.remoteId)
+        } catch (e: Exception) {
+            Log.e("IndexationEventSyncRepository", "Failed to delete remote indexation event ${entity.remoteId}", e)
         }
     }
 
