@@ -30,7 +30,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -209,10 +209,10 @@ internal fun TenantActionsBottomSheet(
 
 @Composable
 private fun TenantHeroSection(tenant: Tenant, situation: TenantSituation?, modifier: Modifier = Modifier) {
-    FilledCard(
+    Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.filledCardElevation(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -326,10 +326,10 @@ private fun TenantActionsPanel(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
         SectionHeader(title = "Actions rapides")
-        FilledCard(
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.filledCardElevation(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp,
                 focusedElevation = 1.dp,
                 hoveredElevation = 1.dp
@@ -352,10 +352,10 @@ private fun TenantActionsPanel(
 
         SectionHeader(title = "Zone dangereuse", supportingText = "Actions irréversibles")
 
-        FilledCard(
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-            elevation = CardDefaults.filledCardElevation(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp,
                 focusedElevation = 1.dp,
                 hoveredElevation = 1.dp

@@ -32,7 +32,7 @@ import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -543,12 +543,12 @@ private fun FinancialSection(
 
 @Composable
 private fun TotalPreviewCard(totalCents: Long) {
-    FilledCard(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.filledCardColors(
+        colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        elevation = CardDefaults.filledCardElevation(
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -587,12 +587,12 @@ private fun TotalPreviewCard(totalCents: Long) {
 
 @Composable
 private fun ErrorBanner(message: String) {
-    FilledCard(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.filledCardColors(
+        colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
         ),
-        elevation = CardDefaults.filledCardElevation(
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
