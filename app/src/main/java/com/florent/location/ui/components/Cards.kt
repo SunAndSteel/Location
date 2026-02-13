@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,10 +36,10 @@ fun variantCardColors(variant: CardVariant) = when (variant) {
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface
     )
-    CardVariant.Highlighted -> CardDefaults.filledCardColors(
+    CardVariant.Highlighted -> CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.secondaryContainer
     )
-    CardVariant.Warning -> CardDefaults.filledCardColors(
+    CardVariant.Warning -> CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.errorContainer
     )
 }
@@ -67,10 +67,10 @@ fun HighlightCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    FilledCard(
+    Card(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Highlighted),
-        elevation = CardDefaults.filledCardElevation(
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -85,10 +85,10 @@ fun WarningCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    FilledCard(
+    Card(
         modifier = modifier,
         colors = variantCardColors(CardVariant.Warning),
-        elevation = CardDefaults.filledCardElevation(
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp

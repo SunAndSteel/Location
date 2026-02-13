@@ -18,7 +18,7 @@ import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Timelapse
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -44,14 +44,14 @@ fun TenantCard(
 ) {
     val hasContact = tenant.phone != null || tenant.email != null
     val cardColors = if (isSelected) {
-        CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     } else {
-        CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     }
-    FilledCard(
+    Card(
         modifier = modifier.keyboardClickable(onOpen),
         colors = cardColors,
-        elevation = CardDefaults.filledCardElevation(
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -101,10 +101,10 @@ fun HousingCard(
     modifier: Modifier = Modifier
 ) {
     val situationLabel = housingSituationLabel(situation)
-    FilledCard(
+    Card(
         modifier = modifier.keyboardClickable(onOpen),
-        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.filledCardElevation(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -173,10 +173,10 @@ fun LeaseCard(
         else -> CardVariant.Default
     }
     if (variant == CardVariant.Highlighted) {
-        FilledCard(
+        Card(
             modifier = modifier.keyboardClickable(onOpen),
-            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-            elevation = CardDefaults.filledCardElevation(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+            elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp,
                 focusedElevation = 1.dp,
                 hoveredElevation = 1.dp

@@ -33,7 +33,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -394,10 +394,10 @@ private fun LeaseSummarySection(lease: Lease, housing: Housing?, tenantName: Str
 
 @Composable
 private fun LeaseHeroSection(lease: Lease, statusLabel: String, isActive: Boolean, modifier: Modifier = Modifier) {
-    FilledCard(
+    Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.filledCardElevation(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp

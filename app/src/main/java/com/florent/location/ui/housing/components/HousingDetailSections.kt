@@ -36,7 +36,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledCard
+import androidx.compose.material3.Card
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -226,10 +226,10 @@ private fun CompactLayout(
 
 @Composable
 private fun EnhancedHeroSection(housing: Housing, situation: HousingSituation, modifier: Modifier = Modifier) {
-    FilledCard(
+    Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.filledCardElevation(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
             focusedElevation = 1.dp,
             hoveredElevation = 1.dp
@@ -371,10 +371,10 @@ private fun SituationBadge(situation: HousingSituation) {
 private fun ActionsPanel(onEdit: () -> Unit, onCreateLease: () -> Unit, onDeleteClick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)) {
         SectionHeader(title = "Actions rapides")
-        FilledCard(
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            elevation = CardDefaults.filledCardElevation(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp,
                 focusedElevation = 1.dp,
                 hoveredElevation = 1.dp
@@ -396,10 +396,10 @@ private fun ActionsPanel(onEdit: () -> Unit, onCreateLease: () -> Unit, onDelete
         }
 
         SectionHeader(title = "Zone dangereuse", supportingText = "Actions irréversibles")
-        FilledCard(
+        Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-            elevation = CardDefaults.filledCardElevation(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            elevation = CardDefaults.cardElevation(
                 defaultElevation = 0.dp,
                 focusedElevation = 1.dp,
                 hoveredElevation = 1.dp
@@ -545,9 +545,9 @@ internal fun HousingDeleteConfirmationDialog(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                FilledCard(
-                    colors = CardDefaults.filledCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    elevation = CardDefaults.filledCardElevation(
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(
                         defaultElevation = 0.dp,
                         focusedElevation = 1.dp,
                         hoveredElevation = 1.dp
