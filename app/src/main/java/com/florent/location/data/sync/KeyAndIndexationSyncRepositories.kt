@@ -66,15 +66,27 @@ class KeySyncRepository(
                 if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
             }
         }.decodeList<KeyRow>()
+            .sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
-        val entities = rows.mapNotNull { row ->
-            val housing = housingDao.getByRemoteId(row.housingRemoteId) ?: return@mapNotNull null
-            val existing = keyDao.getByRemoteId(row.remoteId)
-            row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id)
-        }
-        if (entities.isNotEmpty()) {
-            keyDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { keyDao.markClean(e.remoteId, it) } }
+        val resolution = mapRowsStoppingAtDependencyGap(rows,
+            mapRow = { row ->
+                val housing = housingDao.getByRemoteId(row.housingRemoteId)
+                if (housing == null) null
+                else {
+                    val existing = keyDao.getByRemoteId(row.remoteId)
+                    row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id)
+                }
+            },
+            onMissingDependency = { row ->
+                Log.w(
+                    "KeySyncRepository",
+                    "Stopping incremental key pull on dependency gap: remote_id=${row.remoteId}, missing=housing_remote_id=${row.housingRemoteId}"
+                )
+            }
+        )
+        if (resolution.mapped.isNotEmpty()) {
+            keyDao.upsertAll(resolution.mapped)
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { keyDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = supabase.from("keys").select {
@@ -141,15 +153,27 @@ class IndexationEventSyncRepository(
                 if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
             }
         }.decodeList<IndexationEventRow>()
+            .sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
-        val entities = rows.mapNotNull { row ->
-            val lease = leaseDao.getByRemoteId(row.leaseRemoteId) ?: return@mapNotNull null
-            val existing = indexationEventDao.getByRemoteId(row.remoteId)
-            row.toEntityPreservingLocalId(existing?.id ?: 0L, lease.id)
-        }
-        if (entities.isNotEmpty()) {
-            indexationEventDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { indexationEventDao.markClean(e.remoteId, it) } }
+        val resolution = mapRowsStoppingAtDependencyGap(rows,
+            mapRow = { row ->
+                val lease = leaseDao.getByRemoteId(row.leaseRemoteId)
+                if (lease == null) null
+                else {
+                    val existing = indexationEventDao.getByRemoteId(row.remoteId)
+                    row.toEntityPreservingLocalId(existing?.id ?: 0L, lease.id)
+                }
+            },
+            onMissingDependency = { row ->
+                Log.w(
+                    "IndexationEventSyncRepository",
+                    "Stopping incremental indexation pull on dependency gap: remote_id=${row.remoteId}, missing=lease_remote_id=${row.leaseRemoteId}"
+                )
+            }
+        )
+        if (resolution.mapped.isNotEmpty()) {
+            indexationEventDao.upsertAll(resolution.mapped)
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { indexationEventDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = supabase.from("indexation_events").select {

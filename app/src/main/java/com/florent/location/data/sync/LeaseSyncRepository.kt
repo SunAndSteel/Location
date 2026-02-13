@@ -79,19 +79,28 @@ class LeaseSyncRepository(
                 if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
             }
         }.decodeList<LeaseRow>()
+            .sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
-        val entities = rows.mapNotNull { row ->
+        val resolution = mapRowsStoppingAtDependencyGap(rows,
+            mapRow = { row ->
             val housing = housingDao.getByRemoteId(row.housingRemoteId)
             val tenant = tenantDao.getByRemoteId(row.tenantRemoteId)
-            if (housing == null || tenant == null) null
-            else {
+            if (housing == null || tenant == null) {
+                null
+            } else {
                 val existing = leaseDao.getByRemoteId(row.remoteId)
                 row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id, tenant.id, existing?.createdAt)
             }
-        }
-        if (entities.isNotEmpty()) {
-            leaseDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { leaseDao.markClean(e.remoteId, it) } }
+        }, onMissingDependency = { row ->
+            val missingFks = buildList {
+                if (housingDao.getByRemoteId(row.housingRemoteId) == null) add("housing_remote_id=${row.housingRemoteId}")
+                if (tenantDao.getByRemoteId(row.tenantRemoteId) == null) add("tenant_remote_id=${row.tenantRemoteId}")
+            }.joinToString(",")
+            Log.w("LeaseSyncRepository", "Stopping incremental lease pull on dependency gap: remote_id=${row.remoteId}, missing=$missingFks")
+        })
+        if (resolution.mapped.isNotEmpty()) {
+            leaseDao.upsertAll(resolution.mapped)
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { leaseDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = supabase.from("leases").select {
