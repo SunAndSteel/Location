@@ -1,6 +1,7 @@
 package com.florent.location.data.sync
 
 import android.util.Log
+import com.florent.location.data.db.entity.LeaseEntity
 import com.florent.location.data.db.dao.HousingDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.data.db.dao.TenantDao
@@ -31,16 +32,7 @@ class LeaseSyncRepository(
         if (dirty.isEmpty()) return
 
         dirty.filter { it.isDeleted }.forEach { entity ->
-            try {
-                supabase.from("leases").delete {
-                    filter {
-                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
-                    }
-                }
-            } finally {
-                leaseDao.hardDeleteByRemoteId(entity.remoteId)
-            }
+            deleteDeletedLease(entity, user.id)
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -57,6 +49,23 @@ class LeaseSyncRepository(
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+        }
+    }
+
+
+    internal suspend fun deleteDeletedLease(entity: LeaseEntity, userId: String, remoteDelete: suspend () -> Unit = {
+        supabase.from("leases").delete {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = userId)
+                filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+            }
+        }
+    }) {
+        try {
+            remoteDelete()
+            leaseDao.hardDeleteByRemoteId(entity.remoteId)
+        } catch (e: Exception) {
+            Log.e("LeaseSyncRepository", "Failed to delete remote lease ${entity.remoteId}", e)
         }
     }
 
