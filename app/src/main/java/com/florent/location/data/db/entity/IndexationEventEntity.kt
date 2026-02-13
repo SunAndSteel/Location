@@ -35,5 +35,5 @@ data class IndexationEventEntity(
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false,
     val dirty: Boolean = true,
-    val serverUpdatedAtEpochSeconds: Long? = null
+    val serverUpdatedAtEpochMillis: Long? = null
 )

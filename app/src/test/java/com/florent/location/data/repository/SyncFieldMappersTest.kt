@@ -23,7 +23,7 @@ class SyncFieldMappersTest {
             createdAt = 1_700_000_000_000,
             updatedAt = 1_700_000_001_000,
             dirty = false,
-            serverUpdatedAtEpochSeconds = 1_700_000_002
+            serverUpdatedAtEpochMillis = 1_700_000_002_000
         )
 
         val roundTrip = entity.toDomain().toEntity()
@@ -32,7 +32,7 @@ class SyncFieldMappersTest {
         assertEquals(entity.createdAt, roundTrip.createdAt)
         assertEquals(entity.updatedAt, roundTrip.updatedAt)
         assertEquals(entity.dirty, roundTrip.dirty)
-        assertEquals(entity.serverUpdatedAtEpochSeconds, roundTrip.serverUpdatedAtEpochSeconds)
+        assertEquals(entity.serverUpdatedAtEpochMillis, roundTrip.serverUpdatedAtEpochMillis)
     }
 
     @Test
@@ -49,7 +49,7 @@ class SyncFieldMappersTest {
             createdAt = 1_700_000_000_000,
             updatedAt = 1_700_000_001_000,
             dirty = false,
-            serverUpdatedAtEpochSeconds = 1_700_000_002
+            serverUpdatedAtEpochMillis = 1_700_000_002_000
         )
 
         val roundTrip = entity.toDomain().toEntity()
@@ -58,7 +58,7 @@ class SyncFieldMappersTest {
         assertEquals(entity.createdAt, roundTrip.createdAt)
         assertEquals(entity.updatedAt, roundTrip.updatedAt)
         assertEquals(entity.dirty, roundTrip.dirty)
-        assertEquals(entity.serverUpdatedAtEpochSeconds, roundTrip.serverUpdatedAtEpochSeconds)
+        assertEquals(entity.serverUpdatedAtEpochMillis, roundTrip.serverUpdatedAtEpochMillis)
     }
 
     @Test
@@ -72,7 +72,7 @@ class SyncFieldMappersTest {
             createdAt = 1_700_000_000_000,
             updatedAt = 1_700_000_001_000,
             dirty = false,
-            serverUpdatedAtEpochSeconds = 1_700_000_002
+            serverUpdatedAtEpochMillis = 1_700_000_002_000
         )
 
         val roundTrip = entity.toDomain().toEntity()
@@ -81,7 +81,7 @@ class SyncFieldMappersTest {
         assertEquals(entity.createdAt, roundTrip.createdAt)
         assertEquals(entity.updatedAt, roundTrip.updatedAt)
         assertEquals(entity.dirty, roundTrip.dirty)
-        assertEquals(entity.serverUpdatedAtEpochSeconds, roundTrip.serverUpdatedAtEpochSeconds)
+        assertEquals(entity.serverUpdatedAtEpochMillis, roundTrip.serverUpdatedAtEpochMillis)
     }
 
     @Test
@@ -97,7 +97,7 @@ class SyncFieldMappersTest {
             createdAt = 1_700_000_000_000,
             updatedAt = 1_700_000_001_000,
             dirty = false,
-            serverUpdatedAtEpochSeconds = 1_700_000_002
+            serverUpdatedAtEpochMillis = 1_700_000_002_000
         )
 
         val roundTrip = entity.toDomain().toEntity()
@@ -106,7 +106,7 @@ class SyncFieldMappersTest {
         assertEquals(entity.createdAt, roundTrip.createdAt)
         assertEquals(entity.updatedAt, roundTrip.updatedAt)
         assertEquals(entity.dirty, roundTrip.dirty)
-        assertEquals(entity.serverUpdatedAtEpochSeconds, roundTrip.serverUpdatedAtEpochSeconds)
+        assertEquals(entity.serverUpdatedAtEpochMillis, roundTrip.serverUpdatedAtEpochMillis)
     }
 
     @Test

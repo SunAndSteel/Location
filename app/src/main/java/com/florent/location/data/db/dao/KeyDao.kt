@@ -48,9 +48,9 @@ interface KeyDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(keys: List<KeyEntity>)
 
-    @Query("UPDATE keys SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdated, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdated: Long?)
+    @Query("UPDATE keys SET dirty = 0, serverUpdatedAtEpochMillis = COALESCE(:serverUpdatedAtEpochMillis, serverUpdatedAtEpochMillis) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdatedAtEpochMillis: Long?)
 
-    @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM keys")
+    @Query("SELECT MAX(serverUpdatedAtEpochMillis) FROM keys")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?
 }

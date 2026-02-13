@@ -97,7 +97,7 @@ class KeySyncRepository(
         )
         if (resolution.mapped.isNotEmpty()) {
             keyDao.upsertAll(resolution.mapped)
-            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { keyDao.markClean(e.remoteId, it) } }
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { keyDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = fetchAllPaged(tag = "KeySyncRepository", pageLabel = "pullRemoteIds") { from, to ->
@@ -196,7 +196,7 @@ class IndexationEventSyncRepository(
         )
         if (resolution.mapped.isNotEmpty()) {
             indexationEventDao.upsertAll(resolution.mapped)
-            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { indexationEventDao.markClean(e.remoteId, it) } }
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { indexationEventDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = fetchAllPaged(tag = "IndexationEventSyncRepository", pageLabel = "pullRemoteIds") { from, to ->

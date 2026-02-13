@@ -14,7 +14,7 @@ fun KeyEntity.toDomain(): Key =
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
 fun Key.toEntity(overrideHousingId: Long? = null): KeyEntity {
@@ -27,7 +27,7 @@ fun Key.toEntity(overrideHousingId: Long? = null): KeyEntity {
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
     return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)

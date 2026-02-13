@@ -35,6 +35,6 @@ data class HousingEntity(
     val internalNote: String? = null,
     val isDeleted: Boolean = false,
     val dirty: Boolean = true,
-    val serverUpdatedAtEpochSeconds: Long? = null
+    val serverUpdatedAtEpochMillis: Long? = null
 
 )

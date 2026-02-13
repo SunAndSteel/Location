@@ -21,5 +21,5 @@ data class Lease(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val dirty: Boolean = true,
-    val serverUpdatedAtEpochSeconds: Long? = null
+    val serverUpdatedAtEpochMillis: Long? = null
 )

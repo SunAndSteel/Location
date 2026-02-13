@@ -66,10 +66,10 @@ interface LeaseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(leases: List<LeaseEntity>)
 
-    @Query("UPDATE leases SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdated, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdated: Long?)
+    @Query("UPDATE leases SET dirty = 0, serverUpdatedAtEpochMillis = COALESCE(:serverUpdatedAtEpochMillis, serverUpdatedAtEpochMillis) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdatedAtEpochMillis: Long?)
 
-    @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM leases")
+    @Query("SELECT MAX(serverUpdatedAtEpochMillis) FROM leases")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?
 
     @Query("UPDATE leases SET endDateEpochDay = :endEpochDay, updatedAt = :updatedAt, dirty = 1 WHERE id = :leaseId AND endDateEpochDay IS NULL AND isDeleted = 0")

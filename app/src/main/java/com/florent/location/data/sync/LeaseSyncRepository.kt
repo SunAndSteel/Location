@@ -102,7 +102,7 @@ class LeaseSyncRepository(
         })
         if (resolution.mapped.isNotEmpty()) {
             leaseDao.upsertAll(resolution.mapped)
-            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { leaseDao.markClean(e.remoteId, it) } }
+            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
         }
 
         val remoteIds = fetchAllPaged(tag = "LeaseSyncRepository", pageLabel = "pullRemoteIds") { from, to ->

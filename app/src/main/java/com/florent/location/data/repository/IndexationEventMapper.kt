@@ -15,7 +15,7 @@ fun IndexationEventEntity.toDomain(): IndexationEvent =
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
 fun IndexationEvent.toEntity(): IndexationEventEntity {
@@ -29,7 +29,7 @@ fun IndexationEvent.toEntity(): IndexationEventEntity {
         createdAt = createdAt,
         updatedAt = updatedAt,
         dirty = dirty,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
+        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis
     )
 
     return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)

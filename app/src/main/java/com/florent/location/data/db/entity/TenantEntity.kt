@@ -29,5 +29,5 @@ data class TenantEntity(
 
     // NOUVEAU : Flags de synchronisation
     val dirty: Boolean = true, // true = doit être sync avec Supabase
-    val serverUpdatedAtEpochSeconds: Long? = null // timestamp serveur
+    val serverUpdatedAtEpochMillis: Long? = null // timestamp serveur
 )
