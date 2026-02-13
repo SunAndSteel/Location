@@ -11,6 +11,7 @@ import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,9 +52,14 @@ fun AppSearchBar(
                             )
                         }
                     }
-                }
+                },
+                colors = SearchBarDefaults.inputFieldColors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
             )
         },
+        colors = SearchBarDefaults.colors(containerColor = Color.Transparent),
         expanded = expanded,
         onExpandedChange = { expanded = it },
         modifier = modifier.fillMaxWidth()
