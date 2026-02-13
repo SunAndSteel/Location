@@ -26,18 +26,25 @@ class KeySyncRepository(
 
     suspend fun syncOnce() = mutex.withLock {
         val startedAt = System.currentTimeMillis()
-        pushDirty()
+        val deleteFailures = pushDirty()
+        if (deleteFailures.isNotEmpty()) {
+            throw SyncDeleteFailuresException(deleteFailures)
+        }
         pullUpdates()
         Log.i("KeySyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
-    private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull() ?: return
+    private suspend fun pushDirty(): List<SyncDeleteResult.Failure> {
+        val user = supabase.auth.currentUserOrNull() ?: return emptyList()
         val dirty = keyDao.getDirty()
-        if (dirty.isEmpty()) return
+        if (dirty.isEmpty()) return emptyList()
 
+        val deleteFailures = mutableListOf<SyncDeleteResult.Failure>()
         dirty.filter { it.isDeleted }.forEach { entity ->
-            deleteDeletedKey(entity, user.id)
+            when (val result = deleteDeletedKey(entity, user.id)) {
+                SyncDeleteResult.Success -> Unit
+                is SyncDeleteResult.Failure -> deleteFailures += result
+            }
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -52,6 +59,8 @@ class KeySyncRepository(
             }
             payload.forEach { keyDao.markClean(it.first.remoteId, null) }
         }
+
+        return deleteFailures
     }
 
     internal suspend fun deleteDeletedKey(entity: KeyEntity, userId: String, remoteDelete: suspend () -> Unit = {
@@ -61,12 +70,18 @@ class KeySyncRepository(
                 filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
             }
         }
-    }) {
-        try {
+    }): SyncDeleteResult {
+        return try {
             remoteDelete()
             keyDao.deleteById(entity.id)
+            SyncDeleteResult.Success
         } catch (e: Exception) {
             Log.e("KeySyncRepository", "Failed to delete remote key ${entity.remoteId}", e)
+            SyncDeleteResult.Failure(
+                entityType = "Key",
+                remoteId = entity.remoteId,
+                reason = e.message ?: "Unknown delete error"
+            )
         }
     }
 
@@ -149,18 +164,25 @@ class IndexationEventSyncRepository(
 
     suspend fun syncOnce() = mutex.withLock {
         val startedAt = System.currentTimeMillis()
-        pushDirty()
+        val deleteFailures = pushDirty()
+        if (deleteFailures.isNotEmpty()) {
+            throw SyncDeleteFailuresException(deleteFailures)
+        }
         pullUpdates()
         Log.i("IndexationEventSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
-    private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull() ?: return
+    private suspend fun pushDirty(): List<SyncDeleteResult.Failure> {
+        val user = supabase.auth.currentUserOrNull() ?: return emptyList()
         val dirty = indexationEventDao.getDirty()
-        if (dirty.isEmpty()) return
+        if (dirty.isEmpty()) return emptyList()
 
+        val deleteFailures = mutableListOf<SyncDeleteResult.Failure>()
         dirty.filter { it.isDeleted }.forEach { entity ->
-            deleteDeletedIndexationEvent(entity, user.id)
+            when (val result = deleteDeletedIndexationEvent(entity, user.id)) {
+                SyncDeleteResult.Success -> Unit
+                is SyncDeleteResult.Failure -> deleteFailures += result
+            }
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -178,6 +200,8 @@ class IndexationEventSyncRepository(
             }
             payload.forEach { indexationEventDao.markClean(it.first.remoteId, null) }
         }
+
+        return deleteFailures
     }
 
     internal suspend fun deleteDeletedIndexationEvent(entity: IndexationEventEntity, userId: String, remoteDelete: suspend () -> Unit = {
@@ -187,12 +211,18 @@ class IndexationEventSyncRepository(
                 filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
             }
         }
-    }) {
-        try {
+    }): SyncDeleteResult {
+        return try {
             remoteDelete()
             indexationEventDao.hardDeleteByRemoteId(entity.remoteId)
+            SyncDeleteResult.Success
         } catch (e: Exception) {
             Log.e("IndexationEventSyncRepository", "Failed to delete remote indexation event ${entity.remoteId}", e)
+            SyncDeleteResult.Failure(
+                entityType = "IndexationEvent",
+                remoteId = entity.remoteId,
+                reason = e.message ?: "Unknown delete error"
+            )
         }
     }
 

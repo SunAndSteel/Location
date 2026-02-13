@@ -21,19 +21,26 @@ class TenantSyncRepository(
 
     suspend fun syncOnce() = mutex.withLock {
         val startedAt = System.currentTimeMillis()
-        pushDirty()
+        val deleteFailures = pushDirty()
+        if (deleteFailures.isNotEmpty()) {
+            throw SyncDeleteFailuresException(deleteFailures)
+        }
         pullUpdates()
         Log.i("TenantSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
-    private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull() ?: return
+    private suspend fun pushDirty(): List<SyncDeleteResult.Failure> {
+        val user = supabase.auth.currentUserOrNull() ?: return emptyList()
         val dirty = tenantDao.getDirty()
-        if (dirty.isEmpty()) return
+        if (dirty.isEmpty()) return emptyList()
 
+        val deleteFailures = mutableListOf<SyncDeleteResult.Failure>()
         val deleted = dirty.filter { it.isDeleted }
         deleted.forEach { entity ->
-            deleteDeletedTenant(entity, user.id)
+            when (val result = deleteDeletedTenant(entity, user.id)) {
+                SyncDeleteResult.Success -> Unit
+                is SyncDeleteResult.Failure -> deleteFailures += result
+            }
         }
 
         val payload = dirty.filterNot { it.isDeleted }.map { it.toRow(userId = user.id) }
@@ -44,6 +51,8 @@ class TenantSyncRepository(
             }
             dirty.filterNot { it.isDeleted }.forEach { tenantDao.markClean(it.remoteId, null) }
         }
+
+        return deleteFailures
     }
 
 
@@ -54,12 +63,18 @@ class TenantSyncRepository(
                 filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
             }
         }
-    }) {
-        try {
+    }): SyncDeleteResult {
+        return try {
             remoteDelete()
             tenantDao.deleteById(entity.id)
+            SyncDeleteResult.Success
         } catch (e: Exception) {
             Log.e("TenantSyncRepository", "Failed to delete remote tenant ${entity.remoteId}", e)
+            SyncDeleteResult.Failure(
+                entityType = "Tenant",
+                remoteId = entity.remoteId,
+                reason = e.message ?: "Unknown delete error"
+            )
         }
     }
 

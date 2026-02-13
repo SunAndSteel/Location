@@ -21,18 +21,26 @@ class HousingSyncRepository(
 
     suspend fun syncOnce() = mutex.withLock {
         val startedAt = System.currentTimeMillis()
-        pushDirty()
+        val deleteFailures = pushDirty()
+        if (deleteFailures.isNotEmpty()) {
+            throw SyncDeleteFailuresException(deleteFailures)
+        }
         pullUpdates()
         Log.i("HousingSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
-    private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull() ?: return
+    private suspend fun pushDirty(): List<SyncDeleteResult.Failure> {
+        val user = supabase.auth.currentUserOrNull() ?: return emptyList()
         val dirty = housingDao.getDirty()
-        if (dirty.isEmpty()) return
+        if (dirty.isEmpty()) return emptyList()
+
+        val deleteFailures = mutableListOf<SyncDeleteResult.Failure>()
 
         dirty.filter { it.isDeleted }.forEach { entity ->
-            deleteDeletedHousing(entity, user.id)
+            when (val result = deleteDeletedHousing(entity, user.id)) {
+                SyncDeleteResult.Success -> Unit
+                is SyncDeleteResult.Failure -> deleteFailures += result
+            }
         }
 
         val payload = dirty.filterNot { it.isDeleted }.map { it.toRow(userId = user.id) }
@@ -43,6 +51,8 @@ class HousingSyncRepository(
             }
             dirty.filterNot { it.isDeleted }.forEach { housingDao.markClean(it.remoteId, null) }
         }
+
+        return deleteFailures
     }
 
 
@@ -53,12 +63,18 @@ class HousingSyncRepository(
                 filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
             }
         }
-    }) {
-        try {
+    }): SyncDeleteResult {
+        return try {
             remoteDelete()
             housingDao.deleteById(entity.id)
+            SyncDeleteResult.Success
         } catch (e: Exception) {
             Log.e("HousingSyncRepository", "Failed to delete remote housing ${entity.remoteId}", e)
+            SyncDeleteResult.Failure(
+                entityType = "Housing",
+                remoteId = entity.remoteId,
+                reason = e.message ?: "Unknown delete error"
+            )
         }
     }
 
