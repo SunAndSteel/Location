@@ -33,3 +33,8 @@ data class IndexationEventRow(
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null
 )
+
+@Serializable
+data class RemoteIdRow(
+    @SerialName("remote_id") val remoteId: String
+)

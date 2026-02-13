@@ -46,6 +46,6 @@ class TenantRepositoryImpl (
     override suspend fun deleteTenant(id: Long) {
         val hasActiveLease = dao.hasActiveLease(id)
         require(!hasActiveLease) { "Impossible de supprimer un locataire avec un bail actif." }
-        dao.deleteById(id)
+        dao.markDeletedById(id)
     }
 }

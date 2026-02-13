@@ -57,7 +57,7 @@ class HousingRepositoryImpl(
      * Supprime un logement par identifiant.
      */
     override suspend fun deleteById(id: Long) {
-        housingDao.deleteById(id)
+        housingDao.markDeletedById(id)
     }
 
     override fun observeKeysForHousing(housingId: Long): Flow<List<Key>> =
@@ -69,7 +69,7 @@ class HousingRepositoryImpl(
         keyDao.insert(key.toEntity())
 
     override suspend fun deleteKeyById(id: Long) {
-        val deleted = keyDao.deleteById(id)
+        val deleted = keyDao.markDeletedById(id)
         require(deleted == 1) { "Clé introuvable." }
     }
 

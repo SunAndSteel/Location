@@ -37,6 +37,7 @@ fun TenantRow.toEntityPreservingLocalId(
         status = status,
         createdAt = serverCreatedAtMillis ?: existingCreatedAtMillis ?: nowMillis,
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
+        isDeleted = false,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
     )
@@ -102,6 +103,7 @@ fun LeaseRow.toEntityPreservingLocalId(
         housingDepositCentsSnapshot = housingDepositCentsSnapshot,
         createdAt = serverCreatedAtMillis ?: existingCreatedAtMillis ?: nowMillis,
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
+        isDeleted = false,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
     )
@@ -142,6 +144,7 @@ fun KeyRow.toEntityPreservingLocalId(
         handedOverEpochDay = handedOverEpochDay,
         createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
+        isDeleted = false,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
     )
@@ -184,6 +187,7 @@ fun IndexationEventRow.toEntityPreservingLocalId(
         newRentCents = newRentCents,
         createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
+        isDeleted = false,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
     )

@@ -1,9 +1,9 @@
 package com.florent.location.data.sync
 
 import android.util.Log
-import com.florent.location.data.db.dao.KeyDao
-import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.IndexationEventDao
+import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -13,10 +13,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 
-// ============================================================================
-// KEY SYNC REPOSITORY
-// ============================================================================
-
 class KeySyncRepository(
     private val supabase: SupabaseClient,
     private val keyDao: KeyDao,
@@ -25,104 +21,68 @@ class KeySyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
-        try {
-            pushDirty()
-            pullUpdates()
-        } catch (e: Exception) {
-            Log.e("KeySyncRepository", "Sync failed: ${e.message}", e)
-            throw e
-        }
+        pushDirty()
+        pullUpdates()
     }
 
     private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull()
-        if (user == null) {
-            Log.w("KeySyncRepository", "User not authenticated - skipping push")
-            return
-        }
-
+        val user = supabase.auth.currentUserOrNull() ?: return
         val dirty = keyDao.getDirty()
-        if (dirty.isEmpty()) {
-            Log.d("KeySyncRepository", "No dirty records to push")
-            return
-        }
+        if (dirty.isEmpty()) return
 
-        val payload = dirty.mapNotNull { entity ->
-            val housing = housingDao.getById(entity.housingId)
-            if (housing == null) {
-                Log.e("KeySyncRepository", "Missing housing for key ${entity.id}")
-                return@mapNotNull null
+        dirty.filter { it.isDeleted }.forEach { entity ->
+            try {
+                supabase.from("keys").delete {
+                    filter {
+                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+                    }
+                }
+            } finally {
+                keyDao.deleteById(entity.id)
             }
-
-            entity.toRow(userId = user.id, housingRemoteId = housing.remoteId)
         }
 
-        if (payload.isEmpty()) return
+        val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
+            val housing = housingDao.getById(entity.housingId) ?: return@mapNotNull null
+            entity.toRow(user.id, housing.remoteId)
+        }
 
-        try {
+        if (payload.isNotEmpty()) {
             supabase.from("keys").upsert(payload) {
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
-            Log.d("KeySyncRepository", "Successfully pushed ${payload.size} records")
-        } catch (e: Exception) {
-            Log.e("KeySyncRepository", "Failed to upsert keys: ${e.message}", e)
-            throw Exception("Échec de la synchronisation des clés: ${e.message}", e)
         }
     }
 
     private suspend fun pullUpdates() {
-        val user = supabase.auth.currentUserOrNull()
-        if (user == null) return
+        val user = supabase.auth.currentUserOrNull() ?: return
+        val sinceIso = keyDao.getMaxServerUpdatedAtOrNull()?.let { Instant.ofEpochSecond(it).toString() }
 
-        val sinceEpoch = keyDao.getMaxServerUpdatedAtOrNull()
-        val sinceIso = sinceEpoch?.let { Instant.ofEpochSecond(it).toString() }
-
-        try {
-            val response = supabase.from("keys").select {
-                filter {
-                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) {
-                        filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
-                    }
-                }
+        val rows = supabase.from("keys").select {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
             }
+        }.decodeList<KeyRow>()
 
-            val rows = response.decodeList<KeyRow>()
-            if (rows.isEmpty()) return
-
-            val entities = rows.mapNotNull { row ->
-                val housing = housingDao.getByRemoteId(row.housingRemoteId)
-                if (housing == null) return@mapNotNull null
-
-                val existing = keyDao.getByRemoteId(row.remoteId)
-                row.toEntityPreservingLocalId(
-                    localId = existing?.id ?: 0L,
-                    housingLocalId = housing.id
-                )
-            }
-
-            if (entities.isEmpty()) return
-
-            keyDao.upsertAll(entities)
-            entities.forEach { e ->
-                val serverUpdated = e.serverUpdatedAtEpochSeconds
-                if (serverUpdated != null) {
-                    keyDao.markClean(e.remoteId, serverUpdated)
-                }
-            }
-
-            Log.d("KeySyncRepository", "Successfully pulled and saved ${entities.size} records")
-        } catch (e: Exception) {
-            Log.e("KeySyncRepository", "Failed to pull updates: ${e.message}", e)
-            throw e
+        val entities = rows.mapNotNull { row ->
+            val housing = housingDao.getByRemoteId(row.housingRemoteId) ?: return@mapNotNull null
+            val existing = keyDao.getByRemoteId(row.remoteId)
+            row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id)
         }
+        if (entities.isNotEmpty()) {
+            keyDao.upsertAll(entities)
+            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { keyDao.markClean(e.remoteId, it) } }
+        }
+
+        val remoteIds = supabase.from("keys").select {
+            filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+        }.decodeList<KeyRow>().map { it.remoteId }.toSet()
+        keyDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { keyDao.hardDeleteByRemoteId(it) }
     }
 }
-
-// ============================================================================
-// INDEXATION EVENT SYNC REPOSITORY
-// ============================================================================
 
 class IndexationEventSyncRepository(
     private val supabase: SupabaseClient,
@@ -132,97 +92,68 @@ class IndexationEventSyncRepository(
     private val mutex = Mutex()
 
     suspend fun syncOnce() = mutex.withLock {
-        try {
-            pushDirty()
-            pullUpdates()
-        } catch (e: Exception) {
-            Log.e("IndexationEventSyncRepository", "Sync failed: ${e.message}", e)
-            throw e
-        }
+        pushDirty()
+        pullUpdates()
     }
 
     private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull()
-        if (user == null) {
-            Log.w("IndexationEventSyncRepository", "User not authenticated - skipping push")
-            return
-        }
-
+        val user = supabase.auth.currentUserOrNull() ?: return
         val dirty = indexationEventDao.getDirty()
-        if (dirty.isEmpty()) {
-            Log.d("IndexationEventSyncRepository", "No dirty records to push")
-            return
+        if (dirty.isEmpty()) return
+
+        dirty.filter { it.isDeleted }.forEach { entity ->
+            try {
+                supabase.from("indexation_events").delete {
+                    filter {
+                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+                    }
+                }
+            } finally {
+                indexationEventDao.hardDeleteByRemoteId(entity.remoteId)
+            }
         }
 
-        val payload = dirty.mapNotNull { entity ->
+        val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
             val lease = leaseDao.getById(entity.leaseId)
             if (lease == null) {
-                Log.e("IndexationEventSyncRepository", "Missing lease for event ${entity.id}")
-                return@mapNotNull null
-            }
-
-            entity.toRow(userId = user.id, leaseRemoteId = lease.remoteId)
+                Log.w("IndexationEventSyncRepository", "Missing lease for event ${entity.id}")
+                null
+            } else entity.toRow(user.id, lease.remoteId)
         }
 
-        if (payload.isEmpty()) return
-
-        try {
+        if (payload.isNotEmpty()) {
             supabase.from("indexation_events").upsert(payload) {
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
-            Log.d("IndexationEventSyncRepository", "Successfully pushed ${payload.size} records")
-        } catch (e: Exception) {
-            Log.e("IndexationEventSyncRepository", "Failed to upsert events: ${e.message}", e)
-            throw Exception("Échec de la synchronisation des indexations: ${e.message}", e)
         }
     }
 
     private suspend fun pullUpdates() {
-        val user = supabase.auth.currentUserOrNull()
-        if (user == null) return
+        val user = supabase.auth.currentUserOrNull() ?: return
+        val sinceIso = indexationEventDao.getMaxServerUpdatedAtOrNull()?.let { Instant.ofEpochSecond(it).toString() }
 
-        val sinceEpoch = indexationEventDao.getMaxServerUpdatedAtOrNull()
-        val sinceIso = sinceEpoch?.let { Instant.ofEpochSecond(it).toString() }
-
-        try {
-            val response = supabase.from("indexation_events").select {
-                filter {
-                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) {
-                        filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
-                    }
-                }
+        val rows = supabase.from("indexation_events").select {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
             }
+        }.decodeList<IndexationEventRow>()
 
-            val rows = response.decodeList<IndexationEventRow>()
-            if (rows.isEmpty()) return
-
-            val entities = rows.mapNotNull { row ->
-                val lease = leaseDao.getByRemoteId(row.leaseRemoteId)
-                if (lease == null) return@mapNotNull null
-
-                val existing = indexationEventDao.getByRemoteId(row.remoteId)
-                row.toEntityPreservingLocalId(
-                    localId = existing?.id ?: 0L,
-                    leaseLocalId = lease.id
-                )
-            }
-
-            if (entities.isEmpty()) return
-
-            indexationEventDao.upsertAll(entities)
-            entities.forEach { e ->
-                val serverUpdated = e.serverUpdatedAtEpochSeconds
-                if (serverUpdated != null) {
-                    indexationEventDao.markClean(e.remoteId, serverUpdated)
-                }
-            }
-
-            Log.d("IndexationEventSyncRepository", "Successfully pulled and saved ${entities.size} records")
-        } catch (e: Exception) {
-            Log.e("IndexationEventSyncRepository", "Failed to pull updates: ${e.message}", e)
-            throw e
+        val entities = rows.mapNotNull { row ->
+            val lease = leaseDao.getByRemoteId(row.leaseRemoteId) ?: return@mapNotNull null
+            val existing = indexationEventDao.getByRemoteId(row.remoteId)
+            row.toEntityPreservingLocalId(existing?.id ?: 0L, lease.id)
         }
+        if (entities.isNotEmpty()) {
+            indexationEventDao.upsertAll(entities)
+            entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { indexationEventDao.markClean(e.remoteId, it) } }
+        }
+
+        val remoteIds = supabase.from("indexation_events").select {
+            filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+        }.decodeList<IndexationEventRow>().map { it.remoteId }.toSet()
+        indexationEventDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { indexationEventDao.hardDeleteByRemoteId(it) }
     }
 }

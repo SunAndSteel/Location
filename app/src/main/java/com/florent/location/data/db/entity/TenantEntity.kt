@@ -25,6 +25,7 @@ data class TenantEntity(
     // NOUVEAU : Timestamps pour la synchronisation
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
 
     // NOUVEAU : Flags de synchronisation
     val dirty: Boolean = true, // true = doit être sync avec Supabase

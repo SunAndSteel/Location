@@ -11,11 +11,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface IndexationEventDao {
-    // Méthodes existantes
-    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId ORDER BY appliedEpochDay DESC")
+    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId AND isDeleted = 0 ORDER BY appliedEpochDay DESC")
     fun observeAllByLease(leaseId: Long): Flow<List<IndexationEventEntity>>
 
-    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId ORDER BY appliedEpochDay DESC")
+    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId AND isDeleted = 0 ORDER BY appliedEpochDay DESC")
     fun observeEventsForLease(leaseId: Long): Flow<List<IndexationEventEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -27,18 +26,26 @@ interface IndexationEventDao {
     @Delete
     suspend fun delete(event: IndexationEventEntity)
 
-    @Query("SELECT * FROM indexation_events WHERE id = :id")
+    @Query("SELECT * FROM indexation_events WHERE id = :id AND isDeleted = 0")
     suspend fun getById(id: Long): IndexationEventEntity?
 
-    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId ORDER BY appliedEpochDay DESC LIMIT 1")
+    @Query("SELECT * FROM indexation_events WHERE leaseId = :leaseId AND isDeleted = 0 ORDER BY appliedEpochDay DESC LIMIT 1")
     suspend fun getLatestByLease(leaseId: Long): IndexationEventEntity?
 
-    // NOUVELLES MÉTHODES pour la synchronisation
+    @Query("UPDATE indexation_events SET isDeleted = 1, dirty = 1, updatedAt = :updatedAt WHERE id = :id AND isDeleted = 0")
+    suspend fun markDeletedById(id: Long, updatedAt: Long = System.currentTimeMillis()): Int
+
+    @Query("DELETE FROM indexation_events WHERE remoteId = :remoteId")
+    suspend fun hardDeleteByRemoteId(remoteId: String): Int
+
     @Query("SELECT * FROM indexation_events WHERE dirty = 1")
     suspend fun getDirty(): List<IndexationEventEntity>
 
     @Query("SELECT * FROM indexation_events WHERE remoteId = :remoteId")
     suspend fun getByRemoteId(remoteId: String): IndexationEventEntity?
+
+    @Query("SELECT remoteId FROM indexation_events")
+    suspend fun getAllRemoteIds(): List<String>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(events: List<IndexationEventEntity>)
