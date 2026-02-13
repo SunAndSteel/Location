@@ -3,16 +3,19 @@ package com.florent.location.data.sync
 import android.util.Log
 import com.florent.location.data.db.entity.HousingEntity
 import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.SyncCursorDao
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class HousingSyncRepository(
     private val supabase: SupabaseClient,
-    private val housingDao: HousingDao
+    private val housingDao: HousingDao,
+    private val syncCursorDao: SyncCursorDao
 ) {
     private val mutex = Mutex()
 
@@ -61,19 +64,22 @@ class HousingSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = toServerCursorIso(housingDao.getMaxServerUpdatedAtOrNull())
+        val cursor = syncCursorDao.getByKey("housings")?.toCompositeCursor()
+        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("housings").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
                 }
+                order(column = "updated_at", order = Order.ASCENDING)
+                order(column = "remote_id", order = Order.ASCENDING)
                 range(from.toLong(), to.toLong())
             }
                 .decodeList<HousingRow>()
         }
-        val rows = updatesResult.rows
+        val rows = updatesResult.rows.filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
 
         val entities = rows.map { row ->
             val existing = housingDao.getByRemoteId(row.remoteId)
@@ -82,6 +88,9 @@ class HousingSyncRepository(
         if (entities.isNotEmpty()) {
             housingDao.upsertAll(entities)
             entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
+            entities.maxCompositeCursorOrNull { e ->
+                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
+            }?.let { syncCursorDao.upsert(it.toEntity("housings")) }
         }
 
         var hardDeleted = 0

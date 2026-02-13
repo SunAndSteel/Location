@@ -3,11 +3,13 @@ package com.florent.location.data.sync
 import android.util.Log
 import com.florent.location.data.db.entity.LeaseEntity
 import com.florent.location.data.db.dao.HousingDao
+import com.florent.location.data.db.dao.SyncCursorDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.data.db.dao.TenantDao
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -16,7 +18,8 @@ class LeaseSyncRepository(
     private val supabase: SupabaseClient,
     private val leaseDao: LeaseDao,
     private val housingDao: HousingDao,
-    private val tenantDao: TenantDao
+    private val tenantDao: TenantDao,
+    private val syncCursorDao: SyncCursorDao
 ) {
     private val mutex = Mutex()
 
@@ -73,18 +76,23 @@ class LeaseSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = toServerCursorIso(leaseDao.getMaxServerUpdatedAtOrNull())
+        val cursor = syncCursorDao.getByKey("leases")?.toCompositeCursor()
+        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("leases").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
                 }
+                order(column = "updated_at", order = Order.ASCENDING)
+                order(column = "remote_id", order = Order.ASCENDING)
                 range(from.toLong(), to.toLong())
             }.decodeList<LeaseRow>()
         }
-        val rows = updatesResult.rows.sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        val rows = updatesResult.rows
+            .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
+            .sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -106,6 +114,9 @@ class LeaseSyncRepository(
         if (resolution.mapped.isNotEmpty()) {
             leaseDao.upsertAll(resolution.mapped)
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
+            resolution.mapped.maxCompositeCursorOrNull { e ->
+                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
+            }?.let { syncCursorDao.upsert(it.toEntity("leases")) }
         }
 
         var hardDeleted = 0

@@ -5,6 +5,7 @@ import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
 import com.florent.location.data.db.dao.TenantDao
+import com.florent.location.data.db.dao.SyncCursorDao
 import com.florent.location.data.db.entity.AddressEntity
 import com.florent.location.data.db.entity.HousingEntity
 import com.florent.location.data.db.entity.IndexationEventEntity
@@ -24,7 +25,8 @@ class SyncRepositoryDeleteFailureTest {
     fun housingDelete_keepsLocalEntity_whenRemoteDeleteFails() = runTest {
         val supabase = mockk<SupabaseClient>(relaxed = true)
         val housingDao = mockk<HousingDao>(relaxed = true)
-        val repository = HousingSyncRepository(supabase, housingDao)
+        val syncCursorDao = mockk<SyncCursorDao>(relaxed = true)
+        val repository = HousingSyncRepository(supabase, housingDao, syncCursorDao)
         val entity = HousingEntity(
             id = 12L,
             remoteId = "remote-housing",
@@ -45,7 +47,8 @@ class SyncRepositoryDeleteFailureTest {
     fun tenantDelete_keepsLocalEntity_whenRemoteDeleteFails() = runTest {
         val supabase = mockk<SupabaseClient>(relaxed = true)
         val tenantDao = mockk<TenantDao>(relaxed = true)
-        val repository = TenantSyncRepository(supabase, tenantDao)
+        val syncCursorDao = mockk<SyncCursorDao>(relaxed = true)
+        val repository = TenantSyncRepository(supabase, tenantDao, syncCursorDao)
         val entity = TenantEntity(
             id = 24L,
             remoteId = "remote-tenant",
@@ -68,7 +71,8 @@ class SyncRepositoryDeleteFailureTest {
         val leaseDao = mockk<LeaseDao>(relaxed = true)
         val housingDao = mockk<HousingDao>(relaxed = true)
         val tenantDao = mockk<TenantDao>(relaxed = true)
-        val repository = LeaseSyncRepository(supabase, leaseDao, housingDao, tenantDao)
+        val syncCursorDao = mockk<SyncCursorDao>(relaxed = true)
+        val repository = LeaseSyncRepository(supabase, leaseDao, housingDao, tenantDao, syncCursorDao)
         val entity = LeaseEntity(
             id = 99L,
             remoteId = "remote-lease",
@@ -93,7 +97,8 @@ class SyncRepositoryDeleteFailureTest {
         val supabase = mockk<SupabaseClient>(relaxed = true)
         val keyDao = mockk<KeyDao>(relaxed = true)
         val housingDao = mockk<HousingDao>(relaxed = true)
-        val repository = KeySyncRepository(supabase, keyDao, housingDao)
+        val syncCursorDao = mockk<SyncCursorDao>(relaxed = true)
+        val repository = KeySyncRepository(supabase, keyDao, housingDao, syncCursorDao)
         val entity = KeyEntity(
             id = 34L,
             remoteId = "remote-key",
@@ -116,7 +121,8 @@ class SyncRepositoryDeleteFailureTest {
         val supabase = mockk<SupabaseClient>(relaxed = true)
         val indexationEventDao = mockk<IndexationEventDao>(relaxed = true)
         val leaseDao = mockk<LeaseDao>(relaxed = true)
-        val repository = IndexationEventSyncRepository(supabase, indexationEventDao, leaseDao)
+        val syncCursorDao = mockk<SyncCursorDao>(relaxed = true)
+        val repository = IndexationEventSyncRepository(supabase, indexationEventDao, leaseDao, syncCursorDao)
         val entity = IndexationEventEntity(
             id = 56L,
             remoteId = "remote-event",
