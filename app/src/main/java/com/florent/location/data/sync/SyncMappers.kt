@@ -15,13 +15,15 @@ fun TenantEntity.toRow(userId: String): TenantRow = TenantRow(
     lastName = lastName,
     phone = phone,
     email = email,
-    status = status
+    status = status,
+    createdAt = Instant.ofEpochMilli(createdAt).toString()
 )
 
 fun TenantRow.toEntityPreservingLocalId(
     localId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): TenantEntity {
+    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
     val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
 
     return TenantEntity(
@@ -32,7 +34,7 @@ fun TenantRow.toEntityPreservingLocalId(
         phone = phone,
         email = email,
         status = status,
-        createdAt = nowMillis,
+        createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
@@ -70,7 +72,8 @@ fun LeaseEntity.toRow(
     depositOverridden = depositOverridden,
     housingRentCentsSnapshot = housingRentCentsSnapshot,
     housingChargesCentsSnapshot = housingChargesCentsSnapshot,
-    housingDepositCentsSnapshot = housingDepositCentsSnapshot
+    housingDepositCentsSnapshot = housingDepositCentsSnapshot,
+    createdAt = Instant.ofEpochMilli(createdAt).toString()
 )
 
 /**
@@ -85,6 +88,7 @@ fun LeaseRow.toEntityPreservingLocalId(
     tenantLocalId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): LeaseEntity {
+    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
     val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
 
     return LeaseEntity(
@@ -105,7 +109,7 @@ fun LeaseRow.toEntityPreservingLocalId(
         housingRentCentsSnapshot = housingRentCentsSnapshot,
         housingChargesCentsSnapshot = housingChargesCentsSnapshot,
         housingDepositCentsSnapshot = housingDepositCentsSnapshot,
-        createdAt = nowMillis,
+        createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
@@ -125,7 +129,8 @@ fun KeyEntity.toRow(
     housingRemoteId = housingRemoteId,
     type = type,
     deviceLabel = deviceLabel,
-    handedOverEpochDay = handedOverEpochDay
+    handedOverEpochDay = handedOverEpochDay,
+    createdAt = Instant.ofEpochMilli(createdAt).toString()
 )
 
 fun KeyRow.toEntityPreservingLocalId(
@@ -133,6 +138,7 @@ fun KeyRow.toEntityPreservingLocalId(
     housingLocalId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): KeyEntity {
+    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
     val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
 
     return KeyEntity(
@@ -142,7 +148,7 @@ fun KeyRow.toEntityPreservingLocalId(
         type = type,
         deviceLabel = deviceLabel,
         handedOverEpochDay = handedOverEpochDay,
-        createdAt = nowMillis,
+        createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
@@ -163,7 +169,8 @@ fun IndexationEventEntity.toRow(
     appliedEpochDay = appliedEpochDay,
     baseRentCents = baseRentCents,
     indexPercent = indexPercent,
-    newRentCents = newRentCents
+    newRentCents = newRentCents,
+    createdAt = Instant.ofEpochMilli(createdAt).toString()
 )
 
 fun IndexationEventRow.toEntityPreservingLocalId(
@@ -171,6 +178,7 @@ fun IndexationEventRow.toEntityPreservingLocalId(
     leaseLocalId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): IndexationEventEntity {
+    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
     val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
 
     return IndexationEventEntity(
@@ -181,7 +189,7 @@ fun IndexationEventRow.toEntityPreservingLocalId(
         baseRentCents = baseRentCents,
         indexPercent = indexPercent,
         newRentCents = newRentCents,
-        createdAt = nowMillis,
+        createdAt = serverCreatedAt ?: nowMillis,
         updatedAt = nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
