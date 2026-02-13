@@ -1,7 +1,5 @@
 package com.florent.location.domain.model
 
-
-
 data class Lease(
     val id: Long = 0L,
     val housingId: Long,
@@ -18,5 +16,10 @@ data class Lease(
     val depositOverridden: Boolean = false,
     val housingRentCentsSnapshot: Long = 0L,
     val housingChargesCentsSnapshot: Long = 0L,
-    val housingDepositCentsSnapshot: Long = 0L
+    val housingDepositCentsSnapshot: Long = 0L,
+    val remoteId: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val dirty: Boolean = true,
+    val serverUpdatedAtEpochSeconds: Long? = null
 )

@@ -9,5 +9,10 @@ data class Tenant(
     val lastName: String,
     val phone: String?,
     val email: String?,
-    val status: TenantStatus = TenantStatus.ACTIVE
+    val status: TenantStatus = TenantStatus.ACTIVE,
+    val remoteId: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val dirty: Boolean = true,
+    val serverUpdatedAtEpochSeconds: Long? = null
 )

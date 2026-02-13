@@ -6,5 +6,10 @@ data class IndexationEvent(
     val appliedEpochDay: Long,
     val baseRentCents: Long,
     val indexPercent: Double,
-    val newRentCents: Long
+    val newRentCents: Long,
+    val remoteId: String = "",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val dirty: Boolean = true,
+    val serverUpdatedAtEpochSeconds: Long? = null
 )

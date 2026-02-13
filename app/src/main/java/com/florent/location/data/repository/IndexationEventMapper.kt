@@ -6,19 +6,31 @@ import com.florent.location.domain.model.IndexationEvent
 fun IndexationEventEntity.toDomain(): IndexationEvent =
     IndexationEvent(
         id = id,
+        remoteId = remoteId,
         leaseId = leaseId,
         appliedEpochDay = appliedEpochDay,
         baseRentCents = baseRentCents,
         indexPercent = indexPercent,
-        newRentCents = newRentCents
+        newRentCents = newRentCents,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
 
-fun IndexationEvent.toEntity(): IndexationEventEntity =
-    IndexationEventEntity(
+fun IndexationEvent.toEntity(): IndexationEventEntity {
+    val baseEntity = IndexationEventEntity(
         id = id,
         leaseId = leaseId,
         appliedEpochDay = appliedEpochDay,
         baseRentCents = baseRentCents,
         indexPercent = indexPercent,
-        newRentCents = newRentCents
+        newRentCents = newRentCents,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
+
+    return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)
+}
