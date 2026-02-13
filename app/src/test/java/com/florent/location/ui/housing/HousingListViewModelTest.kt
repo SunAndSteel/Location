@@ -9,7 +9,7 @@ import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.sampleHousing
 import com.florent.location.testutils.MainDispatcherRule
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

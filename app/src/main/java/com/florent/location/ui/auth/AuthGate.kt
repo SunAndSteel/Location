@@ -16,8 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.florent.location.ui.navigation.LocationNavHost
-import com.florent.location.ui.sync.HousingSyncStateObserver
-import com.florent.location.ui.sync.SyncState
+import com.florent.location.presentation.sync.HousingSyncStateObserver
+import com.florent.location.presentation.sync.SyncState
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 

@@ -13,7 +13,7 @@ import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

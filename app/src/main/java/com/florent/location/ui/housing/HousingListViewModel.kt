@@ -6,7 +6,7 @@ import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.domain.usecase.housing.HousingUseCases
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

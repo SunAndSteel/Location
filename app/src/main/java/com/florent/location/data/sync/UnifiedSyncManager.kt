@@ -1,7 +1,9 @@
-package com.florent.location.ui.sync
+package com.florent.location.data.sync
 
 import android.util.Log
-import com.florent.location.data.sync.*
+import com.florent.location.presentation.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncStateObserver
+import com.florent.location.presentation.sync.SyncState
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope

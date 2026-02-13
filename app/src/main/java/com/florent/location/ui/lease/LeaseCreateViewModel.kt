@@ -10,7 +10,7 @@ import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.ui.components.formatEuroInput
 import com.florent.location.ui.components.parseEuroInputToCents
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.MutableStateFlow

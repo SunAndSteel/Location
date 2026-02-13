@@ -29,9 +29,9 @@ import com.florent.location.ui.tenant.TenantEditViewModel
 import com.florent.location.ui.lease.LeaseCreateViewModel
 import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
-import com.florent.location.ui.sync.UnifiedSyncManager
-import com.florent.location.ui.sync.HousingSyncRequester
-import com.florent.location.ui.sync.HousingSyncStateObserver
+import com.florent.location.data.sync.UnifiedSyncManager
+import com.florent.location.presentation.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncStateObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
