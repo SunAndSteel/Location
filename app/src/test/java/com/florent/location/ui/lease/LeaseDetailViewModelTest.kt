@@ -4,15 +4,19 @@ import app.cash.turbine.test
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
+import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.lease.LeaseUseCases
+import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeHousingRepository
+import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_LEASE_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_HOUSING_ID
+import com.florent.location.fake.FakeLeaseRepository.Companion.ACTIVE_TENANT_ID
 import com.florent.location.fake.FakeLeaseRepository.Companion.CLOSE_EPOCH_DAY
 import com.florent.location.fake.FakeLeaseRepository.Companion.START_EPOCH_DAY
 import com.florent.location.sampleHousing
@@ -41,13 +45,34 @@ class LeaseDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val tenantUseCases = TenantUseCasesImpl(
+        FakeTenantRepository(
+            listOf(
+                Tenant(
+                    id = ACTIVE_TENANT_ID,
+                    firstName = "Alice",
+                    lastName = "Durand",
+                    phone = null,
+                    email = null
+                )
+            )
+        )
+    )
+
     @Test
     fun initialLoadShowsLeaseAndKeys() = runTest {
         val repository = FakeLeaseRepository.seeded()
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
+        val viewModel = LeaseDetailViewModel(
+            ACTIVE_LEASE_ID,
+            bailUseCases,
+            leaseUseCases,
+            housingUseCases,
+            tenantUseCases,
+            RecordingSyncRequester()
+        )
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -70,7 +95,14 @@ class LeaseDetailViewModelTest {
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val syncRequester = RecordingSyncRequester()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, syncRequester)
+        val viewModel = LeaseDetailViewModel(
+            ACTIVE_LEASE_ID,
+            bailUseCases,
+            leaseUseCases,
+            housingUseCases,
+            tenantUseCases,
+            syncRequester
+        )
 
         advanceUntilIdle()
 
@@ -106,7 +138,14 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
+        val viewModel = LeaseDetailViewModel(
+            ACTIVE_LEASE_ID,
+            bailUseCases,
+            leaseUseCases,
+            housingUseCases,
+            tenantUseCases,
+            RecordingSyncRequester()
+        )
 
         advanceUntilIdle()
 
@@ -136,7 +175,14 @@ class LeaseDetailViewModelTest {
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
         val syncRequester = RecordingSyncRequester()
-        val viewModel = LeaseDetailViewModel(ACTIVE_LEASE_ID, bailUseCases, leaseUseCases, housingUseCases, syncRequester)
+        val viewModel = LeaseDetailViewModel(
+            ACTIVE_LEASE_ID,
+            bailUseCases,
+            leaseUseCases,
+            housingUseCases,
+            tenantUseCases,
+            syncRequester
+        )
 
         advanceUntilIdle()
 
@@ -167,7 +213,14 @@ class LeaseDetailViewModelTest {
         val bailUseCases = BailUseCasesImpl(repository)
         val leaseUseCases = LeaseUseCasesImpl(repository, FakeHousingRepository())
         val housingUseCases = buildHousingUseCases()
-        val viewModel = LeaseDetailViewModel(999L, bailUseCases, leaseUseCases, housingUseCases, RecordingSyncRequester())
+        val viewModel = LeaseDetailViewModel(
+            999L,
+            bailUseCases,
+            leaseUseCases,
+            housingUseCases,
+            tenantUseCases,
+            RecordingSyncRequester()
+        )
 
         viewModel.uiState.test {
             val loading = awaitItem()
@@ -194,6 +247,7 @@ class LeaseDetailViewModelTest {
             ),
             FakeLeaseUseCases(),
             FakeHousingUseCases(),
+            tenantUseCases,
             RecordingSyncRequester()
         )
 

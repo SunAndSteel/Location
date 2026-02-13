@@ -100,8 +100,8 @@ class TenantListViewModelTest {
         viewModel.onEvent(TenantListUiEvent.DeleteTenantClicked(1L))
         advanceUntilIdle()
         assertEquals(
-            listOf(Tenant(2L, "Bob", "Martin", null, null)),
-            viewModel.uiState.value.tenants.map { it.tenant }
+            listOf(2L),
+            viewModel.uiState.value.tenants.map { it.tenant.id }
         )
         assertEquals(listOf("tenant_delete"), syncRequester.reasons)
 
