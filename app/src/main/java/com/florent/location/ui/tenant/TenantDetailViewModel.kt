@@ -6,7 +6,7 @@ import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantSituation
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
 import com.florent.location.domain.usecase.tenant.TenantUseCases
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

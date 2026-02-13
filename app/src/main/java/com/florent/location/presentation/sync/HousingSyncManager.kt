@@ -1,4 +1,4 @@
-package com.florent.location.ui.sync
+package com.florent.location.presentation.sync
 
 import kotlinx.coroutines.flow.StateFlow
 

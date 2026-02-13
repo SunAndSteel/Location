@@ -1,6 +1,6 @@
 package com.florent.location.testutils
 
-import com.florent.location.ui.sync.HousingSyncRequester
+import com.florent.location.presentation.sync.HousingSyncRequester
 
 class RecordingSyncRequester : HousingSyncRequester {
     val reasons = mutableListOf<String>()
