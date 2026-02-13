@@ -58,7 +58,10 @@ class HousingSyncRepository(
 
         val entities = rows.map { row ->
             val existing = housingDao.getByRemoteId(row.remoteId)
-            row.toEntityPreservingLocalId(localId = existing?.id ?: 0L)
+            row.toEntityPreservingLocalId(
+                localId = existing?.id ?: 0L,
+                existingCreatedAtMillis = existing?.createdAt
+            )
         }
 
         housingDao.upsertAll(entities)

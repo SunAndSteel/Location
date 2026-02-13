@@ -37,10 +37,12 @@ fun HousingEntity.toRow(userId: String): HousingRow = HousingRow(
 
 fun HousingRow.toEntityPreservingLocalId(
     localId: Long,
+    existingCreatedAtMillis: Long? = null,
     nowMillis: Long = System.currentTimeMillis()
 ): HousingEntity {
-    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
-    val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
+    val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
+    val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
+    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
 
     return HousingEntity(
         id = localId,
@@ -53,8 +55,8 @@ fun HousingRow.toEntityPreservingLocalId(
             city = addrCity,
             country = addrCountry
         ),
-        createdAt = serverCreatedAt ?: nowMillis,
-        updatedAt = nowMillis,
+        createdAt = serverCreatedAtMillis ?: existingCreatedAtMillis ?: nowMillis,
+        updatedAt = serverUpdatedAtMillis ?: nowMillis,
         isArchived = isArchived,
         rentCents = rentCents,
         chargesCents = chargesCents,
@@ -68,6 +70,6 @@ fun HousingRow.toEntityPreservingLocalId(
         buildingLabel = buildingLabel,
         internalNote = internalNote,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdated
+        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
     )
 }
