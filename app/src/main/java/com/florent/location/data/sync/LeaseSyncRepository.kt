@@ -73,13 +73,15 @@ class LeaseSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(leaseDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = supabase.from("leases").select {
-            filter {
-                filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
-            }
-        }.decodeList<LeaseRow>()
-            .sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        val rows = fetchAllPaged(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
+            supabase.from("leases").select {
+                filter {
+                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                }
+                range(from.toLong(), to.toLong())
+            }.decodeList<LeaseRow>()
+        }.sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -103,9 +105,12 @@ class LeaseSyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { leaseDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = supabase.from("leases").select {
-            filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-        }.decodeList<LeaseRow>().map { it.remoteId }.toSet()
+        val remoteIds = fetchAllPaged(tag = "LeaseSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+            supabase.from("leases").select {
+                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                range(from.toLong(), to.toLong())
+            }.decodeList<LeaseRow>()
+        }.map { it.remoteId }.toSet()
 
         leaseDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { leaseDao.hardDeleteByRemoteId(it) }
     }
