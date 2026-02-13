@@ -2,6 +2,7 @@ package com.florent.location.di
 
 import androidx.room.Room
 import com.florent.location.data.db.AppDatabase
+import com.florent.location.data.db.DatabaseMigrations
 import com.florent.location.data.repository.HousingRepositoryImpl
 import com.florent.location.data.repository.LeaseRepositoryImpl
 import com.florent.location.data.repository.TenantRepositoryImpl
@@ -50,9 +51,7 @@ val appModule = module {
             AppDatabase::class.java,
             "location.db"
         )
-            .fallbackToDestructiveMigration()
-            // TODO: Remplacer par de vraies migrations en production
-            // .addMigrations(MIGRATION_1_2, MIGRATION_2_3, etc.)
+            .addMigrations(*DatabaseMigrations.ALL)
             .build()
     }
 
