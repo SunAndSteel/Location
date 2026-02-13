@@ -61,12 +61,16 @@ class HousingSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(housingDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = supabase.from("housings").select {
-            filter {
-                filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+        val rows = fetchAllPaged(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
+            supabase.from("housings").select {
+                filter {
+                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                }
+                range(from.toLong(), to.toLong())
             }
-        }.decodeList<HousingRow>()
+                .decodeList<HousingRow>()
+        }
 
         val entities = rows.map { row ->
             val existing = housingDao.getByRemoteId(row.remoteId)
@@ -77,9 +81,12 @@ class HousingSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { housingDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = supabase.from("housings").select {
-            filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-        }.decodeList<HousingRow>().map { it.remoteId }.toSet()
+        val remoteIds = fetchAllPaged(tag = "HousingSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+            supabase.from("housings").select {
+                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                range(from.toLong(), to.toLong())
+            }.decodeList<HousingRow>()
+        }.map { it.remoteId }.toSet()
 
         housingDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { housingDao.hardDeleteByRemoteId(it) }
     }

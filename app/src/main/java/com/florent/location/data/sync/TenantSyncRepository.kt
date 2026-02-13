@@ -62,12 +62,16 @@ class TenantSyncRepository(
         val user = supabase.auth.currentUserOrNull() ?: return
         val sinceIso = toServerCursorIso(tenantDao.getMaxServerUpdatedAtOrNull())
 
-        val rows = supabase.from("tenants").select {
-            filter {
-                filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+        val rows = fetchAllPaged(tag = "TenantSyncRepository", pageLabel = "pullUpdates") { from, to ->
+            supabase.from("tenants").select {
+                filter {
+                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                }
+                range(from.toLong(), to.toLong())
             }
-        }.decodeList<TenantRow>()
+                .decodeList<TenantRow>()
+        }
 
         val entities = rows.map { row ->
             val existing = tenantDao.getByRemoteId(row.remoteId)
@@ -78,9 +82,12 @@ class TenantSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochSeconds?.let { tenantDao.markClean(e.remoteId, it) } }
         }
 
-        val remoteIds = supabase.from("tenants").select {
-            filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
-        }.decodeList<TenantRow>().map { it.remoteId }.toSet()
+        val remoteIds = fetchAllPaged(tag = "TenantSyncRepository", pageLabel = "pullRemoteIds") { from, to ->
+            supabase.from("tenants").select {
+                filter { filter(column = "user_id", operator = FilterOperator.EQ, value = user.id) }
+                range(from.toLong(), to.toLong())
+            }.decodeList<TenantRow>()
+        }.map { it.remoteId }.toSet()
 
         tenantDao.getAllRemoteIds().filterNot { remoteIds.contains(it) }.forEach { tenantDao.hardDeleteByRemoteId(it) }
     }
