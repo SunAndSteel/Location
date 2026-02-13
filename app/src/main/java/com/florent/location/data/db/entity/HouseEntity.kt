@@ -33,6 +33,7 @@ data class HousingEntity(
     val pebDate: String? = null,
     val buildingLabel: String? = null,
     val internalNote: String? = null,
+    val isDeleted: Boolean = false,
     val dirty: Boolean = true,
     val serverUpdatedAtEpochSeconds: Long? = null
 

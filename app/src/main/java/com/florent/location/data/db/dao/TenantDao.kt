@@ -9,19 +9,15 @@ import androidx.room.Update
 import com.florent.location.data.db.entity.TenantEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * DAO Room pour manipuler les locataires.
- */
 @Dao
 interface TenantDao {
-    // Méthodes existantes
-    @Query("SELECT * FROM tenants ORDER BY lastName, firstName")
+    @Query("SELECT * FROM tenants WHERE isDeleted = 0 ORDER BY lastName, firstName")
     fun observeAll(): Flow<List<TenantEntity>>
 
-    @Query("SELECT * FROM tenants WHERE id = :id")
+    @Query("SELECT * FROM tenants WHERE id = :id AND isDeleted = 0")
     fun observe(id: Long): Flow<TenantEntity?>
 
-    @Query("SELECT * FROM tenants WHERE id = :id")
+    @Query("SELECT * FROM tenants WHERE id = :id AND isDeleted = 0")
     fun observeById(id: Long): Flow<TenantEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -33,24 +29,32 @@ interface TenantDao {
     @Delete
     suspend fun delete(tenant: TenantEntity)
 
-    @Query("SELECT * FROM tenants WHERE id = :id")
+    @Query("SELECT * FROM tenants WHERE id = :id AND isDeleted = 0")
     suspend fun getById(id: Long): TenantEntity?
 
-    @Query("SELECT COUNT(*) > 0 FROM tenants WHERE id = :id")
+    @Query("SELECT COUNT(*) > 0 FROM tenants WHERE id = :id AND isDeleted = 0")
     suspend fun exists(id: Long): Boolean
 
-    @Query("SELECT COUNT(*) > 0 FROM leases WHERE tenantId = :id AND endDateEpochDay IS NULL")
+    @Query("SELECT COUNT(*) > 0 FROM leases WHERE tenantId = :id AND endDateEpochDay IS NULL AND isDeleted = 0")
     suspend fun hasActiveLease(id: Long): Boolean
+
+    @Query("UPDATE tenants SET isDeleted = 1, dirty = 1, updatedAt = :updatedAt WHERE id = :id AND isDeleted = 0")
+    suspend fun markDeletedById(id: Long, updatedAt: Long = System.currentTimeMillis()): Int
 
     @Query("DELETE FROM tenants WHERE id = :id")
     suspend fun deleteById(id: Long): Int
 
-    // NOUVELLES MÉTHODES pour la synchronisation
+    @Query("DELETE FROM tenants WHERE remoteId = :remoteId")
+    suspend fun hardDeleteByRemoteId(remoteId: String): Int
+
     @Query("SELECT * FROM tenants WHERE dirty = 1")
     suspend fun getDirty(): List<TenantEntity>
 
     @Query("SELECT * FROM tenants WHERE remoteId = :remoteId")
     suspend fun getByRemoteId(remoteId: String): TenantEntity?
+
+    @Query("SELECT remoteId FROM tenants")
+    suspend fun getAllRemoteIds(): List<String>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(tenants: List<TenantEntity>)

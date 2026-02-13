@@ -53,6 +53,7 @@ data class LeaseEntity(
     // NOUVEAU : Timestamps et sync
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false,
     val dirty: Boolean = true,
     val serverUpdatedAtEpochSeconds: Long? = null
 )
