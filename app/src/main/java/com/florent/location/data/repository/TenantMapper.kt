@@ -10,23 +10,35 @@ import com.florent.location.domain.model.TenantStatus
 fun TenantEntity.toDomain() : Tenant =
     Tenant(
         id = id,
+        remoteId = remoteId,
         firstName = firstName,
         lastName = lastName,
         phone = phone,
         email = email,
-        status = TenantStatus.entries.firstOrNull { it.name == status } ?: TenantStatus.INACTIVE
+        status = TenantStatus.entries.firstOrNull { it.name == status } ?: TenantStatus.INACTIVE,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
 
 
 /**
  * Transforme un modèle de domaine en entité Room.
  */
-fun Tenant.toEntity(): TenantEntity =
-    TenantEntity(
+fun Tenant.toEntity(): TenantEntity {
+    val baseEntity = TenantEntity(
         id = id,
         firstName = firstName,
         lastName = lastName,
         phone = phone,
         email = email,
-        status = status.name
+        status = status.name,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
+
+    return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)
+}

@@ -6,6 +6,7 @@ import com.florent.location.domain.model.Lease
 fun LeaseEntity.toDomain() : Lease =
     Lease(
         id = id,
+        remoteId = remoteId,
         housingId = housingId,
         tenantId = tenantId,
         startDateEpochDay = startDateEpochDay,
@@ -20,12 +21,16 @@ fun LeaseEntity.toDomain() : Lease =
         depositOverridden = depositOverridden,
         housingRentCentsSnapshot = housingRentCentsSnapshot,
         housingChargesCentsSnapshot = housingChargesCentsSnapshot,
-        housingDepositCentsSnapshot = housingDepositCentsSnapshot
+        housingDepositCentsSnapshot = housingDepositCentsSnapshot,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
 
 
-fun Lease.toEntity() : LeaseEntity =
-    LeaseEntity(
+fun Lease.toEntity() : LeaseEntity {
+    val baseEntity = LeaseEntity(
         id = id,
         housingId = housingId,
         tenantId = tenantId,
@@ -41,5 +46,12 @@ fun Lease.toEntity() : LeaseEntity =
         depositOverridden = depositOverridden,
         housingRentCentsSnapshot = housingRentCentsSnapshot,
         housingChargesCentsSnapshot = housingChargesCentsSnapshot,
-        housingDepositCentsSnapshot = housingDepositCentsSnapshot
+        housingDepositCentsSnapshot = housingDepositCentsSnapshot,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        dirty = dirty,
+        serverUpdatedAtEpochSeconds = serverUpdatedAtEpochSeconds
     )
+
+    return if (remoteId.isBlank()) baseEntity else baseEntity.copy(remoteId = remoteId)
+}
