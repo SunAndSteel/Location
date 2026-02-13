@@ -11,7 +11,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 class KeySyncRepository(
     private val supabase: SupabaseClient,
@@ -45,20 +44,21 @@ class KeySyncRepository(
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
             val housing = housingDao.getById(entity.housingId) ?: return@mapNotNull null
-            entity.toRow(user.id, housing.remoteId)
+            entity to entity.toRow(user.id, housing.remoteId)
         }
 
         if (payload.isNotEmpty()) {
-            supabase.from("keys").upsert(payload) {
+            supabase.from("keys").upsert(payload.map { it.second }) {
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+            payload.forEach { keyDao.markClean(it.first.remoteId, null) }
         }
     }
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = keyDao.getMaxServerUpdatedAtOrNull()?.let { Instant.ofEpochSecond(it).toString() }
+        val sinceIso = toServerCursorIso(keyDao.getMaxServerUpdatedAtOrNull())
 
         val rows = supabase.from("keys").select {
             filter {
@@ -119,20 +119,21 @@ class IndexationEventSyncRepository(
             if (lease == null) {
                 Log.w("IndexationEventSyncRepository", "Missing lease for event ${entity.id}")
                 null
-            } else entity.toRow(user.id, lease.remoteId)
+            } else entity to entity.toRow(user.id, lease.remoteId)
         }
 
         if (payload.isNotEmpty()) {
-            supabase.from("indexation_events").upsert(payload) {
+            supabase.from("indexation_events").upsert(payload.map { it.second }) {
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+            payload.forEach { indexationEventDao.markClean(it.first.remoteId, null) }
         }
     }
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = indexationEventDao.getMaxServerUpdatedAtOrNull()?.let { Instant.ofEpochSecond(it).toString() }
+        val sinceIso = toServerCursorIso(indexationEventDao.getMaxServerUpdatedAtOrNull())
 
         val rows = supabase.from("indexation_events").select {
             filter {

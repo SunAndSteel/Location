@@ -9,7 +9,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 class TenantSyncRepository(
     private val supabase: SupabaseClient,
@@ -38,6 +37,7 @@ class TenantSyncRepository(
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+            dirty.filterNot { it.isDeleted }.forEach { tenantDao.markClean(it.remoteId, null) }
         }
     }
 
@@ -60,8 +60,7 @@ class TenantSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceEpoch = tenantDao.getMaxServerUpdatedAtOrNull()
-        val sinceIso = sinceEpoch?.let { Instant.ofEpochSecond(it).toString() }
+        val sinceIso = toServerCursorIso(tenantDao.getMaxServerUpdatedAtOrNull())
 
         val rows = supabase.from("tenants").select {
             filter {

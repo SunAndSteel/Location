@@ -66,8 +66,8 @@ interface LeaseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(leases: List<LeaseEntity>)
 
-    @Query("UPDATE leases SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdated WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdated: Long)
+    @Query("UPDATE leases SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdated, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdated: Long?)
 
     @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM leases")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?

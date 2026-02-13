@@ -25,7 +25,6 @@ fun TenantRow.toEntityPreservingLocalId(
 ): TenantEntity {
     val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
     val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
-    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
 
     return TenantEntity(
         id = localId,
@@ -39,7 +38,7 @@ fun TenantRow.toEntityPreservingLocalId(
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
         isDeleted = false,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
+        serverUpdatedAtEpochSeconds = serverUpdatedAtMillis
     )
 }
 
@@ -81,7 +80,6 @@ fun LeaseRow.toEntityPreservingLocalId(
 ): LeaseEntity {
     val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
     val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
-    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
 
     return LeaseEntity(
         id = localId,
@@ -105,7 +103,7 @@ fun LeaseRow.toEntityPreservingLocalId(
         updatedAt = serverUpdatedAtMillis ?: nowMillis,
         isDeleted = false,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
+        serverUpdatedAtEpochSeconds = serverUpdatedAtMillis
     )
 }
 
@@ -133,7 +131,7 @@ fun KeyRow.toEntityPreservingLocalId(
 ): KeyEntity {
     val serverCreatedAt = parseServerEpochMillis(createdAt)
     val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
-    val serverUpdated = parseServerEpochSeconds(updatedAt)
+    val serverUpdated = parseServerEpochMillis(updatedAt)
 
     return KeyEntity(
         id = localId,
@@ -175,7 +173,7 @@ fun IndexationEventRow.toEntityPreservingLocalId(
 ): IndexationEventEntity {
     val serverCreatedAt = parseServerEpochMillis(createdAt)
     val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
-    val serverUpdated = parseServerEpochSeconds(updatedAt)
+    val serverUpdated = parseServerEpochMillis(updatedAt)
 
     return IndexationEventEntity(
         id = localId,

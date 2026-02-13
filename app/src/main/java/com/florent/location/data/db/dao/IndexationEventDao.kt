@@ -50,8 +50,8 @@ interface IndexationEventDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(events: List<IndexationEventEntity>)
 
-    @Query("UPDATE indexation_events SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdated WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdated: Long)
+    @Query("UPDATE indexation_events SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdated, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdated: Long?)
 
     @Query("SELECT MAX(serverUpdatedAtEpochSeconds) FROM indexation_events")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?

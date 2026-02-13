@@ -11,7 +11,6 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Instant
 
 class LeaseSyncRepository(
     private val supabase: SupabaseClient,
@@ -41,14 +40,15 @@ class LeaseSyncRepository(
             if (housing == null || tenant == null) {
                 Log.w("LeaseSyncRepository", "Missing relation for lease ${entity.id}")
                 null
-            } else entity.toRow(user.id, housing.remoteId, tenant.remoteId)
+            } else entity to entity.toRow(user.id, housing.remoteId, tenant.remoteId)
         }
 
         if (payload.isNotEmpty()) {
-            supabase.from("leases").upsert(payload) {
+            supabase.from("leases").upsert(payload.map { it.second }) {
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+            payload.forEach { leaseDao.markClean(it.first.remoteId, null) }
         }
     }
 
@@ -71,7 +71,7 @@ class LeaseSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = leaseDao.getMaxServerUpdatedAtOrNull()?.let { Instant.ofEpochSecond(it).toString() }
+        val sinceIso = toServerCursorIso(leaseDao.getMaxServerUpdatedAtOrNull())
 
         val rows = supabase.from("leases").select {
             filter {
