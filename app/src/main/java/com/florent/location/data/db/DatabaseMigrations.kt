@@ -36,8 +36,25 @@ object DatabaseMigrations {
         }
     }
 
+
+    val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `sync_cursors` (
+                    `syncKey` TEXT NOT NULL,
+                    `updatedAtEpochMillis` INTEGER NOT NULL,
+                    `remoteId` TEXT NOT NULL,
+                    PRIMARY KEY(`syncKey`)
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
+        MIGRATION_3_4,
     )
 }

@@ -8,12 +8,14 @@ import com.florent.location.data.db.dao.HousingDao
 import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
+import com.florent.location.data.db.dao.SyncCursorDao
 import com.florent.location.data.db.dao.TenantDao
 import com.florent.location.data.db.entity.AuthSessionEntity
 import com.florent.location.data.db.entity.HousingEntity
 import com.florent.location.data.db.entity.IndexationEventEntity
 import com.florent.location.data.db.entity.KeyEntity
 import com.florent.location.data.db.entity.LeaseEntity
+import com.florent.location.data.db.entity.SyncCursorEntity
 import com.florent.location.data.db.entity.TenantEntity
 
 @Database(
@@ -24,8 +26,9 @@ import com.florent.location.data.db.entity.TenantEntity
         KeyEntity::class,
         IndexationEventEntity::class,
         AuthSessionEntity::class,
+        SyncCursorEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(PebRatingConverters::class)
@@ -37,4 +40,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun indexationEventDao(): IndexationEventDao
 
     abstract fun authSessionDao(): AuthSessionDao
+    abstract fun syncCursorDao(): SyncCursorDao
 }

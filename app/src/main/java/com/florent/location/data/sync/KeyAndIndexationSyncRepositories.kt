@@ -5,11 +5,13 @@ import com.florent.location.data.db.dao.HousingDao
 import com.florent.location.data.db.dao.IndexationEventDao
 import com.florent.location.data.db.dao.KeyDao
 import com.florent.location.data.db.dao.LeaseDao
+import com.florent.location.data.db.dao.SyncCursorDao
 import com.florent.location.data.db.entity.IndexationEventEntity
 import com.florent.location.data.db.entity.KeyEntity
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,7 +19,8 @@ import kotlinx.coroutines.sync.withLock
 class KeySyncRepository(
     private val supabase: SupabaseClient,
     private val keyDao: KeyDao,
-    private val housingDao: HousingDao
+    private val housingDao: HousingDao,
+    private val syncCursorDao: SyncCursorDao
 ) {
     private val mutex = Mutex()
 
@@ -69,18 +72,23 @@ class KeySyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = toServerCursorIso(keyDao.getMaxServerUpdatedAtOrNull())
+        val cursor = syncCursorDao.getByKey("keys")?.toCompositeCursor()
+        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "KeySyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("keys").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
                 }
+                order(column = "updated_at", order = Order.ASCENDING)
+                order(column = "remote_id", order = Order.ASCENDING)
                 range(from.toLong(), to.toLong())
             }.decodeList<KeyRow>()
         }
-        val rows = updatesResult.rows.sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        val rows = updatesResult.rows
+            .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
+            .sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -101,6 +109,9 @@ class KeySyncRepository(
         if (resolution.mapped.isNotEmpty()) {
             keyDao.upsertAll(resolution.mapped)
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { keyDao.markClean(e.remoteId, it) } }
+            resolution.mapped.maxCompositeCursorOrNull { e ->
+                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
+            }?.let { syncCursorDao.upsert(it.toEntity("keys")) }
         }
 
         var hardDeleted = 0
@@ -131,7 +142,8 @@ class KeySyncRepository(
 class IndexationEventSyncRepository(
     private val supabase: SupabaseClient,
     private val indexationEventDao: IndexationEventDao,
-    private val leaseDao: LeaseDao
+    private val leaseDao: LeaseDao,
+    private val syncCursorDao: SyncCursorDao
 ) {
     private val mutex = Mutex()
 
@@ -186,18 +198,23 @@ class IndexationEventSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val sinceIso = toServerCursorIso(indexationEventDao.getMaxServerUpdatedAtOrNull())
+        val cursor = syncCursorDao.getByKey("indexation_events")?.toCompositeCursor()
+        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "IndexationEventSyncRepository", pageLabel = "pullUpdates") { from, to ->
             supabase.from("indexation_events").select {
                 filter {
                     filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GT, value = sinceIso)
+                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
                 }
+                order(column = "updated_at", order = Order.ASCENDING)
+                order(column = "remote_id", order = Order.ASCENDING)
                 range(from.toLong(), to.toLong())
             }.decodeList<IndexationEventRow>()
         }
-        val rows = updatesResult.rows.sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+        val rows = updatesResult.rows
+            .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
+            .sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
 
         val resolution = mapRowsStoppingAtDependencyGap(rows,
             mapRow = { row ->
@@ -218,6 +235,9 @@ class IndexationEventSyncRepository(
         if (resolution.mapped.isNotEmpty()) {
             indexationEventDao.upsertAll(resolution.mapped)
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { indexationEventDao.markClean(e.remoteId, it) } }
+            resolution.mapped.maxCompositeCursorOrNull { e ->
+                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
+            }?.let { syncCursorDao.upsert(it.toEntity("indexation_events")) }
         }
 
         var hardDeleted = 0

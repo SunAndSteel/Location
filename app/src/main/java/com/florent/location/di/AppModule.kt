@@ -67,6 +67,7 @@ val appModule = module {
     single { get<AppDatabase>().keyDao() }
     single { get<AppDatabase>().indexationEventDao() }
     single { get<AppDatabase>().authSessionDao() }
+    single { get<AppDatabase>().syncCursorDao() }
 
     // =========================================================================
     // Repositories (Domain)
@@ -103,14 +104,16 @@ val appModule = module {
     single {
         com.florent.location.data.sync.HousingSyncRepository(
             supabase = get(),
-            housingDao = get()
+            housingDao = get(),
+            syncCursorDao = get()
         )
     }
 
     single {
         com.florent.location.data.sync.TenantSyncRepository(
             supabase = get(),
-            tenantDao = get()
+            tenantDao = get(),
+            syncCursorDao = get()
         )
     }
 
@@ -119,7 +122,8 @@ val appModule = module {
             supabase = get(),
             leaseDao = get(),
             housingDao = get(),
-            tenantDao = get()
+            tenantDao = get(),
+            syncCursorDao = get()
         )
     }
 
@@ -127,7 +131,8 @@ val appModule = module {
         com.florent.location.data.sync.KeySyncRepository(
             supabase = get(),
             keyDao = get(),
-            housingDao = get()
+            housingDao = get(),
+            syncCursorDao = get()
         )
     }
 
@@ -135,7 +140,8 @@ val appModule = module {
         com.florent.location.data.sync.IndexationEventSyncRepository(
             supabase = get(),
             indexationEventDao = get(),
-            leaseDao = get()
+            leaseDao = get(),
+            syncCursorDao = get()
         )
     }
 
