@@ -17,6 +17,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SyncRepositoryDeleteFailureTest {
@@ -36,10 +37,11 @@ class SyncRepositoryDeleteFailureTest {
             pebRating = PebRating.UNKNOWN
         )
 
-        repository.deleteDeletedHousing(entity, "user-1") {
+        val result = repository.deleteDeletedHousing(entity, "user-1") {
             throw RuntimeException("Supabase delete failed")
         }
 
+        assertTrue(result is SyncDeleteResult.Failure)
         coVerify(exactly = 0) { housingDao.deleteById(any()) }
     }
 
@@ -58,10 +60,11 @@ class SyncRepositoryDeleteFailureTest {
             dirty = true
         )
 
-        repository.deleteDeletedTenant(entity, "user-1") {
+        val result = repository.deleteDeletedTenant(entity, "user-1") {
             throw RuntimeException("Supabase delete failed")
         }
 
+        assertTrue(result is SyncDeleteResult.Failure)
         coVerify(exactly = 0) { tenantDao.deleteById(any()) }
     }
 
@@ -85,10 +88,11 @@ class SyncRepositoryDeleteFailureTest {
             dirty = true
         )
 
-        repository.deleteDeletedLease(entity, "user-1") {
+        val result = repository.deleteDeletedLease(entity, "user-1") {
             throw RuntimeException("Supabase delete failed")
         }
 
+        assertTrue(result is SyncDeleteResult.Failure)
         coVerify(exactly = 0) { leaseDao.hardDeleteByRemoteId(any()) }
     }
 
@@ -109,10 +113,11 @@ class SyncRepositoryDeleteFailureTest {
             dirty = true
         )
 
-        repository.deleteDeletedKey(entity, "user-1") {
+        val result = repository.deleteDeletedKey(entity, "user-1") {
             throw RuntimeException("Supabase delete failed")
         }
 
+        assertTrue(result is SyncDeleteResult.Failure)
         coVerify(exactly = 0) { keyDao.deleteById(any()) }
     }
 
@@ -135,10 +140,11 @@ class SyncRepositoryDeleteFailureTest {
             dirty = true
         )
 
-        repository.deleteDeletedIndexationEvent(entity, "user-1") {
+        val result = repository.deleteDeletedIndexationEvent(entity, "user-1") {
             throw RuntimeException("Supabase delete failed")
         }
 
+        assertTrue(result is SyncDeleteResult.Failure)
         coVerify(exactly = 0) { indexationEventDao.hardDeleteByRemoteId(any()) }
     }
 }

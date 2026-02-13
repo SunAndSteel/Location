@@ -25,18 +25,25 @@ class LeaseSyncRepository(
 
     suspend fun syncOnce() = mutex.withLock {
         val startedAt = System.currentTimeMillis()
-        pushDirty()
+        val deleteFailures = pushDirty()
+        if (deleteFailures.isNotEmpty()) {
+            throw SyncDeleteFailuresException(deleteFailures)
+        }
         pullUpdates()
         Log.i("LeaseSyncRepository", "syncOnce completed durationMs=${System.currentTimeMillis() - startedAt}")
     }
 
-    private suspend fun pushDirty() {
-        val user = supabase.auth.currentUserOrNull() ?: return
+    private suspend fun pushDirty(): List<SyncDeleteResult.Failure> {
+        val user = supabase.auth.currentUserOrNull() ?: return emptyList()
         val dirty = leaseDao.getDirty()
-        if (dirty.isEmpty()) return
+        if (dirty.isEmpty()) return emptyList()
 
+        val deleteFailures = mutableListOf<SyncDeleteResult.Failure>()
         dirty.filter { it.isDeleted }.forEach { entity ->
-            deleteDeletedLease(entity, user.id)
+            when (val result = deleteDeletedLease(entity, user.id)) {
+                SyncDeleteResult.Success -> Unit
+                is SyncDeleteResult.Failure -> deleteFailures += result
+            }
         }
 
         val payload = dirty.filterNot { it.isDeleted }.mapNotNull { entity ->
@@ -55,6 +62,8 @@ class LeaseSyncRepository(
             }
             payload.forEach { leaseDao.markClean(it.first.remoteId, null) }
         }
+
+        return deleteFailures
     }
 
 
@@ -65,12 +74,18 @@ class LeaseSyncRepository(
                 filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
             }
         }
-    }) {
-        try {
+    }): SyncDeleteResult {
+        return try {
             remoteDelete()
             leaseDao.hardDeleteByRemoteId(entity.remoteId)
+            SyncDeleteResult.Success
         } catch (e: Exception) {
             Log.e("LeaseSyncRepository", "Failed to delete remote lease ${entity.remoteId}", e)
+            SyncDeleteResult.Failure(
+                entityType = "Lease",
+                remoteId = entity.remoteId,
+                reason = e.message ?: "Unknown delete error"
+            )
         }
     }
 

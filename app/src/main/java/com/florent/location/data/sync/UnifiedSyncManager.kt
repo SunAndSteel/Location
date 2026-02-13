@@ -68,6 +68,17 @@ class UnifiedSyncManager(
         return supabase.auth.currentUserOrNull()
     }
 
+    private fun collectSyncError(prefix: String, throwable: Exception): List<String> {
+        return if (throwable is SyncDeleteFailuresException) {
+            throwable.failures.map { failure ->
+                "$prefix delete failed for ${failure.entityType}(${failure.remoteId}): ${failure.reason}"
+            }
+        } else {
+            listOf("$prefix failed: ${throwable.message ?: "Unknown error"}")
+        }
+    }
+
+
     /**
      * Synchronise toutes les entités dans le bon ordre
      */
@@ -82,7 +93,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Tenants synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Tenant sync failed: ${e.message}", e)
-            errors += "Tenant sync failed: ${e.message ?: "Unknown error"}"
+            errors += collectSyncError("Tenant sync", e)
         }
 
         try {
@@ -91,7 +102,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Housings synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Housing sync failed: ${e.message}", e)
-            errors += "Housing sync failed: ${e.message ?: "Unknown error"}"
+            errors += collectSyncError("Housing sync", e)
         }
 
         // Étape 2 : Synchroniser les leases (dépend de tenants + housings)
@@ -101,7 +112,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Leases synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Lease sync failed: ${e.message}", e)
-            errors += "Lease sync failed: ${e.message ?: "Unknown error"}"
+            errors += collectSyncError("Lease sync", e)
         }
 
         // Étape 3 : Synchroniser les keys (dépend de housings)
@@ -111,7 +122,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Keys synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Key sync failed: ${e.message}", e)
-            errors += "Key sync failed: ${e.message ?: "Unknown error"}"
+            errors += collectSyncError("Key sync", e)
         }
 
         // Étape 4 : Synchroniser les indexation events (dépend de leases)
@@ -121,7 +132,7 @@ class UnifiedSyncManager(
             Log.d("UnifiedSyncManager", "Indexation events synced successfully")
         } catch (e: Exception) {
             Log.e("UnifiedSyncManager", "Indexation event sync failed: ${e.message}", e)
-            errors += "Indexation event sync failed: ${e.message ?: "Unknown error"}"
+            errors += collectSyncError("Indexation event sync", e)
         }
 
         Log.d("UnifiedSyncManager", "Full sync completed")
