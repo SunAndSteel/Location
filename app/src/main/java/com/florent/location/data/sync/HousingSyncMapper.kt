@@ -42,7 +42,7 @@ fun HousingRow.toEntityPreservingLocalId(
 ): HousingEntity {
     val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
     val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
-    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
+    val serverUpdatedAtMillisCursor = parseServerEpochMillis(updatedAt)
 
     return HousingEntity(
         id = localId,
@@ -70,6 +70,6 @@ fun HousingRow.toEntityPreservingLocalId(
         buildingLabel = buildingLabel,
         internalNote = internalNote,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
+        serverUpdatedAtEpochSeconds = serverUpdatedAtMillisCursor
     )
 }

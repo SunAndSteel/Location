@@ -80,8 +80,8 @@ interface HousingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<HousingEntity>)
 
-    @Query("UPDATE housings SET dirty = 0, serverUpdatedAtEpochSeconds = :serverUpdatedAt WHERE remoteId = :remoteId")
-    suspend fun markClean(remoteId: String, serverUpdatedAt: Long)
+    @Query("UPDATE housings SET dirty = 0, serverUpdatedAtEpochSeconds = COALESCE(:serverUpdatedAt, serverUpdatedAtEpochSeconds) WHERE remoteId = :remoteId")
+    suspend fun markClean(remoteId: String, serverUpdatedAt: Long?)
 
     @Query("SELECT serverUpdatedAtEpochSeconds FROM housings ORDER BY serverUpdatedAtEpochSeconds DESC LIMIT 1")
     suspend fun getMaxServerUpdatedAtOrNull(): Long?
