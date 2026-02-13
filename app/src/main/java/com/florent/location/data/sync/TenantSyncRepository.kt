@@ -1,6 +1,7 @@
 package com.florent.location.data.sync
 
 import android.util.Log
+import com.florent.location.data.db.entity.TenantEntity
 import com.florent.location.data.db.dao.TenantDao
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -28,16 +29,7 @@ class TenantSyncRepository(
 
         val deleted = dirty.filter { it.isDeleted }
         deleted.forEach { entity ->
-            try {
-                supabase.from("tenants").delete {
-                    filter {
-                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
-                    }
-                }
-            } finally {
-                tenantDao.deleteById(entity.id)
-            }
+            deleteDeletedTenant(entity, user.id)
         }
 
         val payload = dirty.filterNot { it.isDeleted }.map { it.toRow(userId = user.id) }
@@ -46,6 +38,23 @@ class TenantSyncRepository(
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+        }
+    }
+
+
+    internal suspend fun deleteDeletedTenant(entity: TenantEntity, userId: String, remoteDelete: suspend () -> Unit = {
+        supabase.from("tenants").delete {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = userId)
+                filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+            }
+        }
+    }) {
+        try {
+            remoteDelete()
+            tenantDao.deleteById(entity.id)
+        } catch (e: Exception) {
+            Log.e("TenantSyncRepository", "Failed to delete remote tenant ${entity.remoteId}", e)
         }
     }
 

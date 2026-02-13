@@ -1,5 +1,7 @@
 package com.florent.location.data.sync
 
+import android.util.Log
+import com.florent.location.data.db.entity.HousingEntity
 import com.florent.location.data.db.dao.HousingDao
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -26,16 +28,7 @@ class HousingSyncRepository(
         if (dirty.isEmpty()) return
 
         dirty.filter { it.isDeleted }.forEach { entity ->
-            try {
-                supabase.from("housings").delete {
-                    filter {
-                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                        filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
-                    }
-                }
-            } finally {
-                housingDao.deleteById(entity.id)
-            }
+            deleteDeletedHousing(entity, user.id)
         }
 
         val payload = dirty.filterNot { it.isDeleted }.map { it.toRow(userId = user.id) }
@@ -44,6 +37,23 @@ class HousingSyncRepository(
                 onConflict = "remote_id"
                 ignoreDuplicates = false
             }
+        }
+    }
+
+
+    internal suspend fun deleteDeletedHousing(entity: HousingEntity, userId: String, remoteDelete: suspend () -> Unit = {
+        supabase.from("housings").delete {
+            filter {
+                filter(column = "user_id", operator = FilterOperator.EQ, value = userId)
+                filter(column = "remote_id", operator = FilterOperator.EQ, value = entity.remoteId)
+            }
+        }
+    }) {
+        try {
+            remoteDelete()
+            housingDao.deleteById(entity.id)
+        } catch (e: Exception) {
+            Log.e("HousingSyncRepository", "Failed to delete remote housing ${entity.remoteId}", e)
         }
     }
 
