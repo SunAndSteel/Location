@@ -1,7 +1,6 @@
 package com.florent.location.data.sync
 
 import com.florent.location.data.db.entity.*
-import com.florent.location.domain.model.TenantStatus
 import java.time.Instant
 
 // ============================================================================
@@ -21,10 +20,12 @@ fun TenantEntity.toRow(userId: String): TenantRow = TenantRow(
 
 fun TenantRow.toEntityPreservingLocalId(
     localId: Long,
+    existingCreatedAtMillis: Long? = null,
     nowMillis: Long = System.currentTimeMillis()
 ): TenantEntity {
-    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
-    val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
+    val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
+    val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
+    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
 
     return TenantEntity(
         id = localId,
@@ -34,10 +35,10 @@ fun TenantRow.toEntityPreservingLocalId(
         phone = phone,
         email = email,
         status = status,
-        createdAt = serverCreatedAt ?: nowMillis,
-        updatedAt = nowMillis,
+        createdAt = serverCreatedAtMillis ?: existingCreatedAtMillis ?: nowMillis,
+        updatedAt = serverUpdatedAtMillis ?: nowMillis,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdated
+        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
     )
 }
 
@@ -45,12 +46,6 @@ fun TenantRow.toEntityPreservingLocalId(
 // LEASE MAPPERS
 // ============================================================================
 
-/**
- * Convertit une LeaseEntity + les remote IDs du housing et tenant en LeaseRow
- *
- * NOTE: Cette fonction nécessite que vous ayez accès aux remote_id du housing et tenant.
- * Vous devrez les récupérer depuis les DAOs dans le repository.
- */
 fun LeaseEntity.toRow(
     userId: String,
     housingRemoteId: String,
@@ -76,20 +71,16 @@ fun LeaseEntity.toRow(
     createdAt = Instant.ofEpochMilli(createdAt).toString()
 )
 
-/**
- * Convertit un LeaseRow en LeaseEntity
- *
- * NOTE: Cette fonction nécessite que vous convertissiez les remote_id en local ID.
- * Vous devrez les récupérer depuis les DAOs dans le repository.
- */
 fun LeaseRow.toEntityPreservingLocalId(
     localId: Long,
     housingLocalId: Long,
     tenantLocalId: Long,
+    existingCreatedAtMillis: Long? = null,
     nowMillis: Long = System.currentTimeMillis()
 ): LeaseEntity {
-    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
-    val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
+    val serverCreatedAtMillis = parseServerEpochMillis(createdAt)
+    val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
+    val serverUpdatedAtSeconds = parseServerEpochSeconds(updatedAt)
 
     return LeaseEntity(
         id = localId,
@@ -109,10 +100,10 @@ fun LeaseRow.toEntityPreservingLocalId(
         housingRentCentsSnapshot = housingRentCentsSnapshot,
         housingChargesCentsSnapshot = housingChargesCentsSnapshot,
         housingDepositCentsSnapshot = housingDepositCentsSnapshot,
-        createdAt = serverCreatedAt ?: nowMillis,
-        updatedAt = nowMillis,
+        createdAt = serverCreatedAtMillis ?: existingCreatedAtMillis ?: nowMillis,
+        updatedAt = serverUpdatedAtMillis ?: nowMillis,
         dirty = false,
-        serverUpdatedAtEpochSeconds = serverUpdated
+        serverUpdatedAtEpochSeconds = serverUpdatedAtSeconds
     )
 }
 
@@ -138,8 +129,9 @@ fun KeyRow.toEntityPreservingLocalId(
     housingLocalId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): KeyEntity {
-    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
-    val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
+    val serverCreatedAt = parseServerEpochMillis(createdAt)
+    val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
+    val serverUpdated = parseServerEpochSeconds(updatedAt)
 
     return KeyEntity(
         id = localId,
@@ -149,7 +141,7 @@ fun KeyRow.toEntityPreservingLocalId(
         deviceLabel = deviceLabel,
         handedOverEpochDay = handedOverEpochDay,
         createdAt = serverCreatedAt ?: nowMillis,
-        updatedAt = nowMillis,
+        updatedAt = serverUpdatedAtMillis ?: nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
     )
@@ -178,8 +170,9 @@ fun IndexationEventRow.toEntityPreservingLocalId(
     leaseLocalId: Long,
     nowMillis: Long = System.currentTimeMillis()
 ): IndexationEventEntity {
-    val serverCreatedAt = createdAt?.let { Instant.parse(it).toEpochMilli() }
-    val serverUpdated = updatedAt?.let { Instant.parse(it).epochSecond }
+    val serverCreatedAt = parseServerEpochMillis(createdAt)
+    val serverUpdatedAtMillis = parseServerEpochMillis(updatedAt)
+    val serverUpdated = parseServerEpochSeconds(updatedAt)
 
     return IndexationEventEntity(
         id = localId,
@@ -190,7 +183,7 @@ fun IndexationEventRow.toEntityPreservingLocalId(
         indexPercent = indexPercent,
         newRentCents = newRentCents,
         createdAt = serverCreatedAt ?: nowMillis,
-        updatedAt = nowMillis,
+        updatedAt = serverUpdatedAtMillis ?: nowMillis,
         dirty = false,
         serverUpdatedAtEpochSeconds = serverUpdated
     )

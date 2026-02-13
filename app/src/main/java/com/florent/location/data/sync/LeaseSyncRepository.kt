@@ -123,7 +123,8 @@ class LeaseSyncRepository(
                 row.toEntityPreservingLocalId(
                     localId = existing?.id ?: 0L,
                     housingLocalId = housing.id,
-                    tenantLocalId = tenant.id
+                    tenantLocalId = tenant.id,
+                    existingCreatedAtMillis = existing?.createdAt
                 )
             }
 

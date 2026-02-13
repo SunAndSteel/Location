@@ -91,7 +91,10 @@ class TenantSyncRepository(
 
             val entities = rows.map { row ->
                 val existing = tenantDao.getByRemoteId(row.remoteId)
-                row.toEntityPreservingLocalId(localId = existing?.id ?: 0L)
+                row.toEntityPreservingLocalId(
+                    localId = existing?.id ?: 0L,
+                    existingCreatedAtMillis = existing?.createdAt
+                )
             }
 
             tenantDao.upsertAll(entities)
