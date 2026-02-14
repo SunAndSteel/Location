@@ -80,7 +80,7 @@ class TenantSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val cursor = syncCursorDao.getByKey("tenants")?.toCompositeCursor()
+        val cursor = syncCursorDao.getByKey(user.id, "tenants")?.toCompositeCursor()
         val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "TenantSyncRepository", pageLabel = "pullUpdates") { from, to ->
@@ -106,7 +106,7 @@ class TenantSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { tenantDao.markClean(e.remoteId, it) } }
             entities.maxCompositeCursorOrNull { e ->
                 e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity("tenants")) }
+            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "tenants")) }
         }
 
         var hardDeleted = 0

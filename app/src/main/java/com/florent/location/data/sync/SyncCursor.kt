@@ -10,8 +10,8 @@ internal data class CompositeSyncCursor(
 internal fun SyncCursorEntity.toCompositeCursor(): CompositeSyncCursor =
     CompositeSyncCursor(updatedAtEpochMillis = updatedAtEpochMillis, remoteId = remoteId)
 
-internal fun CompositeSyncCursor.toEntity(syncKey: String): SyncCursorEntity =
-    SyncCursorEntity(syncKey = syncKey, updatedAtEpochMillis = updatedAtEpochMillis, remoteId = remoteId)
+internal fun CompositeSyncCursor.toEntity(userId: String, syncKey: String): SyncCursorEntity =
+    SyncCursorEntity(userId = userId, syncKey = syncKey, updatedAtEpochMillis = updatedAtEpochMillis, remoteId = remoteId)
 
 internal fun isAfterCursor(updatedAtIso: String?, remoteId: String, cursor: CompositeSyncCursor?): Boolean {
     if (cursor == null) return true

@@ -1,12 +1,11 @@
 package com.florent.location.data.db.entity
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "sync_cursors")
+@Entity(tableName = "sync_cursors", primaryKeys = ["userId", "syncKey"])
 data class SyncCursorEntity(
-    @PrimaryKey val syncKey: String,
+    val userId: String,
+    val syncKey: String,
     val updatedAtEpochMillis: Long,
     val remoteId: String
 )
-
