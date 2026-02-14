@@ -101,6 +101,7 @@ class KeySyncRepository(
                 range(from.toLong(), to.toLong())
             }.decodeList<KeyRow>()
         }
+        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
         val rows = updatesResult.rows
             .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
             .sortedWith(compareBy<KeyRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
@@ -149,7 +150,7 @@ class KeySyncRepository(
 
         Log.i(
             "KeySyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }
@@ -242,6 +243,7 @@ class IndexationEventSyncRepository(
                 range(from.toLong(), to.toLong())
             }.decodeList<IndexationEventRow>()
         }
+        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
         val rows = updatesResult.rows
             .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
             .sortedWith(compareBy<IndexationEventRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
@@ -290,7 +292,7 @@ class IndexationEventSyncRepository(
 
         Log.i(
             "IndexationEventSyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }

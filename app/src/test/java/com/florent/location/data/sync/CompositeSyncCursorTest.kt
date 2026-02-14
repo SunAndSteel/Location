@@ -19,6 +19,28 @@ class CompositeSyncCursorTest {
         assertTrue(isAfterCursor("2024-01-02T11:30:00Z", "remote-003", cursor))
     }
 
+
+
+    @Test
+    fun `isAfterCursor applies row conservatively when updated_at is null`() {
+        val cursor = CompositeSyncCursor(
+            updatedAtEpochMillis = 1_704_195_000_000,
+            remoteId = "remote-002"
+        )
+
+        assertTrue(isAfterCursor(null, "remote-001", cursor))
+    }
+
+    @Test
+    fun `isAfterCursor applies row conservatively when updated_at is malformed`() {
+        val cursor = CompositeSyncCursor(
+            updatedAtEpochMillis = 1_704_195_000_000,
+            remoteId = "remote-002"
+        )
+
+        assertTrue(isAfterCursor("not-a-timestamp", "remote-001", cursor))
+    }
+
     @Test
     fun `maxCompositeCursorOrNull picks max remote id for identical updated_at`() {
         val rows = listOf(
