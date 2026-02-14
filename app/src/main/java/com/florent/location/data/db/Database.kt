@@ -28,7 +28,7 @@ import com.florent.location.data.db.entity.TenantEntity
         AuthSessionEntity::class,
         SyncCursorEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(PebRatingConverters::class)

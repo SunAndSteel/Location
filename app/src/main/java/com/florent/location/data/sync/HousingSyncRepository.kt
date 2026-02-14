@@ -80,7 +80,7 @@ class HousingSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val cursor = syncCursorDao.getByKey("housings")?.toCompositeCursor()
+        val cursor = syncCursorDao.getByKey(user.id, "housings")?.toCompositeCursor()
         val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
@@ -106,7 +106,7 @@ class HousingSyncRepository(
             entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
             entities.maxCompositeCursorOrNull { e ->
                 e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity("housings")) }
+            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "housings")) }
         }
 
         var hardDeleted = 0

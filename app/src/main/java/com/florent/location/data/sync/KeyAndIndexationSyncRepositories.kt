@@ -87,7 +87,7 @@ class KeySyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val cursor = syncCursorDao.getByKey("keys")?.toCompositeCursor()
+        val cursor = syncCursorDao.getByKey(user.id, "keys")?.toCompositeCursor()
         val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "KeySyncRepository", pageLabel = "pullUpdates") { from, to ->
@@ -126,7 +126,7 @@ class KeySyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { keyDao.markClean(e.remoteId, it) } }
             resolution.mapped.maxCompositeCursorOrNull { e ->
                 e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity("keys")) }
+            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "keys")) }
         }
 
         var hardDeleted = 0
@@ -228,7 +228,7 @@ class IndexationEventSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val cursor = syncCursorDao.getByKey("indexation_events")?.toCompositeCursor()
+        val cursor = syncCursorDao.getByKey(user.id, "indexation_events")?.toCompositeCursor()
         val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "IndexationEventSyncRepository", pageLabel = "pullUpdates") { from, to ->
@@ -267,7 +267,7 @@ class IndexationEventSyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { indexationEventDao.markClean(e.remoteId, it) } }
             resolution.mapped.maxCompositeCursorOrNull { e ->
                 e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity("indexation_events")) }
+            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "indexation_events")) }
         }
 
         var hardDeleted = 0

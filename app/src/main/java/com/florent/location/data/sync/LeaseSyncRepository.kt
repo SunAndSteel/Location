@@ -91,7 +91,7 @@ class LeaseSyncRepository(
 
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
-        val cursor = syncCursorDao.getByKey("leases")?.toCompositeCursor()
+        val cursor = syncCursorDao.getByKey(user.id, "leases")?.toCompositeCursor()
         val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
 
         val updatesResult = fetchAllPagedWithMetrics(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
@@ -131,7 +131,7 @@ class LeaseSyncRepository(
             resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
             resolution.mapped.maxCompositeCursorOrNull { e ->
                 e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity("leases")) }
+            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "leases")) }
         }
 
         var hardDeleted = 0

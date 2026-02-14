@@ -52,9 +52,37 @@ object DatabaseMigrations {
         }
     }
 
+
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `sync_cursors_new` (
+                    `userId` TEXT NOT NULL,
+                    `syncKey` TEXT NOT NULL,
+                    `updatedAtEpochMillis` INTEGER NOT NULL,
+                    `remoteId` TEXT NOT NULL,
+                    PRIMARY KEY(`userId`, `syncKey`)
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT INTO `sync_cursors_new` (`userId`, `syncKey`, `updatedAtEpochMillis`, `remoteId`)
+                SELECT '', `syncKey`, `updatedAtEpochMillis`, `remoteId`
+                FROM `sync_cursors`
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE `sync_cursors`")
+            db.execSQL("ALTER TABLE `sync_cursors_new` RENAME TO `sync_cursors`")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
+        MIGRATION_4_5,
     )
 }
