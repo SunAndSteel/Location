@@ -105,6 +105,7 @@ class LeaseSyncRepository(
                 range(from.toLong(), to.toLong())
             }.decodeList<LeaseRow>()
         }
+        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
         val rows = updatesResult.rows
             .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
             .sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
@@ -154,7 +155,7 @@ class LeaseSyncRepository(
 
         Log.i(
             "LeaseSyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }

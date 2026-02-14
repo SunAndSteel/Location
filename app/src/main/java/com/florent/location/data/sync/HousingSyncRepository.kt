@@ -95,6 +95,7 @@ class HousingSyncRepository(
             }
                 .decodeList<HousingRow>()
         }
+        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
         val rows = updatesResult.rows.filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
 
         val entities = rows.map { row ->
@@ -129,7 +130,7 @@ class HousingSyncRepository(
 
         Log.i(
             "HousingSyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }
