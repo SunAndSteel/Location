@@ -81,34 +81,41 @@ class HousingSyncRepository(
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
         val cursor = syncCursorDao.getByKey(user.id, "housings")?.toCompositeCursor()
-        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
-
-        val updatesResult = fetchAllPagedWithMetrics(tag = "HousingSyncRepository", pageLabel = "pullUpdates") { from, to ->
-            supabase.from("housings").select {
-                filter {
-                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
+        var invalidUpdatedAtCount = 0
+        val updatesResult = processKeysetPagedWithMetrics(
+            tag = "HousingSyncRepository",
+            pageLabel = "pullUpdates",
+            initialCursor = cursor,
+            fetchPage = { updatedAtFromInclusiveIso, limit ->
+                supabase.from("housings").select {
+                    filter {
+                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                        if (updatedAtFromInclusiveIso != null) {
+                            filter(column = "updated_at", operator = FilterOperator.GTE, value = updatedAtFromInclusiveIso)
+                        }
+                    }
+                    order(column = "updated_at", order = Order.ASCENDING)
+                    order(column = "remote_id", order = Order.ASCENDING)
+                    limit(limit.toLong())
+                }.decodeList<HousingRow>()
+            },
+            extractUpdatedAt = { it.updatedAt },
+            extractRemoteId = { it.remoteId },
+            processPage = { rows ->
+                invalidUpdatedAtCount += rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
+                val entities = rows.map { row ->
+                    val existing = housingDao.getByRemoteId(row.remoteId)
+                    row.toEntityPreservingLocalId(localId = existing?.id ?: 0L, existingCreatedAtMillis = existing?.createdAt)
                 }
-                order(column = "updated_at", order = Order.ASCENDING)
-                order(column = "remote_id", order = Order.ASCENDING)
-                range(from.toLong(), to.toLong())
+                if (entities.isNotEmpty()) {
+                    housingDao.upsertAll(entities)
+                    entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
+                }
+            },
+            onCursorAdvanced = { nextCursor ->
+                syncCursorDao.upsert(nextCursor.toEntity(user.id, "housings"))
             }
-                .decodeList<HousingRow>()
-        }
-        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
-        val rows = updatesResult.rows.filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
-
-        val entities = rows.map { row ->
-            val existing = housingDao.getByRemoteId(row.remoteId)
-            row.toEntityPreservingLocalId(localId = existing?.id ?: 0L, existingCreatedAtMillis = existing?.createdAt)
-        }
-        if (entities.isNotEmpty()) {
-            housingDao.upsertAll(entities)
-            entities.forEach { e -> e.serverUpdatedAtEpochMillis?.let { housingDao.markClean(e.remoteId, it) } }
-            entities.maxCompositeCursorOrNull { e ->
-                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "housings")) }
-        }
+        )
 
         var hardDeleted = 0
         val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("HousingSyncRepository")
@@ -130,7 +137,7 @@ class HousingSyncRepository(
 
         Log.i(
             "HousingSyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${updatesResult.processedCount} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }
