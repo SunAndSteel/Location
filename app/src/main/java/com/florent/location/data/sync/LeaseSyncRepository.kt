@@ -92,48 +92,56 @@ class LeaseSyncRepository(
     private suspend fun pullUpdates() {
         val user = supabase.auth.currentUserOrNull() ?: return
         val cursor = syncCursorDao.getByKey(user.id, "leases")?.toCompositeCursor()
-        val sinceIso = cursor?.let { toServerCursorIso(it.updatedAtEpochMillis) }
+        var invalidUpdatedAtCount = 0
 
-        val updatesResult = fetchAllPagedWithMetrics(tag = "LeaseSyncRepository", pageLabel = "pullUpdates") { from, to ->
-            supabase.from("leases").select {
-                filter {
-                    filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
-                    if (sinceIso != null) filter(column = "updated_at", operator = FilterOperator.GTE, value = sinceIso)
+        val updatesResult = processKeysetPagedWithMetrics(
+            tag = "LeaseSyncRepository",
+            pageLabel = "pullUpdates",
+            initialCursor = cursor,
+            fetchPage = { updatedAtFromInclusiveIso, limit ->
+                supabase.from("leases").select {
+                    filter {
+                        filter(column = "user_id", operator = FilterOperator.EQ, value = user.id)
+                        if (updatedAtFromInclusiveIso != null) {
+                            filter(column = "updated_at", operator = FilterOperator.GTE, value = updatedAtFromInclusiveIso)
+                        }
+                    }
+                    order(column = "updated_at", order = Order.ASCENDING)
+                    order(column = "remote_id", order = Order.ASCENDING)
+                    limit(limit.toLong())
+                }.decodeList<LeaseRow>()
+            },
+            extractUpdatedAt = { it.updatedAt },
+            extractRemoteId = { it.remoteId },
+            processPage = { rows ->
+                invalidUpdatedAtCount += rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
+                val orderedRows = rows.sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
+                val resolution = mapRowsStoppingAtDependencyGap(orderedRows,
+                    mapRow = { row ->
+                        val housing = housingDao.getByRemoteId(row.housingRemoteId)
+                        val tenant = tenantDao.getByRemoteId(row.tenantRemoteId)
+                        if (housing == null || tenant == null) {
+                            null
+                        } else {
+                            val existing = leaseDao.getByRemoteId(row.remoteId)
+                            row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id, tenant.id, existing?.createdAt)
+                        }
+                    }, onMissingDependency = { row ->
+                        val missingFks = buildList {
+                            if (housingDao.getByRemoteId(row.housingRemoteId) == null) add("housing_remote_id=${row.housingRemoteId}")
+                            if (tenantDao.getByRemoteId(row.tenantRemoteId) == null) add("tenant_remote_id=${row.tenantRemoteId}")
+                        }.joinToString(",")
+                        Log.w("LeaseSyncRepository", "Stopping incremental lease pull on dependency gap: remote_id=${row.remoteId}, missing=$missingFks")
+                    })
+                if (resolution.mapped.isNotEmpty()) {
+                    leaseDao.upsertAll(resolution.mapped)
+                    resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
                 }
-                order(column = "updated_at", order = Order.ASCENDING)
-                order(column = "remote_id", order = Order.ASCENDING)
-                range(from.toLong(), to.toLong())
-            }.decodeList<LeaseRow>()
-        }
-        val invalidUpdatedAtCount = updatesResult.rows.count { row -> hasInvalidUpdatedAt(row.updatedAt) }
-        val rows = updatesResult.rows
-            .filter { row -> isAfterCursor(row.updatedAt, row.remoteId, cursor) }
-            .sortedWith(compareBy<LeaseRow> { parseServerEpochMillis(it.updatedAt) ?: Long.MAX_VALUE }.thenBy { it.remoteId })
-
-        val resolution = mapRowsStoppingAtDependencyGap(rows,
-            mapRow = { row ->
-            val housing = housingDao.getByRemoteId(row.housingRemoteId)
-            val tenant = tenantDao.getByRemoteId(row.tenantRemoteId)
-            if (housing == null || tenant == null) {
-                null
-            } else {
-                val existing = leaseDao.getByRemoteId(row.remoteId)
-                row.toEntityPreservingLocalId(existing?.id ?: 0L, housing.id, tenant.id, existing?.createdAt)
+            },
+            onCursorAdvanced = { nextCursor ->
+                syncCursorDao.upsert(nextCursor.toEntity(user.id, "leases"))
             }
-        }, onMissingDependency = { row ->
-            val missingFks = buildList {
-                if (housingDao.getByRemoteId(row.housingRemoteId) == null) add("housing_remote_id=${row.housingRemoteId}")
-                if (tenantDao.getByRemoteId(row.tenantRemoteId) == null) add("tenant_remote_id=${row.tenantRemoteId}")
-            }.joinToString(",")
-            Log.w("LeaseSyncRepository", "Stopping incremental lease pull on dependency gap: remote_id=${row.remoteId}, missing=$missingFks")
-        })
-        if (resolution.mapped.isNotEmpty()) {
-            leaseDao.upsertAll(resolution.mapped)
-            resolution.mapped.forEach { e -> e.serverUpdatedAtEpochMillis?.let { leaseDao.markClean(e.remoteId, it) } }
-            resolution.mapped.maxCompositeCursorOrNull { e ->
-                e.serverUpdatedAtEpochMillis?.let { CompositeSyncCursor(updatedAtEpochMillis = it, remoteId = e.remoteId) }
-            }?.let { syncCursorDao.upsert(it.toEntity(user.id, "leases")) }
-        }
+        )
 
         var hardDeleted = 0
         val shouldRunFullReconciliation = SyncDeletionReconciliation.policy.shouldRunFullReconciliation("LeaseSyncRepository")
@@ -155,7 +163,7 @@ class LeaseSyncRepository(
 
         Log.i(
             "LeaseSyncRepository",
-            "pullUpdates completed updatedVolume=${rows.size} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
+            "pullUpdates completed updatedVolume=${updatesResult.processedCount} invalidUpdatedAtCount=$invalidUpdatedAtCount updatedPages=${updatesResult.pageCount} updatedDurationMs=${updatesResult.durationMs} hardDeleted=$hardDeleted fullReconciliation=$shouldRunFullReconciliation"
         )
     }
 }
