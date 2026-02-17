@@ -28,6 +28,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,6 +36,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -65,6 +67,7 @@ import kotlinx.coroutines.delay
 fun HousingEditScreen(
     viewModel: HousingEditViewModel,
     onSaved: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -72,6 +75,7 @@ fun HousingEditScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onSaved = onSaved,
+        onCancel = onCancel,
         modifier = modifier
     )
 }
@@ -82,6 +86,7 @@ private fun HousingEditContent(
     state: HousingEditUiState,
     onEvent: (HousingEditUiEvent) -> Unit,
     onSaved: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Navigation automatique après sauvegarde
@@ -111,6 +116,11 @@ private fun HousingEditContent(
     ScreenScaffold(
         title = if (state.housingId == null) "Nouveau logement" else "Modifier le logement",
         contentMaxWidth = UiTokens.ContentMaxWidthMedium,
+        navigationIcon = {
+            IconButton(onClick = onCancel) {
+                Icon(imageVector = Icons.Outlined.Close, contentDescription = "Fermer")
+            }
+        },
         modifier = modifier
     ) {
         if (state.isLoading) {

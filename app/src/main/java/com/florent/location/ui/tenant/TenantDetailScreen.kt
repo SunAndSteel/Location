@@ -15,6 +15,7 @@ fun TenantDetailScreen(
     viewModel: TenantDetailViewModel,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -26,6 +27,7 @@ fun TenantDetailScreen(
         onEdit = onEdit,
         onCreateLease = onCreateLease,
         onShowActions = { showActionsSheet = true },
+        onNavigateBack = onNavigateBack,
         modifier = modifier
     )
 

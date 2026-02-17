@@ -19,10 +19,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -49,6 +52,7 @@ import com.florent.location.domain.model.TenantStatus
 fun TenantEditScreen(
     viewModel: TenantEditViewModel,
     onSaved: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -56,6 +60,7 @@ fun TenantEditScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onSaved = onSaved,
+        onCancel = onCancel,
         modifier = modifier
     )
 }
@@ -65,6 +70,7 @@ private fun TenantEditContent(
     state: TenantEditUiState,
     onEvent: (TenantEditUiEvent) -> Unit,
     onSaved: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(state.isSaved) {
@@ -76,6 +82,14 @@ private fun TenantEditContent(
     ScreenScaffold(
         title = if (state.tenantId == null) "Nouveau locataire" else "Modifier le locataire",
         contentMaxWidth = UiTokens.ContentMaxWidthMedium,
+        navigationIcon = {
+            IconButton(onClick = onCancel) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = "Fermer"
+                )
+            }
+        },
         modifier = modifier
     ) {
         if (state.isLoading) {
@@ -276,7 +290,7 @@ private fun FormSection(
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
-                androidx.compose.material3.Icon(
+                Icon(
                     imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = "Section complétée",
                     tint = MaterialTheme.colorScheme.primary
