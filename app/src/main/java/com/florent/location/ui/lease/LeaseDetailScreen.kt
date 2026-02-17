@@ -13,6 +13,7 @@ import com.florent.location.ui.lease.components.LeaseDetailContent
 @Composable
 fun LeaseDetailScreen(
     viewModel: LeaseDetailViewModel,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -22,6 +23,7 @@ fun LeaseDetailScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onShowActions = { showActionsSheet = true },
+        onNavigateBack = onNavigateBack,
         modifier = modifier
     )
 

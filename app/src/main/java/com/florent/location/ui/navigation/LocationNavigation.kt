@@ -358,7 +358,8 @@ private fun LocationNavGraph(
                 val viewModel: LeaseDetailViewModel =
                     koinViewModel(parameters = { parametersOf(leaseId) })
                 LeaseDetailScreen(
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -394,7 +395,8 @@ private fun LocationNavGraph(
                         }
                     },
                     onAddHousing = { navController.navigate(LocationRoutes.housingEdit()) },
-                    onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
+                    onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) },
+                    onCancel = { navController.popBackStack() }
                 )
             }
         }
@@ -429,7 +431,8 @@ private fun LocationNavGraph(
                 HousingDetailScreen(
                     viewModel = viewModel,
                     onEdit = { navController.navigate(LocationRoutes.housingEdit(housingId)) },
-                    onCreateLease = { navController.navigate(LocationRoutes.bailCreate(housingId = housingId)) }
+                    onCreateLease = { navController.navigate(LocationRoutes.bailCreate(housingId = housingId)) },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -447,7 +450,8 @@ private fun LocationNavGraph(
                     koinViewModel(parameters = { parametersOf(housingId) })
                 HousingEditScreen(
                     viewModel = viewModel,
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
                 )
             }
         }
@@ -482,7 +486,8 @@ private fun LocationNavGraph(
                 TenantDetailScreen(
                     viewModel = viewModel,
                     onEdit = { navController.navigate(LocationRoutes.tenantEdit(tenantId)) },
-                    onCreateLease = { navController.navigate(LocationRoutes.bailCreate(tenantId = tenantId)) }
+                    onCreateLease = { navController.navigate(LocationRoutes.bailCreate(tenantId = tenantId)) },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -500,7 +505,8 @@ private fun LocationNavGraph(
                     koinViewModel(parameters = { parametersOf(tenantId) })
                 TenantEditScreen(
                     viewModel = viewModel,
-                    onSaved = { navController.popBackStack() }
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() }
                 )
             }
         }

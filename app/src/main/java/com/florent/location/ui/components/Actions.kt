@@ -31,6 +31,7 @@ fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentMaxWidth: Dp = UiTokens.ContentMaxWidthMedium,
     floatingActionButton: @Composable (() -> Unit)? = null,
+    navigationIcon: @Composable (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -38,6 +39,11 @@ fun ScreenScaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = title) },
+                navigationIcon = {
+                    if (navigationIcon != null) {
+                        navigationIcon()
+                    }
+                },
                 actions = actions
             )
         },

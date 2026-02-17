@@ -16,6 +16,7 @@ fun HousingDetailScreen(
     viewModel: HousingDetailViewModel,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
+    onNavigateBack: () -> Unit,
     onDeleted: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -29,6 +30,7 @@ fun HousingDetailScreen(
         onCreateLease = onCreateLease,
         onDeleteClick = { showDeleteDialog = true },
         onShowActions = { showActionsSheet = true },
+        onNavigateBack = onNavigateBack,
         modifier = modifier
     )
 

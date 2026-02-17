@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.History
@@ -38,6 +39,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -87,11 +89,17 @@ internal fun LeaseDetailContent(
     state: LeaseDetailUiState,
     onEvent: (LeaseDetailUiEvent) -> Unit,
     onShowActions: () -> Unit,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenScaffold(
         title = "Bail",
         contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "Retour")
+            }
+        },
         modifier = modifier
     ) {
         when {

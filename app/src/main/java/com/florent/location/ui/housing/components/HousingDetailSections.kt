@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HomeWork
@@ -41,6 +42,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -85,11 +87,17 @@ internal fun HousingDetailContent(
     onCreateLease: () -> Unit,
     onDeleteClick: () -> Unit,
     onShowActions: () -> Unit,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     ScreenScaffold(
         title = "Détail du logement",
         contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(imageVector = Icons.Outlined.ArrowBack, contentDescription = "Retour")
+            }
+        },
         modifier = modifier
     ) {
         when {

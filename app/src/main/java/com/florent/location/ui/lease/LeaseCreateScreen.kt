@@ -20,6 +20,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +46,7 @@ import com.florent.location.ui.components.SectionCard
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.formatCurrency
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.KeyboardArrowRight
@@ -58,6 +60,7 @@ fun LeaseCreateScreen(
     onLeaseCreated: (Long) -> Unit,
     onAddHousing: () -> Unit,
     onAddTenant: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -67,6 +70,7 @@ fun LeaseCreateScreen(
         onLeaseCreated = onLeaseCreated,
         onAddHousing = onAddHousing,
         onAddTenant = onAddTenant,
+        onCancel = onCancel,
         modifier = modifier
     )
 }
@@ -79,6 +83,7 @@ private fun LeaseCreateContent(
     onLeaseCreated: (Long) -> Unit,
     onAddHousing: () -> Unit,
     onAddTenant: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(state.isSaved, state.savedLeaseId) {
@@ -91,6 +96,11 @@ private fun LeaseCreateContent(
     ScreenScaffold(
         title = "Créer un bail",
         contentMaxWidth = UiTokens.ContentMaxWidthExpanded,
+        navigationIcon = {
+            IconButton(onClick = onCancel) {
+                Icon(imageVector = Icons.Outlined.Close, contentDescription = "Fermer")
+            }
+        },
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest)
     ) {
         if (state.isLoading) {
@@ -266,7 +276,9 @@ private fun LeaseCreateContent(
                     PrimaryActionRow(
                         primaryLabel = if (state.isSaving) "Enregistrement..." else "Créer le bail",
                         primaryEnabled = state.canSave && !state.isSaving,
-                        onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) }
+                        onPrimary = { onEvent(LeaseCreateUiEvent.SaveClicked) },
+                        secondaryLabel = "Annuler",
+                        onSecondary = onCancel
                     )
                 }
             }
