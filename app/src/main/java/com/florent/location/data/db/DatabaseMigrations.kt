@@ -20,9 +20,14 @@ object DatabaseMigrations {
         }
 
         private fun migrateServerUpdatedCursorToMillis(db: SupportSQLiteDatabase, table: String) {
-            db.execSQL(
-                "ALTER TABLE $table RENAME COLUMN serverUpdatedAtEpochSeconds TO serverUpdatedAtEpochMillis"
-            )
+            val hasSecondsColumn = db.tableHasColumn(table, "serverUpdatedAtEpochSeconds")
+            val hasMillisColumn = db.tableHasColumn(table, "serverUpdatedAtEpochMillis")
+
+            if (hasSecondsColumn && !hasMillisColumn) {
+                db.execSQL(
+                    "ALTER TABLE $table RENAME COLUMN serverUpdatedAtEpochSeconds TO serverUpdatedAtEpochMillis"
+                )
+            }
             db.execSQL(
                 """
                 UPDATE $table
@@ -33,6 +38,17 @@ object DatabaseMigrations {
                 END
                 """.trimIndent()
             )
+        }
+
+        private fun SupportSQLiteDatabase.tableHasColumn(table: String, column: String): Boolean {
+            query("PRAGMA table_info($table)").use { cursor ->
+                val columnNameIndex = cursor.getColumnIndex("name")
+                if (columnNameIndex == -1) return false
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(columnNameIndex) == column) return true
+                }
+            }
+            return false
         }
     }
 
