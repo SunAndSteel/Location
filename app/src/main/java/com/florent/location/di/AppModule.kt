@@ -217,7 +217,7 @@ val appModule = module {
     // =========================================================================
     // ViewModels - Lease
     // =========================================================================
-    viewModel { LeaseListViewModel(useCases = get()) }
+    viewModel { LeaseListViewModel(useCases = get(), housingUseCases = get(), tenantUseCases = get()) }
     viewModel {
         LeaseCreateViewModel(
             housingUseCases = get(),

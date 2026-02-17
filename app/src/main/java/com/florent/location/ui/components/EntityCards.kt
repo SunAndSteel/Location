@@ -163,6 +163,8 @@ fun HousingCard(
 @Composable
 fun LeaseCard(
     bail: Bail,
+    housingLabel: String,
+    tenantLabel: String,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -210,11 +212,11 @@ fun LeaseCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 DetailChipRow {
                     NonInteractiveChip(
-                        label = "Logement #${bail.housingId}",
+                        label = housingLabel,
                         icon = Icons.Outlined.Home
                     )
                     NonInteractiveChip(
-                        label = "Locataire #${bail.tenantId}",
+                        label = tenantLabel,
                         icon = Icons.Outlined.Person
                     )
                     NonInteractiveChip(
@@ -274,11 +276,11 @@ fun LeaseCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 DetailChipRow {
                     NonInteractiveChip(
-                        label = "Logement #${bail.housingId}",
+                        label = housingLabel,
                         icon = Icons.Outlined.Home
                     )
                     NonInteractiveChip(
-                        label = "Locataire #${bail.tenantId}",
+                        label = tenantLabel,
                         icon = Icons.Outlined.Person
                     )
                     NonInteractiveChip(
