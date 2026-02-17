@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
@@ -170,6 +171,7 @@ fun LeaseCard(
 ) {
     val isActive = bail.endDateEpochDay == null
     val statusLabel = if (isActive) "Actif" else "Terminé"
+    val leaseTitle = "$tenantLabel • $housingLabel"
     val variant = when {
         isActive -> CardVariant.Highlighted
         else -> CardVariant.Default
@@ -192,8 +194,11 @@ fun LeaseCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Bail #${bail.id}",
-                        style = MaterialTheme.typography.titleLarge
+                        text = leaseTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     StatusBadge(
                         text = statusLabel,
@@ -256,8 +261,11 @@ fun LeaseCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Bail #${bail.id}",
-                        style = MaterialTheme.typography.titleLarge
+                        text = leaseTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     StatusBadge(
                         text = statusLabel,
