@@ -12,7 +12,8 @@ data class LoginUiState(
     val email: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isLoggedIn: Boolean = false
 )
 
 sealed interface LoginUiEvent {
@@ -30,7 +31,7 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState
 
-    fun onEvent(event: LoginUiEvent, onSuccess: () -> Unit) {
+    fun onEvent(event: LoginUiEvent) {
         when (event) {
             is LoginUiEvent.EmailChanged ->
                 _uiState.value = _uiState.value.copy(email = event.value, errorMessage = null)
@@ -50,12 +51,16 @@ class LoginViewModel(
 
                 viewModelScope.launch {
                     _uiState.value = s.copy(isLoading = true, errorMessage = null)
+
                     runCatching {
                         authRepository.signIn(s.email.trim(), s.password)
                     }.onSuccess {
                         syncManager.requestSync("login", debounceMs = 0)
-                        _uiState.value = _uiState.value.copy(isLoading = false)
-                        onSuccess()
+
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isLoggedIn = true
+                        )
                     }.onFailure { t ->
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
