@@ -44,6 +44,7 @@ import com.florent.location.ui.components.EmptyDetailPane
 import com.florent.location.ui.components.WindowWidthSize
 import com.florent.location.ui.components.windowWidthSize
 import com.florent.location.ui.housing.HousingDetailScreen
+import com.florent.location.ui.housing.HousingDetailTab
 import com.florent.location.ui.housing.HousingDetailViewModel
 import com.florent.location.ui.housing.HousingEditScreen
 import com.florent.location.ui.housing.HousingEditViewModel
@@ -66,7 +67,7 @@ object LocationRoutes {
     const val BAIL_CREATE = "bails/create?housingId={housingId}&tenantId={tenantId}"
     const val HOUSINGS = "housings"
     const val HOUSINGS_LIST = "housings/list"
-    const val HOUSING_DETAIL = "housing/{housingId}"
+    const val HOUSING_DETAIL = "housing/{housingId}?tab={tab}"
     const val HOUSING_EDIT = "housing/edit?housingId={housingId}"
     const val TENANTS = "tenants"
     const val TENANTS_LIST = "tenants/list"
@@ -75,7 +76,8 @@ object LocationRoutes {
 
     fun bailDetail(leaseId: Long) = "bails/$leaseId"
 
-    fun housingDetail(housingId: Long) = "housing/$housingId"
+    fun housingDetail(housingId: Long, tab: HousingDetailTab = HousingDetailTab.HOUSING) =
+        "housing/$housingId?tab=${tab.name}"
 
     fun housingEdit(housingId: Long? = null) =
         housingId?.let { "housing/edit?housingId=$it" } ?: "housing/edit"
@@ -137,10 +139,9 @@ fun LocationNavHost(
             LocationRoutes.BAILS_LIST,
             LocationRoutes.BAIL_DETAIL,
             LocationRoutes.HOUSINGS_LIST,
-            LocationRoutes.HOUSING_DETAIL,
             LocationRoutes.TENANTS_LIST,
             LocationRoutes.TENANT_DETAIL
-        )
+        ) || currentRoute?.startsWith("housing/") == true
 
         when (widthSize) {
             WindowWidthSize.Compact -> {
@@ -421,13 +422,23 @@ private fun LocationNavGraph(
 
             composable(
                 route = LocationRoutes.HOUSING_DETAIL,
-                arguments = listOf(navArgument("housingId") { type = NavType.LongType })
+                arguments = listOf(
+                    navArgument("housingId") { type = NavType.LongType },
+                    navArgument("tab") {
+                        type = NavType.StringType
+                        defaultValue = HousingDetailTab.HOUSING.name
+                    }
+                )
             ) { backStackEntry ->
                 val housingId = backStackEntry.arguments?.getLong("housingId") ?: 0L
+                val tab = backStackEntry.arguments?.getString("tab")
+                    ?.let { runCatching { HousingDetailTab.valueOf(it) }.getOrNull() }
+                    ?: HousingDetailTab.HOUSING
                 val viewModel: HousingDetailViewModel =
                     koinViewModel(parameters = { parametersOf(housingId) })
                 HousingDetailScreen(
                     viewModel = viewModel,
+                    initialTab = tab,
                     onEdit = { navController.navigate(LocationRoutes.housingEdit(housingId)) },
                     onCreateLease = { navController.navigate(LocationRoutes.bailCreate(housingId = housingId)) }
                 )
