@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -11,6 +12,9 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,11 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.florent.location.R
@@ -108,7 +112,8 @@ fun LoginScreen(
 private fun LoginHeader() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.widthIn(max = 460.dp)
     ) {
 
         Surface(
@@ -135,6 +140,61 @@ private fun LoginHeader() {
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        LoginHighlights()
+    }
+}
+
+@Composable
+private fun LoginHighlights(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        LoginHighlightItem(
+            icon = Icons.Outlined.AutoAwesome,
+            text = "Vue claire de vos logements, locataires et baux"
+        )
+        LoginHighlightItem(
+            icon = Icons.Outlined.Bolt,
+            text = "Actions rapides pour gagner du temps au quotidien"
+        )
+        LoginHighlightItem(
+            icon = Icons.Outlined.VerifiedUser,
+            text = "Données centralisées pour un suivi plus serein"
+        )
+    }
+}
+
+@Composable
+private fun LoginHighlightItem(
+    icon: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -144,7 +204,6 @@ private fun LoginCard(
     state: LoginUiState,
     onEvent: (LoginUiEvent) -> Unit
 ) {
-    val focusManager = LocalFocusManager.current
     val emailFocus = remember { FocusRequester() }
     val passwordFocus = remember { FocusRequester() }
 
@@ -168,6 +227,11 @@ private fun LoginCard(
                 },
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            Text(
+                text = "Connectez-vous pour retrouver votre espace en quelques secondes.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             OutlinedTextField(
                 value = state.email,
@@ -249,6 +313,12 @@ private fun LoginCard(
                     Text("Se connecter")
                 }
             }
+
+            Text(
+                text = "Astuce : appuyez sur Entrée pour valider plus vite.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
