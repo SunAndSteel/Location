@@ -11,9 +11,11 @@ import com.florent.location.ui.housing.components.HousingActionsBottomSheet
 import com.florent.location.ui.housing.components.HousingDeleteConfirmationDialog
 import com.florent.location.ui.housing.components.HousingDetailContent
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun HousingDetailScreen(
     viewModel: HousingDetailViewModel,
+    initialTab: HousingDetailTab = HousingDetailTab.HOUSING,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
     onDeleted: () -> Unit = {},
