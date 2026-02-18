@@ -183,6 +183,9 @@ val appModule = module {
             housingId = params.get(),
             housingUseCases = get(),
             observeHousingSituation = get(),
+            bailUseCases = get(),
+            leaseUseCases = get(),
+            tenantUseCases = get(),
             syncManager = get()
         )
     }
