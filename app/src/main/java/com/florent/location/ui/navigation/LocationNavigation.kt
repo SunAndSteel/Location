@@ -371,7 +371,7 @@ private fun LocationNavGraph(
 
                 LeaseCreateScreen(
                     viewModel = viewModel,
-                    onLeaseCreated = { housingId ->
+                    onLeaseCreated = { _, housingId ->
                         navController.navigate(
                             LocationRoutes.housingDetail(housingId, HousingDetailTab.BAIL)
                         ) {
