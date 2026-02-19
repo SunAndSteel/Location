@@ -10,7 +10,6 @@ import com.florent.location.domain.model.IndexationSimulation
 import com.florent.location.domain.model.Key
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.model.Tenant
-import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
 import com.florent.location.domain.usecase.lease.LeaseUseCases
@@ -117,7 +116,6 @@ class HousingDetailViewModel(
     private val housingId: Long,
     private val housingUseCases: HousingUseCases,
     private val observeHousingSituation: ObserveHousingSituation,
-    private val bailUseCases: BailUseCases,
     private val leaseUseCases: LeaseUseCases,
     private val tenantUseCases: TenantUseCases,
     private val syncManager: HousingSyncRequester
@@ -163,14 +161,14 @@ class HousingDetailViewModel(
                     observeHousingSituation(housing)
                 }
             }
-            val activeLeaseFlow = bailUseCases.observeBails()
+            val activeLeaseFlow = leaseUseCases.observeLeases()
                 .map { bails -> bails.firstOrNull { it.housingId == housingId && it.endDateEpochDay == null } }
             val tenantFlow = activeLeaseFlow.flatMapLatest { lease ->
                 lease?.let { tenantUseCases.observeTenant(it.tenantId) } ?: flowOf(null)
             }
             val keysFlow = housingUseCases.observeKeysForHousing(housingId)
             val indexationEventsFlow = activeLeaseFlow.flatMapLatest { lease ->
-                lease?.let { bailUseCases.observeIndexationEvents(it.id) } ?: flowOf(emptyList())
+                lease?.let { leaseUseCases.observeIndexationEvents(it.id) } ?: flowOf(emptyList())
             }
 
             combine(
@@ -207,7 +205,7 @@ class HousingDetailViewModel(
                 }
                 .collect { snapshot ->
                     val policy = snapshot.lease?.let {
-                        bailUseCases.buildIndexationPolicy(it, todayEpochDay)
+                        leaseUseCases.buildIndexationPolicy(it, todayEpochDay)
                     }
                     _uiState.update { current ->
                         current.copy(
@@ -409,7 +407,7 @@ class HousingDetailViewModel(
                 return@launch
             }
             try {
-                val simulation = bailUseCases.simulateIndexationForBail(
+                val simulation = leaseUseCases.simulateIndexation(
                     leaseId = lease.id,
                     indexPercent = percent,
                     effectiveEpochDay = effectiveEpochDay
@@ -441,7 +439,7 @@ class HousingDetailViewModel(
                 return@launch
             }
             try {
-                bailUseCases.applyIndexationToBail(
+                leaseUseCases.applyIndexation(
                     leaseId = lease.id,
                     indexPercent = percent,
                     effectiveEpochDay = effectiveEpochDay

@@ -9,8 +9,6 @@ import com.florent.location.data.repository.TenantRepositoryImpl
 import com.florent.location.domain.repository.HousingRepository
 import com.florent.location.domain.repository.LeaseRepository
 import com.florent.location.domain.repository.TenantRepository
-import com.florent.location.domain.usecase.bail.BailUseCases
-import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCasesImpl
 import com.florent.location.domain.usecase.housing.ObserveHousingSituation
@@ -170,7 +168,6 @@ val appModule = module {
     single { ObserveHousingSituation(leaseRepository = get()) }
     single { ObserveTenantSituation(leaseRepository = get()) }
     single<LeaseUseCases> { LeaseUseCasesImpl(repository = get(), housingRepository = get()) }
-    single<BailUseCases> { BailUseCasesImpl(repository = get()) }
 
     // =========================================================================
     // ViewModels - Housing
@@ -181,7 +178,6 @@ val appModule = module {
             housingId = params.get(),
             housingUseCases = get(),
             observeHousingSituation = get(),
-            bailUseCases = get(),
             leaseUseCases = get(),
             tenantUseCases = get(),
             syncManager = get()
@@ -198,7 +194,7 @@ val appModule = module {
     // =========================================================================
     // ViewModels - Tenant
     // =========================================================================
-    viewModel { TenantListViewModel(useCases = get(), bailUseCases = get(), observeTenantSituation = get(), syncManager = get()) }
+    viewModel { TenantListViewModel(useCases = get(), leaseUseCases = get(), observeTenantSituation = get(), syncManager = get()) }
     viewModel { params ->
         TenantEditViewModel(
             tenantId = params.getOrNull(),
