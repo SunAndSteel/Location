@@ -1,7 +1,7 @@
 package com.florent.location.ui.tenant
 
 import com.florent.location.domain.model.Tenant
-import com.florent.location.domain.usecase.TenantUseCasesImpl
+import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.fake.FakeTenantRepository
 import com.florent.location.testutils.RecordingSyncRequester
 import com.florent.location.util.MainDispatcherRule

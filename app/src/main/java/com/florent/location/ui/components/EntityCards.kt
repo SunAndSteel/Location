@@ -27,7 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.florent.location.domain.model.Bail
+import com.florent.location.domain.model.Lease
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.HousingSituation
 import com.florent.location.domain.model.PebRating
@@ -163,13 +163,13 @@ fun HousingCard(
 
 @Composable
 fun LeaseCard(
-    bail: Bail,
+    lease: Lease,
     housingLabel: String,
     tenantLabel: String,
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isActive = bail.endDateEpochDay == null
+    val isActive = lease.endDateEpochDay == null
     val statusLabel = if (isActive) "Actif" else "Terminé"
     val leaseTitle = "$tenantLabel • $housingLabel"
     val variant = when {
@@ -211,7 +211,7 @@ fun LeaseCard(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 HeroMetric(
-                    value = formatCurrency(bail.rentCents),
+                    value = formatCurrency(lease.rentCents),
                     label = "/ mois"
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -225,20 +225,20 @@ fun LeaseCard(
                         icon = Icons.Outlined.Person
                     )
                     NonInteractiveChip(
-                        label = "Échéance le ${bail.rentDueDayOfMonth}",
+                        label = "Échéance le ${lease.rentDueDayOfMonth}",
                         icon = Icons.Outlined.Timelapse
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 LabeledValueRow(
                     label = "Début",
-                    value = formatEpochDay(bail.startDateEpochDay)
+                    value = formatEpochDay(lease.startDateEpochDay)
                 )
-                if (!isActive && bail.endDateEpochDay != null) {
+                if (!isActive && lease.endDateEpochDay != null) {
                     Spacer(modifier = Modifier.height(6.dp))
                     LabeledValueRow(
                         label = "Fin",
-                        value = formatEpochDay(bail.endDateEpochDay)
+                        value = formatEpochDay(lease.endDateEpochDay)
                     )
                 }
             }
@@ -278,7 +278,7 @@ fun LeaseCard(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 HeroMetric(
-                    value = formatCurrency(bail.rentCents),
+                    value = formatCurrency(lease.rentCents),
                     label = "/ mois"
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -292,20 +292,20 @@ fun LeaseCard(
                         icon = Icons.Outlined.Person
                     )
                     NonInteractiveChip(
-                        label = "Échéance le ${bail.rentDueDayOfMonth}",
+                        label = "Échéance le ${lease.rentDueDayOfMonth}",
                         icon = Icons.Outlined.Timelapse
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 LabeledValueRow(
                     label = "Début",
-                    value = formatEpochDay(bail.startDateEpochDay)
+                    value = formatEpochDay(lease.startDateEpochDay)
                 )
-                if (!isActive && bail.endDateEpochDay != null) {
+                if (!isActive && lease.endDateEpochDay != null) {
                     Spacer(modifier = Modifier.height(6.dp))
                     LabeledValueRow(
                         label = "Fin",
-                        value = formatEpochDay(bail.endDateEpochDay)
+                        value = formatEpochDay(lease.endDateEpochDay)
                     )
                 }
             }

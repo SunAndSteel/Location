@@ -1,10 +1,10 @@
 package com.florent.location.ui.tenant
 
 import com.florent.location.domain.model.Tenant
-import com.florent.location.domain.usecase.TenantUseCasesImpl
 import com.florent.location.domain.usecase.lease.LeaseUseCasesImpl
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
+import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.fake.FakeHousingRepository
 import com.florent.location.fake.FakeLeaseRepository
 import com.florent.location.fake.FakeTenantRepository
