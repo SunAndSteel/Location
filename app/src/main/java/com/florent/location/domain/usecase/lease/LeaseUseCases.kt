@@ -1,8 +1,13 @@
 package com.florent.location.domain.usecase.lease
 
+import com.florent.location.domain.model.IndexationEvent
+import com.florent.location.domain.model.IndexationPolicy
+import com.florent.location.domain.model.IndexationSimulation
 import com.florent.location.domain.model.Lease
 import com.florent.location.domain.repository.HousingRepository
 import com.florent.location.domain.repository.LeaseRepository
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -18,6 +23,49 @@ interface LeaseUseCases {
      * Observe un bail.
      */
     fun observeLease(leaseId: Long): Flow<Lease?>
+
+    /**
+     * Observe tous les baux actifs.
+     */
+    fun observeLeases(): Flow<List<Lease>>
+
+    /**
+     * Observe le bail actif pour un logement.
+     */
+    fun observeActiveLeaseForHousing(housingId: Long): Flow<Lease?>
+
+    /**
+     * Observe le bail actif pour un locataire.
+     */
+    fun observeActiveLeaseForTenant(tenantId: Long): Flow<Lease?>
+
+    /**
+     * Observe l'historique d'indexation d'un bail.
+     */
+    fun observeIndexationEvents(leaseId: Long): Flow<List<IndexationEvent>>
+
+    /**
+     * Construit la politique d'indexation d'un bail.
+     */
+    fun buildIndexationPolicy(lease: Lease, todayEpochDay: Long): IndexationPolicy
+
+    /**
+     * Simule une indexation pour un bail.
+     */
+    suspend fun simulateIndexation(
+        leaseId: Long,
+        indexPercent: Double,
+        effectiveEpochDay: Long
+    ): IndexationSimulation
+
+    /**
+     * Applique une indexation sur un bail.
+     */
+    suspend fun applyIndexation(
+        leaseId: Long,
+        indexPercent: Double,
+        effectiveEpochDay: Long
+    ): IndexationEvent
 
     /**
      * Clôture un bail existant.
@@ -88,6 +136,67 @@ class LeaseUseCasesImpl(
     override fun observeLease(leaseId: Long): Flow<Lease?> =
         repository.observeLease(leaseId)
 
+    override fun observeLeases(): Flow<List<Lease>> =
+        repository.observeActiveLeases()
+
+    override fun observeActiveLeaseForHousing(housingId: Long): Flow<Lease?> =
+        repository.observeActiveLeaseForHousing(housingId)
+
+    override fun observeActiveLeaseForTenant(tenantId: Long): Flow<Lease?> =
+        repository.observeActiveLeaseForTenant(tenantId)
+
+    override fun observeIndexationEvents(leaseId: Long): Flow<List<IndexationEvent>> =
+        repository.observeIndexationEvents(leaseId)
+
+    override fun buildIndexationPolicy(lease: Lease, todayEpochDay: Long): IndexationPolicy {
+        val anniversary = lease.indexAnniversaryEpochDay ?: lease.startDateEpochDay
+        val nextDate = nextIndexationDate(anniversary, LocalDate.ofEpochDay(todayEpochDay))
+        return IndexationPolicy(
+            anniversaryEpochDay = anniversary,
+            nextIndexationEpochDay = nextDate.toEpochDay()
+        )
+    }
+
+    override suspend fun simulateIndexation(
+        leaseId: Long,
+        indexPercent: Double,
+        effectiveEpochDay: Long
+    ): IndexationSimulation {
+        require(leaseId > 0) { "Le bail est obligatoire." }
+        require(indexPercent >= 0) { "Le pourcentage d'indexation est invalide." }
+        require(effectiveEpochDay >= 0) { "La date d'effet est obligatoire." }
+        val lease = requireNotNull(repository.getLease(leaseId)) { "Bail introuvable." }
+        val newRent = computeNewRent(lease.rentCents, indexPercent)
+        return IndexationSimulation(
+            leaseId = lease.id,
+            baseRentCents = lease.rentCents,
+            indexPercent = indexPercent,
+            newRentCents = newRent,
+            effectiveEpochDay = effectiveEpochDay
+        )
+    }
+
+    override suspend fun applyIndexation(
+        leaseId: Long,
+        indexPercent: Double,
+        effectiveEpochDay: Long
+    ): IndexationEvent {
+        require(leaseId > 0) { "Le bail est obligatoire." }
+        require(indexPercent >= 0) { "Le pourcentage d'indexation est invalide." }
+        require(effectiveEpochDay >= 0) { "La date d'effet est obligatoire." }
+        val lease = requireNotNull(repository.getLease(leaseId)) { "Bail introuvable." }
+        val newRent = computeNewRent(lease.rentCents, indexPercent)
+        val event = IndexationEvent(
+            leaseId = lease.id,
+            appliedEpochDay = effectiveEpochDay,
+            baseRentCents = lease.rentCents,
+            indexPercent = indexPercent,
+            newRentCents = newRent
+        )
+        repository.applyIndexation(event)
+        return event
+    }
+
     override suspend fun closeLease(leaseId: Long, endEpochDay: Long) {
         require(leaseId > 0) { "Le bail est obligatoire." }
         require(endEpochDay >= 0) { "La date de clôture est obligatoire." }
@@ -98,5 +207,23 @@ class LeaseUseCasesImpl(
             "La date de clôture ne peut pas être antérieure à la date de début du bail."
         }
         repository.closeLease(leaseId, endEpochDay)
+    }
+
+    private fun computeNewRent(baseRentCents: Long, indexPercent: Double): Long {
+        val multiplier = 1.0 + (indexPercent / 100.0)
+        return kotlin.math.round(baseRentCents * multiplier).toLong()
+    }
+
+    private fun nextIndexationDate(anniversaryEpochDay: Long, today: LocalDate): LocalDate {
+        val anniversaryDate = LocalDate.ofEpochDay(anniversaryEpochDay)
+        if (!anniversaryDate.isBefore(today)) {
+            return anniversaryDate
+        }
+        val yearsBetween = ChronoUnit.YEARS.between(anniversaryDate, today)
+        var candidate = anniversaryDate.plusYears(yearsBetween)
+        if (candidate.isBefore(today)) {
+            candidate = candidate.plusYears(1)
+        }
+        return candidate
     }
 }

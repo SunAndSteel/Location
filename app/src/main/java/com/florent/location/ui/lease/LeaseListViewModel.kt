@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
 import com.florent.location.domain.model.Tenant
-import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.housing.HousingUseCases
+import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +36,7 @@ sealed interface LeaseListUiEvent {
 }
 
 class LeaseListViewModel(
-    private val useCases: BailUseCases,
+    private val useCases: LeaseUseCases,
     private val housingUseCases: HousingUseCases,
     private val tenantUseCases: TenantUseCases
 ) : ViewModel() {
@@ -47,7 +47,7 @@ class LeaseListViewModel(
     private var allBails: List<LeaseListItem> = emptyList()
 
     init {
-        observeBails()
+        observeLeases()
     }
 
     fun onEvent(event: LeaseListUiEvent) {
@@ -56,9 +56,9 @@ class LeaseListViewModel(
         }
     }
 
-    private fun observeBails() {
+    private fun observeLeases() {
         viewModelScope.launch {
-            useCases.observeBails()
+            useCases.observeLeases()
                 .combine(housingUseCases.observeHousings()) { bails, housings ->
                     bails to housings.associateBy(Housing::id)
                 }

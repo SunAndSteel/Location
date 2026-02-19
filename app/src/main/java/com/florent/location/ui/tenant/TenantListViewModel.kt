@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantSituation
-import com.florent.location.domain.usecase.bail.BailUseCases
+import com.florent.location.domain.usecase.lease.LeaseUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.presentation.sync.HousingSyncRequester
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
@@ -42,7 +42,7 @@ sealed interface TenantListUiEvent {
 
 class TenantListViewModel(
     private val useCases: TenantUseCases,
-    private val bailUseCases: BailUseCases,
+    private val leaseUseCases: LeaseUseCases,
     private val observeTenantSituation: ObserveTenantSituation,
     private val syncManager: HousingSyncRequester
 ) : ViewModel() {
@@ -67,7 +67,7 @@ class TenantListViewModel(
     private fun observeTenants() {
         viewModelScope.launch {
             useCases.observeTenants()
-                .combine(bailUseCases.observeBails()) { tenants, bails ->
+                .combine(leaseUseCases.observeLeases()) { tenants, bails ->
                     val activeLeaseByTenant = bails
                         .filter { it.endDateEpochDay == null }
                         .associateBy { it.tenantId }
