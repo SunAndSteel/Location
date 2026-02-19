@@ -81,10 +81,10 @@ private fun LeaseCreateContent(
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(state.isSaved, state.savedLeaseId) {
-        val leaseId = state.savedLeaseId
-        if (state.isSaved && leaseId != null) {
-            onLeaseCreated(leaseId)
+    LaunchedEffect(state.isSaved, state.selectedHousingId) {
+        val housingId = state.selectedHousingId
+        if (state.isSaved && housingId != null) {
+            onLeaseCreated(housingId)
         }
     }
 
