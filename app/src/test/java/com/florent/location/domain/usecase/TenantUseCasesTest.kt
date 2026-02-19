@@ -1,6 +1,7 @@
 package com.florent.location.domain.usecase
 
 import com.florent.location.domain.model.Tenant
+import com.florent.location.domain.usecase.tenant.TenantUseCasesImpl
 import com.florent.location.fake.FakeTenantRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first

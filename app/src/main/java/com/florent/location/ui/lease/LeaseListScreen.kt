@@ -166,20 +166,20 @@ private fun LeaseListContent(
                                     contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                                     verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                                 ) {
-                                    items(state.bails, key = { it.bail.id }) { item ->
+                                    items(state.leases, key = { it.lease.id }) { item ->
                                         LeaseCard(
-                                            bail = item.bail,
+                                            lease = item.lease,
                                             housingLabel = item.housingLabel,
                                             tenantLabel = item.tenantName,
-                                            onOpen = { onBailClick(item.bail.housingId) },
+                                            onOpen = { onBailClick(item.lease.housingId) },
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
                                 }
                             }
                             LeaseContextPanel(
-                                total = state.bails.size,
-                                active = state.bails.count { it.bail.endDateEpochDay == null },
+                                total = state.leases.size,
+                                active = state.leases.count { it.lease.endDateEpochDay == null },
                                 modifier = Modifier.weight(0.6f)
                             )
                         }
@@ -190,12 +190,12 @@ private fun LeaseListContent(
                                 contentPadding = PaddingValues(vertical = UiTokens.SpacingS),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                items(state.bails, key = { it.bail.id }) { item ->
+                                items(state.leases, key = { it.lease.id }) { item ->
                                     LeaseCard(
-                                        bail = item.bail,
+                                        lease = item.lease,
                                         housingLabel = item.housingLabel,
                                         tenantLabel = item.tenantName,
-                                        onOpen = { onBailClick(item.bail.housingId) },
+                                        onOpen = { onBailClick(item.lease.housingId) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }

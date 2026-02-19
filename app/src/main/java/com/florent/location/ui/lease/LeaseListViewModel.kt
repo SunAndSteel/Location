@@ -2,8 +2,8 @@ package com.florent.location.ui.lease
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.florent.location.domain.model.Bail
 import com.florent.location.domain.model.Housing
+import com.florent.location.domain.model.Lease
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.housing.HousingUseCases
 import com.florent.location.domain.usecase.lease.LeaseUseCases
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class LeaseListItem(
-    val bail: Bail,
+    val lease: Lease,
     val tenantName: String,
     val housingLabel: String
 )
@@ -25,7 +25,7 @@ data class LeaseListItem(
 data class LeaseListUiState(
     val isLoading: Boolean = true,
     val searchQuery: String = "",
-    val bails: List<LeaseListItem> = emptyList(),
+    val leases: List<LeaseListItem> = emptyList(),
     val isEmpty: Boolean = false,
     val isSearchResultEmpty: Boolean = false,
     val errorMessage: String? = null
@@ -44,7 +44,7 @@ class LeaseListViewModel(
     private val _uiState = MutableStateFlow(LeaseListUiState())
     val uiState: StateFlow<LeaseListUiState> = _uiState
 
-    private var allBails: List<LeaseListItem> = emptyList()
+    private var allLeases: List<LeaseListItem> = emptyList()
 
     init {
         observeLeases()
@@ -59,23 +59,23 @@ class LeaseListViewModel(
     private fun observeLeases() {
         viewModelScope.launch {
             useCases.observeLeases()
-                .combine(housingUseCases.observeHousings()) { bails, housings ->
-                    bails to housings.associateBy(Housing::id)
+                .combine(housingUseCases.observeHousings()) { leases, housings ->
+                    leases to housings.associateBy(Housing::id)
                 }
-                .combine(tenantUseCases.observeTenants()) { (bails, housingsById), tenants ->
+                .combine(tenantUseCases.observeTenants()) { (leases, housingsById), tenants ->
                     val tenantsById = tenants.associateBy(Tenant::id)
-                    bails.map { bail ->
+                    leases.map { lease ->
                         LeaseListItem(
-                            bail = bail,
-                            tenantName = tenantsById[bail.tenantId]
+                            lease = lease,
+                            tenantName = tenantsById[lease.tenantId]
                                 ?.let { "${it.firstName} ${it.lastName}".trim() }
                                 .orEmpty()
-                                .ifBlank { "Locataire #${bail.tenantId}" },
-                            housingLabel = housingsById[bail.housingId]
+                                .ifBlank { "Locataire #${lease.tenantId}" },
+                            housingLabel = housingsById[lease.housingId]
                                 ?.address
                                 ?.fullString()
                                 .orEmpty()
-                                .ifBlank { "Logement #${bail.housingId}" }
+                                .ifBlank { "Logement #${lease.housingId}" }
                         )
                     }
                 }
@@ -90,15 +90,15 @@ class LeaseListViewModel(
                         )
                     }
                 }
-                .collect { bails ->
-                    allBails = bails
-                    val filtered = applySearch(_uiState.value.searchQuery, bails)
+                .collect { leases ->
+                    allLeases = leases
+                    val filtered = applySearch(_uiState.value.searchQuery, leases)
                     _uiState.update {
-                        val searchResultEmpty = it.searchQuery.isNotBlank() && allBails.isNotEmpty() && filtered.isEmpty()
+                        val searchResultEmpty = it.searchQuery.isNotBlank() && allLeases.isNotEmpty() && filtered.isEmpty()
                         it.copy(
                             isLoading = false,
-                            bails = filtered,
-                            isEmpty = allBails.isEmpty(),
+                            leases = filtered,
+                            isEmpty = allLeases.isEmpty(),
                             isSearchResultEmpty = searchResultEmpty,
                             errorMessage = null
                         )
@@ -108,27 +108,27 @@ class LeaseListViewModel(
     }
 
     private fun updateSearch(query: String) {
-        val filtered = applySearch(query, allBails)
+        val filtered = applySearch(query, allLeases)
         _uiState.update {
             it.copy(
                 searchQuery = query,
-                bails = filtered,
-                isEmpty = allBails.isEmpty(),
-                isSearchResultEmpty = query.isNotBlank() && allBails.isNotEmpty() && filtered.isEmpty(),
+                leases = filtered,
+                isEmpty = allLeases.isEmpty(),
+                isSearchResultEmpty = query.isNotBlank() && allLeases.isNotEmpty() && filtered.isEmpty(),
                 errorMessage = null
             )
         }
     }
 
-    private fun applySearch(query: String, bails: List<LeaseListItem>): List<LeaseListItem> {
+    private fun applySearch(query: String, leases: List<LeaseListItem>): List<LeaseListItem> {
         val trimmed = query.trim()
-        if (trimmed.isEmpty()) return bails
-        return bails.filter { item ->
-            val bail = item.bail
-            bail.id.toString().contains(trimmed, ignoreCase = true) ||
-                bail.startDateEpochDay.toString().contains(trimmed, ignoreCase = true) ||
-                bail.endDateEpochDay?.toString()?.contains(trimmed, ignoreCase = true) == true ||
-                bail.rentCents.toString().contains(trimmed, ignoreCase = true) ||
+        if (trimmed.isEmpty()) return leases
+        return leases.filter { item ->
+            val lease = item.lease
+            lease.id.toString().contains(trimmed, ignoreCase = true) ||
+                lease.startDateEpochDay.toString().contains(trimmed, ignoreCase = true) ||
+                lease.endDateEpochDay?.toString()?.contains(trimmed, ignoreCase = true) == true ||
+                lease.rentCents.toString().contains(trimmed, ignoreCase = true) ||
                 item.tenantName.contains(trimmed, ignoreCase = true) ||
                 item.housingLabel.contains(trimmed, ignoreCase = true)
         }
