@@ -25,10 +25,8 @@ import com.florent.location.ui.housing.HousingEditViewModel
 import com.florent.location.ui.auth.AuthGateViewModel
 import com.florent.location.ui.auth.LoginViewModel
 import com.florent.location.ui.tenant.TenantListViewModel
-import com.florent.location.ui.tenant.TenantDetailViewModel
 import com.florent.location.ui.tenant.TenantEditViewModel
 import com.florent.location.ui.lease.LeaseCreateViewModel
-import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListViewModel
 import com.florent.location.data.sync.UnifiedSyncManager
 import com.florent.location.presentation.sync.HousingSyncRequester
@@ -202,14 +200,6 @@ val appModule = module {
     // =========================================================================
     viewModel { TenantListViewModel(useCases = get(), bailUseCases = get(), observeTenantSituation = get(), syncManager = get()) }
     viewModel { params ->
-        TenantDetailViewModel(
-            tenantId = params.get(),
-            tenantUseCases = get(),
-            observeTenantSituation = get(),
-            syncManager = get()
-        )
-    }
-    viewModel { params ->
         TenantEditViewModel(
             tenantId = params.getOrNull(),
             useCases = get(),
@@ -226,16 +216,6 @@ val appModule = module {
             housingUseCases = get(),
             tenantUseCases = get(),
             leaseUseCases = get(),
-            syncManager = get()
-        )
-    }
-    viewModel { params ->
-        LeaseDetailViewModel(
-            leaseId = params.get(),
-            bailUseCases = get(),
-            leaseUseCases = get(),
-            housingUseCases = get(),
-            tenantUseCases = get(),
             syncManager = get()
         )
     }

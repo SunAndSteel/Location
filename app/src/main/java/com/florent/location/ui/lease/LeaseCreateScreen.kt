@@ -55,7 +55,7 @@ import androidx.compose.material.icons.outlined.PersonAdd
 @Composable
 fun LeaseCreateScreen(
     viewModel: LeaseCreateViewModel,
-    onLeaseCreated: (Long) -> Unit,
+    onLeaseCreated: (leaseId: Long, housingId: Long) -> Unit,
     onAddHousing: () -> Unit,
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
@@ -76,15 +76,16 @@ fun LeaseCreateScreen(
 private fun LeaseCreateContent(
     state: LeaseCreateUiState,
     onEvent: (LeaseCreateUiEvent) -> Unit,
-    onLeaseCreated: (Long) -> Unit,
+    onLeaseCreated: (leaseId: Long, housingId: Long) -> Unit,
     onAddHousing: () -> Unit,
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(state.isSaved, state.selectedHousingId) {
+    LaunchedEffect(state.isSaved, state.savedLeaseId, state.selectedHousingId) {
+        val leaseId = state.savedLeaseId
         val housingId = state.selectedHousingId
-        if (state.isSaved && housingId != null) {
-            onLeaseCreated(housingId)
+        if (state.isSaved && leaseId != null && housingId != null) {
+            onLeaseCreated(leaseId, housingId)
         }
     }
 

@@ -78,14 +78,14 @@ import com.florent.location.ui.components.WindowWidthSize
 import com.florent.location.ui.components.formatCurrency
 import com.florent.location.ui.components.formatEpochDay
 import com.florent.location.ui.components.windowWidthSize
-import com.florent.location.ui.lease.AddKeyField
-import com.florent.location.ui.lease.LeaseDetailUiEvent
-import com.florent.location.ui.lease.LeaseDetailUiState
+import com.florent.location.ui.housing.AddKeyField
+import com.florent.location.ui.housing.HousingDetailUiEvent
+import com.florent.location.ui.housing.HousingDetailUiState
 
 @Composable
 internal fun LeaseDetailContent(
-    state: LeaseDetailUiState,
-    onEvent: (LeaseDetailUiEvent) -> Unit,
+    state: HousingDetailUiState,
+    onEvent: (HousingDetailUiEvent) -> Unit,
     onShowActions: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -147,15 +147,15 @@ internal fun LeaseDetailContent(
                                 modifier = Modifier.weight(0.55f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isActive)
+                                LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isLeaseActive)
                                 KeysSection(
                                     keys = state.keys,
-                                    onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
-                                    onDeleteKey = { keyId -> onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId)) }
+                                    onAddKey = { onEvent(HousingDetailUiEvent.AddKeyClicked) },
+                                    onDeleteKey = { keyId -> onEvent(HousingDetailUiEvent.DeleteKeyClicked(keyId)) }
                                 )
                                 DestructiveActionsSection(
-                                    isActive = state.isActive,
-                                    onCloseLease = { onEvent(LeaseDetailUiEvent.CloseLeaseClicked) }
+                                    isActive = state.isLeaseActive,
+                                    onCloseLease = { onEvent(HousingDetailUiEvent.CloseLeaseClicked) }
                                 )
                             }
                             Column(
@@ -170,7 +170,7 @@ internal fun LeaseDetailContent(
                             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
-                            LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isActive)
+                            LeaseSummarySection(lease = lease, housing = state.housing, tenantName = state.tenant?.let { "${it.firstName} ${it.lastName}" }, isActive = state.isLeaseActive)
                             Button(
                                 onClick = onShowActions,
                                 modifier = Modifier.fillMaxWidth(),
@@ -183,8 +183,8 @@ internal fun LeaseDetailContent(
                             IndexationSection(state = state, onEvent = onEvent)
                             KeysSection(
                                 keys = state.keys,
-                                onAddKey = { onEvent(LeaseDetailUiEvent.AddKeyClicked) },
-                                onDeleteKey = { keyId -> onEvent(LeaseDetailUiEvent.DeleteKeyClicked(keyId)) }
+                                onAddKey = { onEvent(HousingDetailUiEvent.AddKeyClicked) },
+                                onDeleteKey = { keyId -> onEvent(HousingDetailUiEvent.DeleteKeyClicked(keyId)) }
                             )
                         }
                     }
@@ -260,17 +260,17 @@ private fun BottomSheetAction(
 }
 
 @Composable
-private fun AddKeyDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent) -> Unit) {
+private fun AddKeyDialog(state: HousingDetailUiState, onEvent: (HousingDetailUiEvent) -> Unit) {
     if (!state.addKeyDialog.isOpen) return
     AlertDialog(
-        onDismissRequest = { onEvent(LeaseDetailUiEvent.DismissAddKeyDialog) },
+        onDismissRequest = { onEvent(HousingDetailUiEvent.DismissAddKeyDialog) },
         modifier = Modifier.onPreviewKeyEvent {
             if (it.type == KeyEventType.KeyUp && it.key == KeyboardKey.Escape) {
-                onEvent(LeaseDetailUiEvent.DismissAddKeyDialog)
+                onEvent(HousingDetailUiEvent.DismissAddKeyDialog)
                 true
             } else if (it.type == KeyEventType.KeyUp && (it.key == KeyboardKey.Enter || it.key == KeyboardKey.NumPadEnter)) {
                 onEvent(
-                    LeaseDetailUiEvent.ConfirmAddKey(
+                    HousingDetailUiEvent.ConfirmAddKey(
                         type = state.addKeyDialog.type,
                         deviceLabel = state.addKeyDialog.deviceLabel,
                         handedOverDate = state.addKeyDialog.handedOverDate
@@ -285,7 +285,7 @@ private fun AddKeyDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent
             TextButton(
                 onClick = {
                     onEvent(
-                        LeaseDetailUiEvent.ConfirmAddKey(
+                        HousingDetailUiEvent.ConfirmAddKey(
                             type = state.addKeyDialog.type,
                             deviceLabel = state.addKeyDialog.deviceLabel,
                             handedOverDate = state.addKeyDialog.handedOverDate
@@ -297,7 +297,7 @@ private fun AddKeyDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent
             }
         },
         dismissButton = {
-            TextButton(onClick = { onEvent(LeaseDetailUiEvent.DismissAddKeyDialog) }) {
+            TextButton(onClick = { onEvent(HousingDetailUiEvent.DismissAddKeyDialog) }) {
                 Text(text = "Annuler")
             }
         },
@@ -306,20 +306,20 @@ private fun AddKeyDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
                 OutlinedTextField(
                     value = state.addKeyDialog.type,
-                    onValueChange = { onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.Type, it)) },
+                    onValueChange = { onEvent(HousingDetailUiEvent.AddKeyFieldChanged(AddKeyField.Type, it)) },
                     label = { Text(text = "Type") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = state.addKeyDialog.deviceLabel,
-                    onValueChange = { onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.DeviceLabel, it)) },
+                    onValueChange = { onEvent(HousingDetailUiEvent.AddKeyFieldChanged(AddKeyField.DeviceLabel, it)) },
                     label = { Text(text = "Étiquette dispositif") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 DateFieldWithPicker(
                     label = "Date de remise",
                     value = state.addKeyDialog.handedOverDate,
-                    onValueChange = { onEvent(LeaseDetailUiEvent.AddKeyFieldChanged(AddKeyField.HandedOverDate, it)) }
+                    onValueChange = { onEvent(HousingDetailUiEvent.AddKeyFieldChanged(AddKeyField.HandedOverDate, it)) }
                 )
             }
         }
@@ -327,28 +327,28 @@ private fun AddKeyDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent
 }
 
 @Composable
-private fun CloseLeaseDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent) -> Unit) {
+private fun CloseLeaseDialog(state: HousingDetailUiState, onEvent: (HousingDetailUiEvent) -> Unit) {
     if (!state.closeLeaseDialog.isOpen) return
     AlertDialog(
-        onDismissRequest = { onEvent(LeaseDetailUiEvent.DismissCloseLeaseDialog) },
+        onDismissRequest = { onEvent(HousingDetailUiEvent.DismissCloseLeaseDialog) },
         modifier = Modifier.onPreviewKeyEvent {
             if (it.type == KeyEventType.KeyUp && it.key == KeyboardKey.Escape) {
-                onEvent(LeaseDetailUiEvent.DismissCloseLeaseDialog)
+                onEvent(HousingDetailUiEvent.DismissCloseLeaseDialog)
                 true
             } else if (it.type == KeyEventType.KeyUp && (it.key == KeyboardKey.Enter || it.key == KeyboardKey.NumPadEnter)) {
-                onEvent(LeaseDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate))
+                onEvent(HousingDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate))
                 true
             } else {
                 false
             }
         },
         confirmButton = {
-            TextButton(onClick = { onEvent(LeaseDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate)) }) {
+            TextButton(onClick = { onEvent(HousingDetailUiEvent.ConfirmCloseLease(state.closeLeaseDialog.endDate)) }) {
                 Text(text = "Clôturer")
             }
         },
         dismissButton = {
-            TextButton(onClick = { onEvent(LeaseDetailUiEvent.DismissCloseLeaseDialog) }) {
+            TextButton(onClick = { onEvent(HousingDetailUiEvent.DismissCloseLeaseDialog) }) {
                 Text(text = "Annuler")
             }
         },
@@ -357,7 +357,7 @@ private fun CloseLeaseDialog(state: LeaseDetailUiState, onEvent: (LeaseDetailUiE
             DateFieldWithPicker(
                 label = "Date de fin",
                 value = state.closeLeaseDialog.endDate,
-                onValueChange = { onEvent(LeaseDetailUiEvent.CloseLeaseFieldChanged(it)) }
+                onValueChange = { onEvent(HousingDetailUiEvent.CloseLeaseFieldChanged(it)) }
             )
         }
     )
@@ -469,7 +469,7 @@ private fun LeaseHeroSection(lease: Lease, statusLabel: String, isActive: Boolea
 }
 
 @Composable
-private fun IndexationSection(state: LeaseDetailUiState, onEvent: (LeaseDetailUiEvent) -> Unit, modifier: Modifier = Modifier) {
+private fun IndexationSection(state: HousingDetailUiState, onEvent: (HousingDetailUiEvent) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
         SectionHeader(title = "Indexation", supportingText = "Calculs et historique.")
         SectionCard(tonalColor = MaterialTheme.colorScheme.surfaceContainerHigh) {
@@ -494,20 +494,20 @@ private fun IndexationSection(state: LeaseDetailUiState, onEvent: (LeaseDetailUi
             Text(text = "Simulation", style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = state.indexationForm.indexPercent,
-                onValueChange = { onEvent(LeaseDetailUiEvent.IndexationPercentChanged(it)) },
+                onValueChange = { onEvent(HousingDetailUiEvent.IndexationPercentChanged(it)) },
                 label = { Text(text = "Indice (%)") },
                 modifier = Modifier.fillMaxWidth()
             )
             DateFieldWithPicker(
                 label = "Date d'effet",
                 value = state.indexationForm.effectiveDate,
-                onValueChange = { onEvent(LeaseDetailUiEvent.IndexationEffectiveDateChanged(it)) }
+                onValueChange = { onEvent(HousingDetailUiEvent.IndexationEffectiveDateChanged(it)) }
             )
             PrimaryActionRow(
                 primaryLabel = "Simuler",
-                onPrimary = { onEvent(LeaseDetailUiEvent.SimulateIndexation) },
+                onPrimary = { onEvent(HousingDetailUiEvent.SimulateIndexation) },
                 secondaryLabel = "Appliquer",
-                onSecondary = { onEvent(LeaseDetailUiEvent.ApplyIndexation) }
+                onSecondary = { onEvent(HousingDetailUiEvent.ApplyIndexation) }
             )
         }
         state.indexationForm.simulation?.let { simulation ->

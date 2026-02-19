@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.florent.location.domain.model.Tenant
-import com.florent.location.domain.model.TenantSituation
 import com.florent.location.domain.model.TenantStatus
 import com.florent.location.ui.components.ExpressiveEmptyState
 import com.florent.location.ui.components.ExpressiveErrorState
@@ -60,16 +59,13 @@ import com.florent.location.ui.components.SectionHeader
 import com.florent.location.ui.components.StatusBadge
 import com.florent.location.ui.components.UiTokens
 import com.florent.location.ui.components.WindowWidthSize
-import com.florent.location.ui.components.tenantSituationLabel
 import com.florent.location.ui.components.tenantStatusLabel
 import com.florent.location.ui.components.windowWidthSize
-import com.florent.location.ui.tenant.TenantDetailUiEvent
-import com.florent.location.ui.tenant.TenantDetailUiState
+import com.florent.location.ui.housing.HousingDetailUiState
 
 @Composable
 internal fun TenantDetailContent(
-    state: TenantDetailUiState,
-    onEvent: (TenantDetailUiEvent) -> Unit,
+    state: HousingDetailUiState,
     onEdit: () -> Unit,
     onCreateLease: () -> Unit,
     onShowActions: () -> Unit,
@@ -104,7 +100,7 @@ internal fun TenantDetailContent(
                 }
             }
 
-            state.isEmpty -> {
+            state.tenant == null -> {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -118,7 +114,7 @@ internal fun TenantDetailContent(
                 }
             }
 
-            state.tenant != null -> {
+            else -> {
                 val tenant = state.tenant
                 BoxWithConstraints {
                     val sizeClass = windowWidthSize(maxWidth)
@@ -132,21 +128,18 @@ internal fun TenantDetailContent(
                                 modifier = Modifier.weight(0.6f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
-                                TenantHeroSection(tenant = tenant, situation = state.situation)
+                                TenantHeroSection(tenant = tenant)
                                 TenantContactSection(tenant = tenant)
-                                TenantSituationSection(situation = state.situation)
+                                TenantSituationSection()
                             }
                             Column(
                                 modifier = Modifier.weight(0.4f),
                                 verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                             ) {
                                 TenantActionsPanel(
-                                    onEdit = {
-                                        onEvent(TenantDetailUiEvent.Edit)
-                                        onEdit()
-                                    },
+                                    onEdit = onEdit,
                                     onCreateLease = onCreateLease,
-                                    onDelete = { onEvent(TenantDetailUiEvent.Delete) }
+                                    onDelete = { }
                                 )
                             }
                         }
@@ -155,7 +148,7 @@ internal fun TenantDetailContent(
                             modifier = Modifier.fillMaxWidth().verticalScroll(scrollState),
                             verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
                         ) {
-                            TenantHeroSection(tenant = tenant, situation = state.situation)
+                            TenantHeroSection(tenant = tenant)
                             Button(
                                 onClick = onShowActions,
                                 modifier = Modifier.fillMaxWidth(),
@@ -166,7 +159,7 @@ internal fun TenantDetailContent(
                                 Text("Actions")
                             }
                             TenantContactSection(tenant = tenant)
-                            TenantSituationSection(situation = state.situation)
+                            TenantSituationSection()
                         }
                     }
                 }
@@ -208,7 +201,7 @@ internal fun TenantActionsBottomSheet(
 }
 
 @Composable
-private fun TenantHeroSection(tenant: Tenant, situation: TenantSituation?, modifier: Modifier = Modifier) {
+private fun TenantHeroSection(tenant: Tenant, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -220,37 +213,17 @@ private fun TenantHeroSection(tenant: Tenant, situation: TenantSituation?, modif
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(UiTokens.SpacingL), verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingM)) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(UiTokens.SpacingS),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                situation?.let {
-                    StatusBadge(
-                        text = tenantStatusLabel(it.status),
-                        icon = tenantStatusIcon(it.status),
-                        color = tenantStatusColor(it.status)
-                    )
-                }
-                situation?.let {
-                    StatusBadge(
-                        text = if (it.hasActiveLease) "Bail actif" else "Sans bail",
-                        icon = Icons.Outlined.HomeWork,
-                        color = if (it.hasActiveLease) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
+            StatusBadge(
+                text = tenantStatusLabel(tenant.status),
+                icon = tenantStatusIcon(tenant.status),
+                color = tenantStatusColor(tenant.status)
+            )
 
             Text(
                 text = "${tenant.firstName} ${tenant.lastName}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-
-            Text(
-                text = tenantSituationLabel(situation ?: TenantSituation(status = tenant.status, hasActiveLease = false)),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -297,22 +270,11 @@ private fun TenantContactSection(tenant: Tenant, modifier: Modifier = Modifier) 
 }
 
 @Composable
-private fun TenantSituationSection(situation: TenantSituation?, modifier: Modifier = Modifier) {
+private fun TenantSituationSection(modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingS)) {
-        SectionHeader(title = "Situation", supportingText = "Statut et bail en cours.")
+        SectionHeader(title = "Situation", supportingText = "Statut du locataire.")
         SectionCard {
-            LabeledValueRow(
-                label = "Statut",
-                value = situation?.let { tenantStatusLabel(it.status) } ?: "Non renseigné"
-            )
-            LabeledValueRow(
-                label = "Bail",
-                value = when {
-                    situation == null -> "Non renseigné"
-                    situation.hasActiveLease -> "Actif"
-                    else -> "Sans bail"
-                }
-            )
+            LabeledValueRow(label = "Statut", value = "Consultable depuis le bail actif")
         }
     }
 }
