@@ -439,6 +439,7 @@ private fun LocationNavGraph(
                 HousingDetailScreen(
                     viewModel = viewModel,
                     initialTab = tab,
+                    onBack = { navController.popBackStack() },
                     onEdit = { navController.navigate(LocationRoutes.housingEdit(housingId)) },
                     onCreateLease = { navController.navigate(LocationRoutes.bailCreate(housingId = housingId)) }
                 )

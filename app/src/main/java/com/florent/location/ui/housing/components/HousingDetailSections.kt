@@ -519,6 +519,28 @@ private fun HousingAccessSection(housing: Housing, modifier: Modifier = Modifier
 }
 
 @Composable
+internal fun HousingCharacteristicsContent(housing: Housing?, modifier: Modifier = Modifier) {
+    if (housing == null) {
+        ExpressiveEmptyState(
+            title = "Logement introuvable",
+            message = "Impossible d'afficher les caractéristiques du logement.",
+            icon = Icons.Outlined.HomeWork,
+            modifier = modifier.fillMaxWidth()
+        )
+        return
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(UiTokens.SpacingL)
+    ) {
+        HousingInfoSection(housing = housing)
+        HousingFinancialSection(housing = housing)
+        HousingAccessSection(housing = housing)
+    }
+}
+
+@Composable
 internal fun HousingDeleteConfirmationDialog(
     housingAddress: String,
     onConfirm: () -> Unit,

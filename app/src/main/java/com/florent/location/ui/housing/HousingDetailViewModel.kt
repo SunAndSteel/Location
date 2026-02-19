@@ -174,21 +174,25 @@ class HousingDetailViewModel(
             }
 
             combine(
-                housingFlow,
-                situationFlow,
-                activeLeaseFlow,
-                tenantFlow,
-                keysFlow,
+                combine(
+                    housingFlow,
+                    situationFlow,
+                    activeLeaseFlow,
+                    tenantFlow,
+                    keysFlow
+                ) { housing, situation, lease, tenant, keys ->
+                    HousingDetailSnapshot(
+                        housing = housing,
+                        situation = situation,
+                        lease = lease,
+                        tenant = tenant,
+                        keys = keys,
+                        events = emptyList()
+                    )
+                },
                 indexationEventsFlow
-            ) { housing, situation, lease, tenant, keys, events ->
-                HousingDetailSnapshot(
-                    housing = housing,
-                    situation = situation,
-                    lease = lease,
-                    tenant = tenant,
-                    keys = keys,
-                    events = events
-                )
+            ) { snapshot, events ->
+                snapshot.copy(events = events)
             }
                 .onStart {
                     _uiState.update { it.copy(isLoading = true, errorMessage = null) }
