@@ -37,8 +37,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.florent.location.ui.lease.LeaseDetailScreen
-import com.florent.location.ui.lease.LeaseDetailViewModel
 import com.florent.location.ui.lease.LeaseListScreen
 import com.florent.location.ui.components.EmptyDetailPane
 import com.florent.location.ui.components.WindowWidthSize
@@ -52,8 +50,6 @@ import com.florent.location.ui.housing.HousingListScreen
 import com.florent.location.ui.lease.LeaseCreateScreen
 import com.florent.location.ui.lease.LeaseCreateUiEvent
 import com.florent.location.ui.lease.LeaseCreateViewModel
-import com.florent.location.ui.tenant.TenantDetailScreen
-import com.florent.location.ui.tenant.TenantDetailViewModel
 import com.florent.location.ui.tenant.TenantEditScreen
 import com.florent.location.ui.tenant.TenantEditViewModel
 import com.florent.location.ui.tenant.TenantListScreen
@@ -63,7 +59,6 @@ import org.koin.core.parameter.parametersOf
 object LocationRoutes {
     const val BAILS = "bails"
     const val BAILS_LIST = "bails/list"
-    const val BAIL_DETAIL = "bails/{leaseId}"
     const val BAIL_CREATE = "bails/create?housingId={housingId}&tenantId={tenantId}"
     const val HOUSINGS = "housings"
     const val HOUSINGS_LIST = "housings/list"
@@ -71,18 +66,13 @@ object LocationRoutes {
     const val HOUSING_EDIT = "housing/edit?housingId={housingId}"
     const val TENANTS = "tenants"
     const val TENANTS_LIST = "tenants/list"
-    const val TENANT_DETAIL = "tenant/{tenantId}"
     const val TENANT_EDIT = "tenant/edit?tenantId={tenantId}"
-
-    fun bailDetail(leaseId: Long) = "bails/$leaseId"
 
     fun housingDetail(housingId: Long, tab: HousingDetailTab = HousingDetailTab.HOUSING) =
         "housing/$housingId?tab=${tab.name}"
 
     fun housingEdit(housingId: Long? = null) =
         housingId?.let { "housing/edit?housingId=$it" } ?: "housing/edit"
-
-    fun tenantDetail(tenantId: Long) = "tenant/$tenantId"
 
     fun tenantEdit(tenantId: Long? = null) =
         tenantId?.let { "tenant/edit?tenantId=$it" } ?: "tenant/edit"
@@ -137,10 +127,8 @@ fun LocationNavHost(
         val currentRoute = currentDestination?.route
         val isTwoPaneRoute = currentRoute in setOf(
             LocationRoutes.BAILS_LIST,
-            LocationRoutes.BAIL_DETAIL,
             LocationRoutes.HOUSINGS_LIST,
-            LocationRoutes.TENANTS_LIST,
-            LocationRoutes.TENANT_DETAIL
+            LocationRoutes.TENANTS_LIST
         ) || currentRoute?.startsWith("housing/") == true
 
         when (widthSize) {
@@ -279,8 +267,10 @@ private fun TwoPaneContent(
             when {
                 isBails -> {
                     LeaseListScreen(
-                        onBailClick = { leaseId ->
-                            navController.navigate(LocationRoutes.bailDetail(leaseId))
+                        onBailClick = { housingId ->
+                            navController.navigate(
+                                LocationRoutes.housingDetail(housingId, HousingDetailTab.BAIL)
+                            )
                         },
                         onAddBail = { navController.navigate(LocationRoutes.bailCreate()) }
                     )
@@ -297,8 +287,10 @@ private fun TwoPaneContent(
 
                 else -> {
                     TenantListScreen(
-                        onTenantClick = { tenantId ->
-                            navController.navigate(LocationRoutes.tenantDetail(tenantId))
+                        onTenantClick = { housingId ->
+                            navController.navigate(
+                                LocationRoutes.housingDetail(housingId, HousingDetailTab.TENANT)
+                            )
                         },
                         onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
                     )
@@ -343,24 +335,14 @@ private fun LocationNavGraph(
                     )
                 } else {
                     LeaseListScreen(
-                        onBailClick = { leaseId ->
-                            navController.navigate(LocationRoutes.bailDetail(leaseId))
+                        onBailClick = { housingId ->
+                            navController.navigate(
+                                LocationRoutes.housingDetail(housingId, HousingDetailTab.BAIL)
+                            )
                         },
                         onAddBail = { navController.navigate(LocationRoutes.bailCreate()) }
                     )
                 }
-            }
-
-            composable(
-                route = LocationRoutes.BAIL_DETAIL,
-                arguments = listOf(navArgument("leaseId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val leaseId = backStackEntry.arguments?.getLong("leaseId") ?: 0L
-                val viewModel: LeaseDetailViewModel =
-                    koinViewModel(parameters = { parametersOf(leaseId) })
-                LeaseDetailScreen(
-                    viewModel = viewModel
-                )
             }
 
             composable(
@@ -389,8 +371,10 @@ private fun LocationNavGraph(
 
                 LeaseCreateScreen(
                     viewModel = viewModel,
-                    onLeaseCreated = { leaseId ->
-                        navController.navigate(LocationRoutes.bailDetail(leaseId)) {
+                    onLeaseCreated = { housingId ->
+                        navController.navigate(
+                            LocationRoutes.housingDetail(housingId, HousingDetailTab.BAIL)
+                        ) {
                             popUpTo(LocationRoutes.BAIL_CREATE) { inclusive = true }
                         }
                     },
@@ -476,26 +460,14 @@ private fun LocationNavGraph(
                     )
                 } else {
                     TenantListScreen(
-                        onTenantClick = { tenantId ->
-                            navController.navigate(LocationRoutes.tenantDetail(tenantId))
+                        onTenantClick = { housingId ->
+                            navController.navigate(
+                                LocationRoutes.housingDetail(housingId, HousingDetailTab.TENANT)
+                            )
                         },
                         onAddTenant = { navController.navigate(LocationRoutes.tenantEdit()) }
                     )
                 }
-            }
-
-            composable(
-                route = LocationRoutes.TENANT_DETAIL,
-                arguments = listOf(navArgument("tenantId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val tenantId = backStackEntry.arguments?.getLong("tenantId") ?: 0L
-                val viewModel: TenantDetailViewModel =
-                    koinViewModel(parameters = { parametersOf(tenantId) })
-                TenantDetailScreen(
-                    viewModel = viewModel,
-                    onEdit = { navController.navigate(LocationRoutes.tenantEdit(tenantId)) },
-                    onCreateLease = { navController.navigate(LocationRoutes.bailCreate(tenantId = tenantId)) }
-                )
             }
 
             composable(

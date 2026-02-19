@@ -200,7 +200,7 @@ val appModule = module {
     // =========================================================================
     // ViewModels - Tenant
     // =========================================================================
-    viewModel { TenantListViewModel(useCases = get(), observeTenantSituation = get(), syncManager = get()) }
+    viewModel { TenantListViewModel(useCases = get(), bailUseCases = get(), observeTenantSituation = get(), syncManager = get()) }
     viewModel { params ->
         TenantDetailViewModel(
             tenantId = params.get(),

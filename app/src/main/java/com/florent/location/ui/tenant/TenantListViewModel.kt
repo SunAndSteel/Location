@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.model.TenantSituation
+import com.florent.location.domain.usecase.bail.BailUseCases
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.presentation.sync.HousingSyncRequester
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
@@ -29,7 +30,8 @@ data class TenantListUiState(
 
 data class TenantListItem(
     val tenant: Tenant,
-    val situation: TenantSituation
+    val situation: TenantSituation,
+    val activeHousingId: Long?
 )
 
 sealed interface TenantListUiEvent {
@@ -40,6 +42,7 @@ sealed interface TenantListUiEvent {
 
 class TenantListViewModel(
     private val useCases: TenantUseCases,
+    private val bailUseCases: BailUseCases,
     private val observeTenantSituation: ObserveTenantSituation,
     private val syncManager: HousingSyncRequester
 ) : ViewModel() {
@@ -64,14 +67,25 @@ class TenantListViewModel(
     private fun observeTenants() {
         viewModelScope.launch {
             useCases.observeTenants()
-                .flatMapLatest { tenants ->
+                .combine(bailUseCases.observeBails()) { tenants, bails ->
+                    val activeLeaseByTenant = bails
+                        .filter { it.endDateEpochDay == null }
+                        .associateBy { it.tenantId }
+                    tenants to activeLeaseByTenant
+                }
+                .flatMapLatest { (tenants, activeLeaseByTenant) ->
                     if (tenants.isEmpty()) {
                         flowOf(emptyList())
                     } else {
                         combine(
                             tenants.map { tenant ->
-                                observeTenantSituation(tenant)
-                                    .map { situation -> TenantListItem(tenant, situation) }
+                                observeTenantSituation(tenant).map { situation ->
+                                    TenantListItem(
+                                        tenant = tenant,
+                                        situation = situation,
+                                        activeHousingId = activeLeaseByTenant[tenant.id]?.housingId
+                                    )
+                                }
                             }
                         ) { items -> items.toList() }
                     }

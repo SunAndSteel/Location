@@ -2,6 +2,7 @@
 
 package com.florent.location.ui.tenant
 
+import android.widget.Toast
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import androidx.compose.material.icons.Icons
@@ -50,7 +52,7 @@ import androidx.compose.material.icons.outlined.ListAlt
 @Composable
 fun TenantListScreen(
     viewModel: TenantListViewModel = koinViewModel(),
-    onTenantClick: (Long) -> Unit,
+    onTenantClick: (housingId: Long) -> Unit,
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -68,7 +70,7 @@ fun TenantListScreen(
 private fun TenantListContent(
     state: TenantListUiState,
     onEvent: (TenantListUiEvent) -> Unit,
-    onTenantClick: (Long) -> Unit,
+    onTenantClick: (housingId: Long) -> Unit,
     onAddTenant: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -140,10 +142,12 @@ private fun TenantListContent(
 private fun TenantListBody(
     state: TenantListUiState,
     onAddTenant: () -> Unit,
-    onTenantClick: (Long) -> Unit,
+    onTenantClick: (housingId: Long) -> Unit,
     onEvent: (TenantListUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     when {
         state.isLoading -> {
             Box(
@@ -196,7 +200,16 @@ private fun TenantListBody(
                     val tenant = item.tenant
                     val openTenant = {
                         onEvent(TenantListUiEvent.TenantClicked(tenant.id))
-                        onTenantClick(tenant.id)
+                        val housingId = item.activeHousingId
+                        if (housingId != null) {
+                            onTenantClick(housingId)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Ce locataire n'a pas de logement actif.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                     TenantCard(
                         tenant = tenant,

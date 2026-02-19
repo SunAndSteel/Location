@@ -2,6 +2,7 @@ package com.florent.location.ui.tenant
 
 import com.florent.location.domain.model.Tenant
 import com.florent.location.domain.usecase.TenantUseCasesImpl
+import com.florent.location.domain.usecase.bail.BailUseCasesImpl
 import com.florent.location.domain.usecase.tenant.TenantUseCases
 import com.florent.location.domain.usecase.tenant.ObserveTenantSituation
 import com.florent.location.fake.FakeLeaseRepository
@@ -33,6 +34,7 @@ class TenantListViewModelTest {
         val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
+            bailUseCases = BailUseCasesImpl(FakeLeaseRepository()),
             observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
             syncManager = syncRequester
         )
@@ -58,6 +60,7 @@ class TenantListViewModelTest {
         val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
+            bailUseCases = BailUseCasesImpl(FakeLeaseRepository()),
             observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
             syncManager = syncRequester
         )
@@ -92,6 +95,7 @@ class TenantListViewModelTest {
         val syncRequester = RecordingSyncRequester()
         val viewModel = TenantListViewModel(
             useCases = useCases,
+            bailUseCases = BailUseCasesImpl(FakeLeaseRepository()),
             observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
             syncManager = syncRequester
         )
@@ -122,6 +126,7 @@ class TenantListViewModelTest {
                     throw IllegalStateException("boom")
                 }
             ),
+            bailUseCases = BailUseCasesImpl(FakeLeaseRepository()),
             observeTenantSituation = ObserveTenantSituation(FakeLeaseRepository()),
             syncManager = RecordingSyncRequester()
         )

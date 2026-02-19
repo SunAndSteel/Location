@@ -47,7 +47,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun LeaseListScreen(
     viewModel: LeaseListViewModel = koinViewModel(),
-    onBailClick: (Long) -> Unit,
+    onBailClick: (housingId: Long) -> Unit,
     onAddBail: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -66,7 +66,7 @@ fun LeaseListScreen(
 private fun LeaseListContent(
     state: LeaseListUiState,
     onEvent: (LeaseListUiEvent) -> Unit,
-    onBailClick: (Long) -> Unit,
+    onBailClick: (housingId: Long) -> Unit,
     onAddBail: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -171,7 +171,7 @@ private fun LeaseListContent(
                                             bail = item.bail,
                                             housingLabel = item.housingLabel,
                                             tenantLabel = item.tenantName,
-                                            onOpen = { onBailClick(item.bail.id) },
+                                            onOpen = { onBailClick(item.bail.housingId) },
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -195,7 +195,7 @@ private fun LeaseListContent(
                                         bail = item.bail,
                                         housingLabel = item.housingLabel,
                                         tenantLabel = item.tenantName,
-                                        onOpen = { onBailClick(item.bail.id) },
+                                        onOpen = { onBailClick(item.bail.housingId) },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
